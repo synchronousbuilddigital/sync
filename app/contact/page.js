@@ -17,7 +17,7 @@ export default function ContactPage() {
         const objective = formData.get("objective") || "";
         const details = formData.get("details") || "";
 
-        const message = `*New Project Inquiry - Synchronous*%0A%0A*Name:* ${name}%0A*Company:* ${company}%0A*Objective:* ${objective}%0A*Details:* ${details}`;
+        const message = encodeURIComponent(`*New Project Inquiry - Synchronous*\n\n*Name:* ${name}\n*Company:* ${company}\n*Objective:* ${objective}\n\n*Details:* ${details}`);
         const whatsappUrl = `https://wa.me/919161391566?text=${message}`;
 
         setTimeout(() => {
