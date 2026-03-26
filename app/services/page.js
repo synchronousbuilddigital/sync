@@ -4,7 +4,6 @@ import { Fingerprint, BarChart3, Cpu, Layout, ArrowRight, CheckCircle2, ArrowUpR
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import CTA from "@/components/CTA";
 
 const serviceCategories = [
     {
@@ -81,10 +80,10 @@ export default function ServicesPage() {
             <div className="absolute top-[40%] left-[-20%] w-[800px] h-[800px] rounded-full -z-10 opacity-10"
                 style={{ background: 'radial-gradient(circle, #F05E23, transparent 70%)', filter: 'blur(100px)' }}
             ></div>
-            
+
             {/* Hero Section */}
             <section className="w-full max-w-7xl mx-auto px-6 pt-32 pb-20 relative z-10">
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
@@ -95,7 +94,7 @@ export default function ServicesPage() {
                             <span className="w-1.5 h-1.5 rounded-full bg-[#F05E23]"></span>
                             <span className="text-[0.65rem] font-black text-white tracking-[0.4em] uppercase">Architecture</span>
                         </div>
-                        
+
                         <h1 className="text-[3.5rem] sm:text-[4.5rem] md:text-[6.5rem] lg:text-[7.5rem] font-bold tracking-tight leading-[0.9] text-[#111]">
                             What We <span className="text-[#F05E23]">Build.</span> <br />
                             <span className="italic font-light text-slate-400">Synchronized.</span>
@@ -109,7 +108,7 @@ export default function ServicesPage() {
 
             {/* Detailed Services Content */}
             <section className="w-full max-w-[1400px] mx-auto px-6 py-14 mb-32 relative z-10">
-                <motion.div 
+                <motion.div
                     variants={containerVariants}
                     initial="hidden"
                     whileInView="visible"
@@ -129,14 +128,14 @@ export default function ServicesPage() {
                                 {/* Visual Side */}
                                 <div className="w-full lg:w-[48%] relative aspect-[4/3] lg:aspect-auto overflow-hidden bg-slate-50">
                                     <div className={`absolute inset-0 bg-gradient-to-br ${cat.accent} to-transparent opacity-30 mix-blend-multiply z-10 group-hover:opacity-50 transition-opacity duration-700`}></div>
-                                    <Image 
-                                        src={cat.image} 
-                                        alt={cat.title} 
-                                        fill 
+                                    <Image
+                                        src={cat.image}
+                                        alt={cat.title}
+                                        fill
                                         className="object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
                                     />
                                     <div className="absolute inset-0 bg-orange-900/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10"></div>
-                                    
+
                                     {/* Float ID */}
                                     <div className="absolute top-10 left-10 z-20">
                                         <span className="text-[0.7rem] font-black tracking-[0.4em] px-5 py-2.5 bg-white/90 backdrop-blur-xl rounded-2xl text-[#111] shadow-xl border border-white">
@@ -184,8 +183,8 @@ export default function ServicesPage() {
                     ))}
                 </motion.div>
             </section>
-            
-            <CTA />
+
+
         </div>
     );
 }

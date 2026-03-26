@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Clock, User, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import CTA from "@/components/CTA";
 
 const posts = [
     {
@@ -42,7 +41,7 @@ export default function InsightsPage() {
             <div className="absolute bottom-[10%] left-[-5%] w-[800px] h-[800px] rounded-full pointer-events-none z-0 opacity-5"
                 style={{ background: 'radial-gradient(circle, #F05E23, transparent 70%)', filter: 'blur(120px)' }}
             ></div>
-            
+
             {/* Hero Section */}
             <section className="w-full max-w-7xl mx-auto px-6 pt-32 pb-20 relative z-10">
                 <div className="flex flex-col items-start max-w-5xl">
@@ -55,7 +54,7 @@ export default function InsightsPage() {
                         <span className="text-[0.65rem] font-black text-white tracking-[0.4em] uppercase">The Growth Hub</span>
                     </motion.div>
 
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-[4rem] md:text-[6.5rem] lg:text-[7.5rem] font-bold tracking-tight leading-[0.9] text-[#111] mb-12"
@@ -64,7 +63,7 @@ export default function InsightsPage() {
                         <span className="italic font-light text-slate-400">Insights.</span>
                     </motion.h1>
 
-                    <motion.p 
+                    <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
@@ -94,7 +93,7 @@ export default function InsightsPage() {
                                     <span className="px-5 py-2.5 rounded-2xl bg-white/90 backdrop-blur-xl border border-white text-[0.65rem] font-black uppercase tracking-widest text-[#111] shadow-lg">{post.category}</span>
                                 </div>
                             </div>
-                            
+
                             <div className="p-10 sm:p-12 flex flex-col flex-1">
                                 <div className="flex items-center gap-8 mb-8">
                                     <div className="flex items-center gap-2.5 text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">
@@ -108,7 +107,7 @@ export default function InsightsPage() {
                                 </div>
                                 <h3 className="text-3xl font-bold text-[#111] mb-6 leading-[1.1] group-hover:text-[#F05E23] transition-colors duration-500">{post.title}</h3>
                                 <p className="text-[1.05rem] text-slate-500 leading-relaxed line-clamp-3 mb-12 font-light">{post.desc}</p>
-                                
+
                                 <div className="mt-auto pt-10 border-t border-[rgba(0,0,0,0.04)] flex items-center justify-between">
                                     <div className="flex items-center gap-3 text-[0.7rem] font-black uppercase tracking-[0.4em] text-slate-300 group-hover:text-[#F05E23] transition-colors duration-500">
                                         Read Analysis
@@ -123,7 +122,7 @@ export default function InsightsPage() {
                 </div>
             </section>
 
-            <CTA />
+
         </div>
     );
 }
