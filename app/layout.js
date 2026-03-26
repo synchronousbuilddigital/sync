@@ -12,8 +12,9 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "Synchronous Build Digital | Premier Digital Marketing",
-  description: "A cutting-edge digital marketing agency focused on driving growth through innovative strategies and data-driven insights.",
+  title: "Synchronous Build Digital | High-Velocity Growth Architecture",
+  description: "Architecting sustainable, high-performance digital ecosystems for high-growth brands. Specialized in AI automation, brand systems, and data-backed performance marketing.",
+  keywords: ["digital marketing", "AI automation", "brand architecture", "growth engineering", "Synchronous Build Digital", "performance marketing"],
 };
 
 export default function RootLayout({ children }) {
