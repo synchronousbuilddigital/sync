@@ -126,10 +126,15 @@ export default function Hero() {
                             transition={{ delay: 0.8 }}
                             className="mt-10 sm:mt-16 w-full flex justify-center px-6"
                         >
-                            <Link href="/contact" className="relative group w-full sm:w-auto bg-[#111] px-10 sm:px-16 py-5 sm:py-6 rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 text-center">
+                            <a 
+                                href="https://wa.me/919161391566?text=I'd like to start scaling my business with Synchronous Build Digital." 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="relative group w-full sm:w-auto bg-[#111] px-10 sm:px-16 py-5 sm:py-6 rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 text-center"
+                            >
                                 <span className="text-white font-bold text-sm sm:text-base tracking-tight relative z-10">Start Scaling Now</span>
                                 <div className="absolute top-0 right-0 w-8 h-8 bg-[#F05E23] mask-triangle z-20"></div>
-                            </Link>
+                            </a>
                         </motion.div>
                     </div>
 

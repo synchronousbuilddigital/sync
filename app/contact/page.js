@@ -10,7 +10,20 @@ export default function ContactPage() {
     const handleSubmit = (e) => {
         e.preventDefault();
         setFormState("submitting");
-        setTimeout(() => setFormState("success"), 1500);
+        
+        const formData = new FormData(e.target);
+        const name = formData.get("name") || "";
+        const company = formData.get("company") || "";
+        const objective = formData.get("objective") || "";
+        const details = formData.get("details") || "";
+
+        const message = `*New Project Inquiry - Synchronous*%0A%0A*Name:* ${name}%0A*Company:* ${company}%0A*Objective:* ${objective}%0A*Details:* ${details}`;
+        const whatsappUrl = `https://wa.me/919161391566?text=${message}`;
+
+        setTimeout(() => {
+            setFormState("success");
+            window.open(whatsappUrl, '_blank');
+        }, 1000);
     };
 
     return (
@@ -103,6 +116,7 @@ export default function ContactPage() {
                                         <div className="space-y-4">
                                             <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400 ml-2">Your Name</label>
                                             <input 
+                                                name="name"
                                                 type="text" 
                                                 required
                                                 placeholder="Executive Talent" 
@@ -112,6 +126,7 @@ export default function ContactPage() {
                                         <div className="space-y-4">
                                             <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400 ml-2">Digital HQ</label>
                                             <input 
+                                                name="company"
                                                 type="text" 
                                                 placeholder="Company Name" 
                                                 className="w-full px-8 py-5 rounded-2xl bg-[#FAFAF8] border border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 placeholder:text-slate-300 outline-none transition-all duration-300 font-bold text-[#111]" 
@@ -122,7 +137,10 @@ export default function ContactPage() {
                                     <div className="space-y-4">
                                         <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400 ml-2">Priority Objective</label>
                                         <div className="relative">
-                                            <select className="w-full px-8 py-5 rounded-2xl bg-[#FAFAF8] border border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 text-[#111] outline-none transition-all duration-300 font-bold appearance-none cursor-pointer pr-12">
+                                            <select 
+                                                name="objective"
+                                                className="w-full px-8 py-5 rounded-2xl bg-[#FAFAF8] border border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 text-[#111] outline-none transition-all duration-300 font-bold appearance-none cursor-pointer pr-12"
+                                            >
                                                 <option>Identity & Brand Systems</option>
                                                 <option>Digital Product Development</option>
                                                 <option>AI Operations & Automation</option>
@@ -136,6 +154,7 @@ export default function ContactPage() {
                                     <div className="space-y-4">
                                         <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400 ml-2">Deep Details</label>
                                         <textarea 
+                                            name="details"
                                             rows="5" 
                                             placeholder="What are the critical success factors for this project?" 
                                             className="w-full px-8 py-5 rounded-3xl bg-[#FAFAF8] border border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 placeholder:text-slate-300 outline-none transition-all duration-300 font-bold text-[#111] resize-none"

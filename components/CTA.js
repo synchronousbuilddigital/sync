@@ -56,17 +56,27 @@ export default function CTA() {
                         transition={{ delay: 0.5 }}
                         className="w-full sm:w-auto flex flex-col sm:flex-row items-center justify-center gap-6"
                     >
-                        <button className="relative group w-full sm:w-auto bg-[#F05E23] px-10 py-6 rounded-2xl shadow-xl shadow-orange-500/20 transition-all hover:scale-105 active:scale-95 text-white font-black uppercase tracking-[0.2em] text-[0.7rem] flex items-center justify-center gap-4">
+                        <a 
+                            href="https://wa.me/919161391566?text=I'd like to book a consultation for my project." 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="relative group w-full sm:w-auto bg-[#F05E23] px-10 py-6 rounded-2xl shadow-xl shadow-orange-500/20 transition-all hover:scale-105 active:scale-95 text-white font-black uppercase tracking-[0.2em] text-[0.7rem] flex items-center justify-center gap-4"
+                        >
                             <Calendar className="w-4 h-4" />
                             Book Consultation
                             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                        </button>
+                        </a>
                         
                         <div className="flex flex-col items-center gap-4">
-                            <button className="relative w-full sm:w-auto bg-white/10 px-10 py-6 rounded-2xl border border-white/10 backdrop-blur-md text-white font-black uppercase tracking-[0.2em] text-[0.7rem] hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center gap-4 group">
+                            <a 
+                                href="https://wa.me/919161391566?text=I'm interested in starting a new project with Synchronous Build Digital." 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="relative w-full sm:w-auto bg-white/10 px-10 py-6 rounded-2xl border border-white/10 backdrop-blur-md text-white font-black uppercase tracking-[0.2em] text-[0.7rem] hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center gap-4 group"
+                            >
                                 <Rocket className="w-4 h-4 group-hover:text-[#F05E23]" />
                                 Start Your Project
-                            </button>
+                            </a>
                             <span className="text-[0.6rem] font-bold text-slate-500 tracking-[0.3em] uppercase opacity-60">No commitment required</span>
                         </div>
                     </motion.div>

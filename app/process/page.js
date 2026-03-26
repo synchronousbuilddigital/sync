@@ -196,12 +196,14 @@ export default function ProcessPage() {
                                 
                                 <div className="w-full h-px bg-white/10 my-12"></div>
                                 
-                                <Link 
-                                    href="/contact"
+                                <a 
+                                    href="https://wa.me/919161391566?text=I'd like to start my build process with Synchronous Build Digital." 
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="px-10 py-5 bg-[#F05E23] text-white rounded-full text-[0.8rem] font-black uppercase tracking-[0.3em] shadow-xl shadow-orange-500/20 hover:scale-105 transition-transform"
                                 >
                                     Start Your Build
-                                </Link>
+                                </a>
                             </div>
                         </div>
                     </div>

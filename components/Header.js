@@ -69,11 +69,16 @@ export default function Header() {
 
         {/* Action Button Section Area */}
         <div className="hidden md:flex items-center gap-6">
-           <Link href="/contact" className="relative group overflow-hidden bg-[#111] px-8 py-3.5 rounded-xl shadow-lg transition-all hover:scale-[1.03] active:scale-95">
+           <a 
+              href="https://wa.me/919161391566?text=I'd like to start growing my business with Synchronous Build Digital." 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative group overflow-hidden bg-[#111] px-8 py-3.5 rounded-xl shadow-lg transition-all hover:scale-[1.03] active:scale-95"
+           >
                 <span className="text-white text-xs font-bold uppercase tracking-widest relative z-10">Start Growing</span>
                 {/* Style Match: Hero Accent Triangle */}
                 <div className="absolute top-0 right-0 w-4 h-4 bg-[#F05E23] mask-triangle z-20"></div>
-           </Link>
+           </a>
         </div>
 
         {/* Mobile Menu Toggle Area */}

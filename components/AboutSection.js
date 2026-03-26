@@ -183,9 +183,14 @@ export default function AboutSection() {
                                     <div className="text-[0.6rem] font-bold uppercase tracking-[0.4em] text-[#F05E23]">Synchronize Your Growth</div>
                                     <h4 className="text-2xl font-black tracking-tight">Ready to integrate AI systems?</h4>
                                 </div>
-                                <Link href="/contact" className="w-14 h-14 rounded-2xl bg-[#F05E23] flex items-center justify-center hover:scale-110 transition-transform">
+                                <a 
+                                    href="https://wa.me/919161391566?text=I'm ready to integrate AI systems and synchronize my growth." 
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-14 h-14 rounded-2xl bg-[#F05E23] flex items-center justify-center hover:scale-110 transition-transform"
+                                >
                                     <Zap className="w-7 h-7 text-white fill-white" />
-                                </Link>
+                                </a>
                             </div>
                             {/* Abstract Neural Style Mesh */}
                             <div className="absolute inset-0 opacity-10 pointer-events-none transition-transform group-hover:scale-110 duration-[2000ms]"
