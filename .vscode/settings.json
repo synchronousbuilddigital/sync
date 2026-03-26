@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^powershell -Command \"Get-ChildItem -Recurse -File -Exclude '\\.next' \\| Where-Object \\{ \\$_\\.DirectoryName -notmatch '\\\\\\.next' \\} \\| Select-String 'text-slate-900oreground'\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
