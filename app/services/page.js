@@ -1,6 +1,6 @@
 "use client";
 
-import { Fingerprint, BarChart3, Cpu, Layout, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Fingerprint, BarChart3, Cpu, Layout, ArrowRight, CheckCircle2, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
