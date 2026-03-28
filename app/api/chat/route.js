@@ -56,7 +56,7 @@ export async function POST(req) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://synchronous.build',
+        'HTTP-Referer': 'https://www.synchronousbuilddigital.com',
         'X-Title': 'Synchronous AI',
       },
       body: JSON.stringify({
