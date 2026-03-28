@@ -298,7 +298,7 @@ export default function WorkPage() {
                 </div>
             </section>
 
-
+                        
         </div>
     );
 }
