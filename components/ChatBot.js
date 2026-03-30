@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
-import { Send, X, Sparkles, Bot, User, Loader2, Globe, Command, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Send, X, Sparkles, Bot, Globe } from "lucide-react";
 
 import InteractiveEye from './InteractiveEye';
 
@@ -13,70 +13,11 @@ export default function ChatBot() {
     ]);
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [isListening, setIsListening] = useState(false);
-    const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
     const scrollRef = useRef(null);
-    const recognitionRef = useRef(null);
-
-    // Initialize Speech Recognition
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                recognitionRef.current = new SpeechRecognition();
-                recognitionRef.current.continuous = false;
-                recognitionRef.current.interimResults = false;
-                recognitionRef.current.lang = 'en-US';
-
-                recognitionRef.current.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript;
-                    setInputValue(transcript);
-                    setIsListening(false);
-                };
-
-                recognitionRef.current.onerror = (event) => {
-                    console.error('Speech recognition error:', event.error);
-                    setIsListening(false);
-                };
-
-                recognitionRef.current.onend = () => {
-                    setIsListening(false);
-                };
-            }
-        }
-    }, []);
-
-    const toggleListening = () => {
-        if (isListening) {
-            recognitionRef.current?.stop();
-        } else {
-            setIsListening(true);
-            recognitionRef.current?.start();
-        }
-    };
-
-    const speak = (text) => {
-        if (isVoiceEnabled && typeof window !== 'undefined') {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            // Dynamic language detection (very basic)
-            if (/[\u0900-\u097F]/.test(text)) {
-                utterance.lang = 'hi-IN';
-            } else {
-                utterance.lang = 'en-US';
-            }
-            window.speechSynthesis.speak(utterance);
-        }
-    };
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-        // Speak the last message if it's from the assistant
-        const lastMsg = messages[messages.length - 1];
-        if (lastMsg?.role === "assistant" && isOpen) {
-            speak(lastMsg.content);
         }
     }, [messages, isLoading, isOpen]);
 
@@ -99,16 +40,16 @@ export default function ChatBot() {
             if (data.message) {
                 setMessages(prev => [...prev, { role: "assistant", content: data.message }]);
             } else {
-                setMessages(prev => [...prev, { 
-                    role: "assistant", 
-                    content: "Neural link desynchronized. Please re-initiate command logic. | तंत्रिका प्रणाली में त्रुटि। कृपया पुनः प्रयास करें।" 
+                setMessages(prev => [...prev, {
+                    role: "assistant",
+                    content: "Neural link desynchronized. Please re-initiate command logic. | तंत्रिका प्रणाली में त्रुटि। कृपया पुनः प्रयास करें।"
                 }]);
             }
         } catch (error) {
             console.error('Chat error:', error);
-            setMessages(prev => [...prev, { 
-                role: "assistant", 
-                content: "Transmission failed. Network instability detected. | संचरण बाधित। अपना नेटवर्क जांचें।" 
+            setMessages(prev => [...prev, {
+                role: "assistant",
+                content: "Transmission failed. Network instability detected. | संचरण बाधित। अपना नेटवर्क जांचें।"
             }]);
         } finally {
             setIsLoading(false);
@@ -133,13 +74,13 @@ export default function ChatBot() {
                 >
                     {isOpen ? (
                         <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center border-2 border-[#F05E23]/20 shadow-2xl relative group/close">
-                             <div className="absolute inset-0 bg-gradient-to-tr from-[#F05E23]/10 to-transparent opacity-0 group-hover/close:opacity-100 transition-all duration-500 rounded-full"></div>
-                             <X className="w-8 h-8 text-[#111] relative z-10 transition-transform group-hover/close:rotate-90 duration-500" />
+                            <div className="absolute inset-0 bg-gradient-to-tr from-[#F05E23]/10 to-transparent opacity-0 group-hover/close:opacity-100 transition-all duration-500 rounded-full"></div>
+                            <X className="w-8 h-8 text-[#111] relative z-10 transition-transform group-hover/close:rotate-90 duration-500" />
                         </div>
                     ) : (
                         <div className="relative">
                             <InteractiveEye className="drop-shadow-[0_20px_50px_rgba(240,94,35,0.3)]" />
-                            <motion.div 
+                            <motion.div
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                                 className="absolute -inset-4 border border-dashed border-[#F05E23]/20 rounded-full pointer-events-none"
@@ -148,12 +89,9 @@ export default function ChatBot() {
                     )}
 
                     {!isOpen && (
-                        <motion.div 
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="absolute right-24 bg-white/90 backdrop-blur-md text-[#F05E23] font-black px-6 py-3 rounded-2xl shadow-xl text-[0.65rem] uppercase tracking-[0.3em] border border-orange-100/50 hidden md:block pointer-events-none"
+                        <motion.div
                         >
-                            INIT_NEURAL_LINK
+
                         </motion.div>
                     )}
                 </motion.button>
@@ -174,7 +112,7 @@ export default function ChatBot() {
                                 <div className="flex items-center gap-5 relative z-10">
                                     <div className="w-14 h-14 rounded-2xl bg-[#111] flex items-center justify-center shadow-lg relative group">
                                         <Bot className="w-7 h-7 text-[#F05E23]" />
-                                        <motion.div 
+                                        <motion.div
                                             animate={{ scale: [1, 1.2, 1] }}
                                             transition={{ duration: 2, repeat: Infinity }}
                                             className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-4 border-white"
@@ -188,13 +126,6 @@ export default function ChatBot() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 z-10">
-                                    <button 
-                                        onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-                                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isVoiceEnabled ? 'bg-[#F05E23] text-white' : 'bg-[#FAFAF8] text-slate-400 border border-slate-100'}`}
-                                        title={isVoiceEnabled ? "Mute Voice" : "Enable Voice Output"}
-                                    >
-                                        {isVoiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                                    </button>
                                     <button
                                         onClick={() => setIsOpen(false)}
                                         className="w-10 h-10 bg-[#FAFAF8] text-slate-400 border border-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-all cursor-pointer"
@@ -246,7 +177,7 @@ export default function ChatBot() {
                             <div className="p-8 bg-white/50 relative border-t border-[rgba(0,0,0,0.04)]"
                             >
                                 <div className="relative flex items-center gap-3">
-                                    <div className="relative flex-1">
+                                    <div className="flex-1">
                                         <input
                                             type="text"
                                             value={inputValue}
@@ -254,15 +185,9 @@ export default function ChatBot() {
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') handleSend();
                                             }}
-                                            placeholder={isListening ? "Listening..." : "Transmit message..."}
-                                            className={`w-full bg-white border ${isListening ? 'border-[#F05E23] ring-4 ring-[#F05E23]/10' : 'border-slate-200'} rounded-3xl py-5 px-8 pr-16 text-[0.95rem] font-bold text-[#111] focus:outline-none focus:ring-4 focus:ring-[#F05E23]/10 focus:border-[#F05E23] transition-all shadow-inner placeholder:text-slate-300 placeholder:font-normal`}
+                                            placeholder="Transmit message..."
+                                            className="w-full bg-white border border-slate-200 rounded-3xl py-5 px-8 text-[0.95rem] font-bold text-[#111] focus:outline-none focus:ring-4 focus:ring-[#F05E23]/10 focus:border-[#F05E23] transition-all shadow-inner placeholder:text-slate-300 placeholder:font-normal"
                                         />
-                                        <button 
-                                            onClick={toggleListening}
-                                            className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isListening ? 'bg-red-500 text-white animate-pulse shadow-lg' : 'bg-[#FAFAF8] text-slate-400 hover:text-[#F05E23]'}`}
-                                        >
-                                            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                                        </button>
                                     </div>
                                     <button
                                         onClick={handleSend}
@@ -278,10 +203,6 @@ export default function ChatBot() {
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                                             <span>Link_Active</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Globe className="w-3 h-3" />
-                                            <span>Voice_Sync</span>
                                         </div>
                                     </div>
                                     <Sparkles className="w-3.5 h-3.5 text-orange-400" />
