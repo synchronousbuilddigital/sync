@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 
-import AboutSection from "../components/AboutSection";
+import AccordionServices from "../components/AccordionServices";
 import Process from "../components/Process";
 import WorkShowcase from "../components/WorkShowcase";
 import WhyChooseUs from "../components/WhyChooseUs";
@@ -39,16 +39,8 @@ export default function Home() {
         <Hero />
       </section>
 
-      {/* About Section - Seamless Staggered Entrance */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true, margin: "-150px" }}
-        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className={`w-full relative z-10 transition-colors duration-500 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
-      >
-        <AboutSection />
-      </motion.section>
+      {/* Accordion Services Section */}
+      <AccordionServices />
 
       {/* Process Section - Seamless Connection */}
       <motion.section

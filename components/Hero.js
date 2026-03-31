@@ -7,18 +7,45 @@ import { Sparkles, Zap, Target, Search, MousePointer2, BarChart3, Globe2, Rocket
 import Magnetic from './Magnetic';
 import { useTheme } from './ThemeContext';
 
-// Floating Card Component for Reusability & Animation
+// Advanced Floating Card Component with Sophisticated Animations
 const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, index, activeIdx, hoveredIdx, setActiveIdx, setHoveredIdx }) => {
     const { isDark } = useTheme();
     const isActive = activeIdx === index;
     const isHovered = hoveredIdx === index;
+    const cardRef = useRef(null);
+    
+    // Advanced mouse tracking for parallax
     const mouseX = useMotionValue(0.5);
     const mouseY = useMotionValue(0.5);
+    const rotXMouse = useMotionValue(0);
+    const rotYMouse = useMotionValue(0);
+    
+    // Spring animations for smooth follow
+    const springRotX = useSpring(rotXMouse, { stiffness: 100, damping: 25 });
+    const springRotY = useSpring(rotYMouse, { stiffness: 100, damping: 25 });
+    const springMouseX = useSpring(mouseX, { stiffness: 150, damping: 30 });
+    const springMouseY = useSpring(mouseY, { stiffness: 150, damping: 30 });
 
     const handleMouseMove = (e) => {
-        const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-        mouseX.set((e.clientX - left) / width);
-        mouseY.set((e.clientY - top) / height);
+        if (!cardRef.current) return;
+        
+        const { left, top, width, height } = cardRef.current.getBoundingClientRect();
+        const x = (e.clientX - left) / width;
+        const y = (e.clientY - top) / height;
+        
+        // Advanced parallax rotation based on mouse position
+        const rotX = (y - 0.5) * 15; // Increased rotation range
+        const rotY = (x - 0.5) * -15;
+        
+        mouseX.set(x);
+        mouseY.set(y);
+        rotXMouse.set(rotX);
+        rotYMouse.set(rotY);
+    };
+
+    const handleMouseLeave = () => {
+        rotXMouse.set(0);
+        rotYMouse.set(0);
     };
 
     if (!card) {
@@ -36,100 +63,207 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
 
     return (
         <motion.div
+            ref={cardRef}
             onClick={(e) => {
                 e.stopPropagation();
                 setActiveIdx(isActive ? -1 : index);
             }}
             onMouseEnter={() => setHoveredIdx(index)}
-            onMouseLeave={() => setHoveredIdx(-1)}
+            onMouseLeave={() => {
+                setHoveredIdx(-1);
+                handleMouseLeave();
+            }}
             onMouseMove={handleMouseMove}
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{
                 opacity: 1,
                 scale: isActive ? 1.15 : (isHovered ? 1.08 : 1),
-                y: isStackHovered ? (index * 135) : (index * 8),
-                x: isStackHovered ? (index * -15) : (index * 12),
-                rotateX: (isHovered || isActive) ? (index * 2 - 5) : 0,
-                rotateY: (isHovered || isActive) ? (index * 5 - 2) : 0,
+                y: isStackHovered ? (index * 50) : (index * 2),
+                x: isStackHovered ? (index * -35 + 10) : (index * 12),
                 rotateZ: isStackHovered
-                    ? (index * 5 - 5)
+                    ? (index * 12 - 12)
                     : (index !== undefined ? [0, -12, -6, 3][index + 1] : 0),
                 zIndex: isActive ? 500 : (isHovered ? 400 : (10 + index)),
-                height: (isHovered || isActive) ? "220px" : "144px"
+                height: (isHovered || isActive) ? "152px" : "144px"
             }}
-            style={{ transformPerspective: 1200 }}
+            style={{ 
+                transformPerspective: 1200,
+                rotateX: isHovered ? springRotX : 0,
+                rotateY: isHovered ? springRotY : 0,
+            }}
             transition={{
-                duration: 0.5,
-                delay: isStackHovered ? 0 : delay,
+                duration: 0.6,
+                delay: isStackHovered ? (index * 0.08) : delay,
                 ease: [0.23, 1, 0.32, 1]
             }}
-            className={`${className} cursor-pointer group/card overflow-hidden transition-all duration-300 ${isActive ? 'shadow-[0_45px_100px_-15px_rgba(240,94,35,0.4)] border-[#F05E23]/40' : 'hover:shadow-[0_45px_100px_-25px_rgba(240,94,35,0.25)] border-white/10'}`}
+            className={`${className} cursor-pointer group/card overflow-visible transition-all duration-300 relative ${isActive ? 'shadow-[0_45px_100px_-15px_rgba(240,94,35,0.4)] border-[#F05E23]/40' : 'hover:shadow-[0_60px_120px_-20px_rgba(240,94,35,0.5)] border-white/10'}`}
         >
+            {/* Advanced glow effect */}
             <motion.div
-                className="absolute inset-0 pointer-events-none z-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500"
+                className="absolute -inset-2 rounded-2xl opacity-0 group-hover/card:opacity-60 transition-opacity duration-500 -z-10 blur-xl"
+                animate={{
+                    background: isHovered 
+                        ? `conic-gradient(from 0deg, rgba(240,94,35,0.8), rgba(99,102,241,0.6), rgba(240,94,35,0.8))`
+                        : `conic-gradient(from 0deg, rgba(240,94,35,0), rgba(99,102,241,0), rgba(240,94,35,0))`
+                }}
+                transition={{ duration: 2, repeat: isHovered ? Infinity : 0 }}
+            />
+
+            {/* Connecting line between cards when fanned */}
+            {isStackHovered && index > 0 && (
+                <motion.svg
+                    className="absolute -top-8 -left-4 w-20 h-16 pointer-events-none z-0"
+                    viewBox="0 0 80 64"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.3 }}
+                    transition={{ duration: 0.4, delay: index * 0.08 }}
+                >
+                    <motion.line
+                        x1="10"
+                        y1="0"
+                        x2="60"
+                        y2="60"
+                        stroke="rgba(240, 94, 35, 0.5)"
+                        strokeWidth="1"
+                        strokeDasharray="4 4"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 0.5, delay: index * 0.08 }}
+                    />
+                </motion.svg>
+            )}
+
+            {/* Advanced hover light effect */}
+            <motion.div
+                className="absolute inset-0 pointer-events-none z-0 rounded-2xl"
                 style={{
                     background: useTransform(
-                        [mouseX, mouseY],
-                        ([x, y]) => `radial-gradient(150px circle at ${x * 100}% ${y * 100}%, rgba(255, 255, 255, 0.12), transparent 80%)`
+                        [springMouseX, springMouseY],
+                        ([x, y]) => `radial-gradient(300px circle at ${x * 100}% ${y * 100}%, rgba(240,94,35,0.15), rgba(99,102,241,0.08), transparent 85%)`
                     )
                 }}
+                animate={{
+                    opacity: isHovered ? 1 : 0
+                }}
+                transition={{ duration: 0.4 }}
             />
 
             <div className="absolute inset-0 p-5 flex flex-col justify-between z-10 bg-white/[0.02]">
                 <div className="flex justify-between items-start">
-                    {card.icon}
+                    <motion.div
+                        animate={{ 
+                            scale: isHovered ? 1.1 : 1,
+                            filter: isHovered ? "drop-shadow(0 0 12px rgba(240, 94, 35, 0.6))" : "drop-shadow(none)"
+                        }}
+                        transition={{ duration: 0.4 }}
+                    >
+                        {card.icon}
+                    </motion.div>
                     <motion.div
                         animate={{
-                            rotate: (isHovered || isActive) ? 180 : 0,
-                            backgroundColor: (isHovered || isActive) ? "rgba(240, 94, 35, 0.2)" : "transparent"
+                            rotate: (isStackHovered || isHovered || isActive) ? 180 : 0,
+                            backgroundColor: (isStackHovered || isHovered || isActive) ? "rgba(240, 94, 35, 0.2)" : "transparent",
+                            scale: (isStackHovered || isHovered || isActive) ? 1.2 : 1,
+                            boxShadow: (isStackHovered || isHovered || isActive) ? "0 0 12px rgba(240, 94, 35, 0.4)" : "none"
                         }}
+                        transition={{ duration: 0.4 }}
                         className="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center"
                     >
                         <div className="w-1.5 h-[1.5px] bg-white/60" />
                     </motion.div>
                 </div>
-                <div className={`${card.text} font-black text-2xl leading-none tracking-tight`}>
+                <motion.div 
+                    animate={{
+                        letterSpacing: isHovered ? "0.1em" : "0em",
+                    }}
+                    transition={{ duration: 0.4 }}
+                    className={`${card.text} font-black text-2xl leading-none tracking-tight`}
+                >
                     {card.title}
-                </div>
+                </motion.div>
             </div>
 
+            {/* Advanced drop-down content panel */}
             <motion.div
                 initial={false}
                 animate={{
-                    opacity: (isHovered || isActive) ? 1 : 0,
-                    backdropFilter: (isHovered || isActive) ? "blur(25px)" : "blur(0px)",
-                    pointerEvents: (isHovered || isActive) ? "auto" : "none"
+                    opacity: (isStackHovered || isHovered || isActive) ? 1 : 0,
+                    backdropFilter: (isStackHovered || isHovered || isActive) ? "blur(25px)" : "blur(0px)",
+                    pointerEvents: (isStackHovered || isHovered || isActive) ? "auto" : "none",
+                    backgroundColor: isHovered ? "rgba(0, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.90)"
                 }}
                 transition={{ duration: 0.4 }}
-                className="absolute inset-0 bg-black/90 p-6 flex flex-col z-30"
+                className="absolute inset-0 bg-black/90 p-6 flex flex-col z-30 rounded-2xl border border-white/5"
             >
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#F05E23] shadow-[0_0_12px_#F05E23] animate-pulse" />
-                    <span className="text-[9px] uppercase font-black text-white/40 tracking-[0.3em]">Module_Node_{index + 1}</span>
-                </div>
+                {/* Animated top border */}
+                <motion.div
+                    className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#F05E23] to-transparent rounded-t-2xl"
+                    animate={{ 
+                        opacity: (isStackHovered || isHovered || isActive) ? 1 : 0,
+                        boxShadow: (isStackHovered || isHovered || isActive) ? "0 0 15px rgba(240, 94, 35, 0.6)" : "none"
+                    }}
+                    transition={{ duration: 0.4 }}
+                />
 
-                <div className="space-y-4">
+                {/* Module header with staggered reveal */}
+                <motion.div 
+                    className="flex items-center gap-3 mb-6"
+                    animate={{ y: (isStackHovered || isHovered || isActive) ? 0 : -5, opacity: (isStackHovered || isHovered || isActive) ? 1 : 0 }}
+                    transition={{ duration: 0.4 }}
+                >
+                    <motion.div 
+                        className="w-1.5 h-1.5 rounded-full bg-[#F05E23] shadow-[0_0_12px_#F05E23]"
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                    />
+                    <motion.span 
+                        className="text-[9px] uppercase font-black text-white/40 tracking-[0.3em]"
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 2.5, repeat: Infinity }}
+                    >
+                        Module_Node_{index + 1}
+                    </motion.span>
+                </motion.div>
+
+                {/* Services list with advanced stagger */}
+                <div className="space-y-3 flex-1">
                     {card.services.map((service, i) => (
                         <motion.div
                             key={i}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: (isHovered || isActive) ? 1 : 0, x: (isHovered || isActive) ? 0 : -10 }}
-                            transition={{ delay: i * 0.04 + 0.1, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                            className="flex items-center gap-4"
+                            initial={{ opacity: 0, x: -15, y: 10 }}
+                            animate={{ opacity: (isStackHovered || isHovered || isActive) ? 1 : 0, x: (isStackHovered || isHovered || isActive) ? 0 : -15, y: (isStackHovered || isHovered || isActive) ? 0 : 10 }}
+                            transition={{ 
+                                delay: (isStackHovered || isHovered || isActive) ? (i * 0.08 + 0.15) : 0, 
+                                duration: 0.5, 
+                                ease: [0.34, 1.56, 0.64, 1] // cubic-bezier for bouncy feel
+                            }}
+                            whileHover={{ x: 6, color: "rgba(240, 94, 35, 1)" }}
+                            className="flex items-center gap-4 group/service cursor-pointer"
                         >
-                            <div className="w-1 h-1 rounded-full bg-[#F05E23]/40" />
-                            <span className="text-white/90 font-bold text-[11px] uppercase tracking-widest font-mono">{service}</span>
+                            <motion.div 
+                                className="w-1.5 h-1.5 rounded-full bg-[#F05E23]/40 group-hover/service:bg-[#F05E23]"
+                                animate={{ scale: [1, 1.4, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, delay: i * 0.1 }}
+                            />
+                            <span className="text-white/90 font-bold text-[11px] uppercase tracking-widest font-mono transition-colors duration-300">
+                                {service}
+                            </span>
                         </motion.div>
                     ))}
                 </div>
 
-                <div className="mt-auto h-0.5 w-full bg-white/5 overflow-hidden">
+                {/* Animated progress bar with gradient */}
+                <motion.div 
+                    className="mt-auto h-[1.5px] w-full bg-gradient-to-r from-transparent via-[#F05E23]/50 to-transparent rounded-full overflow-hidden"
+                    animate={{ opacity: (isStackHovered || isHovered || isActive) ? 1 : 0 }}
+                    transition={{ duration: 0.4 }}
+                >
                     <motion.div
                         animate={{ x: ["-100%", "100%"] }}
                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         className="h-full w-1/3 bg-[#F05E23]/40"
                     />
-                </div>
+                </motion.div>
             </motion.div>
         </motion.div>
     );
@@ -231,7 +365,7 @@ export default function Hero() {
                 <div className="relative w-full flex flex-col items-center">
 
                     <div
-                        className="absolute -top-32 sm:-top-24 left-0 lg:left-[0%] xl:left-[2%] z-20 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
+                        className="absolute -top-32 sm:-top-24 -left-20 lg:-left-32 xl:-left-40 z-20 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
                         onMouseEnter={() => setStackHovered(true)}
                         onMouseLeave={() => setStackHovered(false)}
                     >

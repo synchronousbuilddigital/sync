@@ -32,40 +32,47 @@ export default function Header() {
   }, []);
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-500 border-b ${isScrolled
-        ? isDark 
-            ? 'bg-[#0A0A0A]/95 backdrop-blur-2xl border-white/5 py-3 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.4)]'
-            : 'bg-white/95 backdrop-blur-2xl border-black/5 py-3 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)]'
-        : isDark
-            ? 'bg-[#0A0A0A]/90 backdrop-blur-xl border-transparent py-6'
-            : 'bg-[#F9F9F9]/90 backdrop-blur-xl border-transparent py-6'
+    <header className={`fixed left-0 right-0 z-[60] transition-all duration-500 flex justify-center w-full ${isScrolled
+        ? 'top-4 px-4'
+        : 'top-0 px-0'
       }`}>
+      
+      <div className={`transition-all duration-500 w-full ${isScrolled
+        ? isDark 
+            ? 'bg-[#0A0A0A]/85 backdrop-blur-md border border-white/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] max-w-5xl py-2'
+            : 'bg-white/85 backdrop-blur-md border border-black/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)] max-w-5xl py-2'
+        : isDark
+            ? 'bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
+            : 'bg-[#F9F9F9]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
+      }`}>
+      
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="w-full max-w-7xl mx-auto flex items-center justify-between px-6 sm:px-10 h-16 sm:h-20"
+        className={`w-full mx-auto flex items-center justify-between transition-all duration-500 ${isScrolled ? 'px-4 sm:px-6 h-12 sm:h-14' : 'px-6 sm:px-10 max-w-7xl h-16 sm:h-20'}`}
       >
         {/* Logo Section */}
         <Link href="/" className="relative z-10 flex items-center group">
-          <div className={`relative w-10 h-10 sm:w-12 sm:h-12 mr-3 sm:mr-4 rounded-xl shadow-sm border transition-all duration-500 group-hover:scale-110 flex items-center justify-center ${isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5'}`}>
+          <div className={`relative ${isScrolled ? 'w-8 h-8 sm:w-10 sm:h-10 border-0 shadow-none' : 'w-10 h-10 sm:w-12 sm:h-12 border shadow-sm'} mr-3 rounded-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center ${!isScrolled && (isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5')} ${isScrolled && (isDark ? 'bg-transparent' : 'bg-transparent')}`}>
             <Image
               src="/logo.png"
               alt="Sync Logo"
-              width={32}
-              height={32}
-              className="object-contain"
+              width={isScrolled ? 28 : 32}
+              height={isScrolled ? 28 : 32}
+              className="object-contain transition-all duration-500"
             />
           </div>
           <div className="flex flex-col">
-            <span className={`text-lg sm:text-xl font-black tracking-tighter leading-none uppercase transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Synchronous</span>
-            <span className="text-[0.6rem] font-bold tracking-[0.3em] text-[#F05E23] leading-none uppercase mt-1">Digital Marketing</span>
+            <span className={`${isScrolled ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} font-black tracking-tighter leading-none uppercase transition-all duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Synchronous</span>
+            {!isScrolled && <span className="text-[0.6rem] font-bold tracking-[0.3em] text-[#F05E23] leading-none uppercase mt-1 transition-all duration-500 opacity-100">Digital Marketing</span>}
+            {isScrolled && <span className="text-[0.55rem] font-bold tracking-[0.2em] text-[#F05E23] leading-none uppercase mt-0.5 transition-all duration-500 opacity-80">Digital</span>}
           </div>
         </Link>
 
         {/* Desktop Navigation Link Pill */}
-        <div className={`hidden md:flex items-center gap-2 p-1.5 rounded-2xl border transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
+        <div className={`hidden md:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
           {navLinks.map((link) => (
-            <NavLink key={link.name} href={link.href} active={pathname === link.href} isDark={isDark}>
+            <NavLink key={link.name} href={link.href} active={pathname === link.href} isDark={isDark} isScrolled={isScrolled}>
               {link.name}
             </NavLink>
           ))}
@@ -77,21 +84,22 @@ export default function Header() {
             href="https://wa.me/919161391566?text=I'd like to start growing my business with Synchronous Build Digital."
             target="_blank"
             rel="noopener noreferrer"
-            className={`relative group overflow-hidden px-8 py-3.5 rounded-xl shadow-lg transition-all hover:scale-[1.03] active:scale-95 border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
+            className={`relative group overflow-hidden ${isScrolled ? 'px-5 py-2.5 rounded-full' : 'px-8 py-3.5 rounded-xl text-xs'} shadow-lg transition-all hover:scale-[1.03] active:scale-95 border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
           >
-            <span className={`text-xs font-bold uppercase tracking-widest relative z-10 transition-colors duration-500 ${isDark ? 'text-[#111]' : 'text-white'}`}>Start Growing</span>
-            <div className="absolute top-0 right-0 w-4 h-4 bg-[#F05E23] mask-triangle z-20"></div>
+            <span className={`font-bold uppercase tracking-widest relative z-10 transition-all duration-500 ${isScrolled ? 'text-[0.65rem]' : 'text-xs'} ${isDark ? 'text-[#111]' : 'text-white'}`}>Start Growing</span>
+            <div className={`absolute top-0 right-0 ${isScrolled ? 'w-3 h-3' : 'w-4 h-4'} bg-[#F05E23] mask-triangle z-20 transition-all duration-500`}></div>
           </a>
         </div>
 
         {/* Mobile Menu Toggle Area */}
         <button
-          className={`md:hidden relative z-10 p-2 transition-all active:scale-90 rounded-xl ${isDark ? 'text-white bg-white/5' : 'text-[#111] bg-black/5'}`}
+          className={`md:hidden relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark ? 'text-white bg-white/5' : 'text-[#111] bg-black/5'}`}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileMenuOpen ? <X className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} /> : <Menu className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} />}
         </button>
       </motion.nav>
+      </div>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
@@ -162,18 +170,18 @@ export default function Header() {
   );
 }
 
-function NavLink({ href, children, active, isDark }) {
+function NavLink({ href, children, active, isDark, isScrolled }) {
   return (
     <Link
       href={href}
-      className={`relative px-5 py-2.5 text-[0.75rem] font-bold uppercase tracking-widest transition-colors duration-300 ${active ? (isDark ? 'text-[#111]' : 'text-white') : (isDark ? 'text-white/50 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+      className={`relative ${isScrolled ? 'px-4 py-2 text-[0.65rem]' : 'px-5 py-2.5 text-[0.75rem]'} font-bold uppercase tracking-widest transition-all duration-300 ${active ? (isDark ? 'text-[#111]' : 'text-white') : (isDark ? 'text-white/50 hover:text-white' : 'text-slate-500 hover:text-slate-900')
         }`}
     >
       <span className="relative z-10">{children}</span>
       {active && (
         <motion.div
           layoutId="nav-pill"
-          className={`absolute inset-0 rounded-xl shadow-lg border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
+          className={`absolute inset-0 ${isScrolled ? 'rounded-full' : 'rounded-xl'} shadow-lg border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
           transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
         />
       )}
