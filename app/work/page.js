@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useTheme } from "../components/ThemeContext";
+import { useTheme } from "../../components/ThemeContext";
 
 const selectedWorks = [
     {

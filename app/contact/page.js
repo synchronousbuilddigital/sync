@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Mail, Phone, Send, MapPin, Globe, Clock, ArrowRight } from "lucide-react";
 import { useState } from "react";
-import { useTheme } from "../components/ThemeContext";
+import { useTheme } from "../../components/ThemeContext";
 
 export default function ContactPage() {
     const { isDark } = useTheme();
