@@ -10,7 +10,6 @@ import { useTheme } from './ThemeContext';
 const expertiseItems = [
     {
         id: "01",
-        version: "v3.1",
         title: "BRAND ARCHITECTURES.",
         desc: "Surgical brand positioning and visual systems engineered for category dominance and high-equity compounding.",
         image: "/brand-arch.png",
@@ -18,7 +17,6 @@ const expertiseItems = [
     },
     {
         id: "02",
-        version: "v3.1",
         title: "ECOSYSTEM ENGINEERING.",
         desc: "Performance-obsessed digital platforms built on headless architectures with sub-100ms latency and 4x conversion lift.",
         image: "/digital-eco.png",
@@ -26,7 +24,6 @@ const expertiseItems = [
     },
     {
         id: "03",
-        version: "v3.1",
         title: "ACQUISITION FRAMEWORKS.",
         desc: "Multi-channel growth engines powered by predictive models and surgical arbitrage to maximize ROAS and scale equity.",
         image: "/growth-eng.png",
@@ -34,7 +31,6 @@ const expertiseItems = [
     },
     {
         id: "04",
-        version: "v3.1",
         title: "NEURAL INTEGRATION.",
         desc: "Deploying custom LLM agents and agentic workflows into core operations to automate human-level cognitive tasks at scale.",
         image: "/neural-marketing.png",
@@ -120,7 +116,7 @@ export default function AboutSection() {
                                 {/* Card Header */}
                                 <div className="space-y-2 sm:space-y-4 mb-4 sm:mb-6">
                                     <div className={`flex items-center gap-2 text-[0.5rem] sm:text-[0.6rem] font-black tracking-widest uppercase transition-colors duration-500 ${isDark ? 'text-white/10' : 'text-black/30'}`}>
-                                        {item.id} // <span className="opacity-50">{item.version}</span>
+                                        {item.id}
                                     </div>
                                     <h3 className={`text-sm sm:text-lg lg:text-xl font-black tracking-tighter leading-tight transition-colors duration-500 group-hover:text-[#FF6B35] ${isDark ? 'text-white' : 'text-[#111]'}`}>
                                         {item.title}

@@ -1,15 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { 
-    CheckCircle2, 
-    ArrowUpRight, 
-    Zap, 
-    Shield, 
-    Activity, 
-    Globe, 
-    Layout, 
-    BarChart3, 
+import {
+    CheckCircle2,
+    ArrowUpRight,
+    Zap,
+    Shield,
+    Activity,
+    Globe,
+    Layout,
+    BarChart3,
     Cpu,
     Target
 } from "lucide-react";
@@ -88,13 +88,13 @@ export default function WorkPage() {
     return (
         <main className={`min-h-screen selection:bg-[#F05E23]/20 overflow-x-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FDFDFD]'}`}>
             {/* Minimalist Grid Pattern */}
-            <div className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 ${isDark ? 'opacity-[0.08]' : 'opacity-[0.03]'}`} 
-                 style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
+            <div className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 ${isDark ? 'opacity-[0.08]' : 'opacity-[0.03]'}`}
+                style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
 
             {/* Header / Hero */}
             <header className="relative w-full pt-44 pb-12 md:pt-60 md:pb-16 px-6 overflow-hidden">
                 <div className="max-w-7xl mx-auto flex flex-col items-start relative z-10">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className={`inline-flex items-center gap-3 px-5 py-2.5 border rounded-full mb-10 shadow-sm transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'}`}
@@ -104,7 +104,7 @@ export default function WorkPage() {
                     </motion.div>
 
                     <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-16 w-full">
-                        <motion.h1 
+                        <motion.h1
                             initial={{ opacity: 0, y: 40 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
@@ -114,7 +114,7 @@ export default function WorkPage() {
                             <span className="text-[#F05E23]">Scale Engineered.</span>
                         </motion.h1>
 
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.6 }}
@@ -131,7 +131,7 @@ export default function WorkPage() {
             {/* Impact Cards Section - Tight Grid */}
             <section className="w-full px-6 py-12 space-y-12 md:space-y-20 relative z-10">
                 {selectedWorks.map((work, i) => (
-                    <motion.div 
+                    <motion.div
                         key={work.title}
                         initial={{ opacity: 0, y: 60 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -139,9 +139,9 @@ export default function WorkPage() {
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         className="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch gap-8 lg:gap-20 group"
                     >
-                        {/* Visual / Badge Side */}
-                        <div className={`lg:w-[48%] flex flex-col justify-start ${i % 2 === 0 ? 'lg:order-1' : 'lg:order-2'}`}>
-                            <div className={`relative aspect-[16/10] w-full rounded-[3.5rem] overflow-hidden group shadow-2xl border transition-colors duration-500 ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-50 bg-slate-50'}`}>
+                        {/* Visual / Badge Side - Full Height Aligned */}
+                        <div className={`lg:w-[42%] flex flex-col ${i % 2 === 0 ? 'lg:order-1' : 'lg:order-2'}`}>
+                            <div className={`relative flex-1 w-full min-h-[300px] lg:min-h-0 rounded-[2.5rem] overflow-hidden group shadow-xl border transition-colors duration-500 ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-50 bg-slate-50'}`}>
                                 <Image 
                                     src={work.image} 
                                     alt={work.title}
@@ -150,22 +150,22 @@ export default function WorkPage() {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#111]/40 to-transparent" />
                                 
-                                {/* Floating Metric Badge */}
-                                <div className={`absolute top-8 left-8 p-5 backdrop-blur-3xl border rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-1 group-hover:scale-110 transition-all duration-700 ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/90 border-white'}`}>
-                                    <span className="text-[0.6rem] font-black text-[#F05E23] tracking-[0.4em] uppercase">Impact Metric</span>
-                                    <span className={`text-2xl md:text-3xl font-black tracking-tighter uppercase transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>{work.metric}</span>
+                                {/* Floating Metric Badge - Optimized for full-height */}
+                                <div className={`absolute top-6 left-6 px-4 py-3 backdrop-blur-3xl border rounded-[1.5rem] shadow-2xl flex flex-col items-center gap-0 group-hover:scale-110 transition-all duration-700 ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/90 border-white'}`}>
+                                    <span className="text-[0.5rem] font-black text-[#F05E23] tracking-[0.3em] uppercase">Impact</span>
+                                    <span className={`text-xl md:text-2xl font-black tracking-tighter uppercase transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>{work.metric}</span>
                                 </div>
 
-                                <div className="absolute bottom-8 right-8 flex items-center gap-3">
-                                    <div className={`px-4 py-2 border rounded-full text-[0.6rem] font-bold tracking-widest uppercase transition-colors duration-500 ${isDark ? 'bg-black/60 border-white/10 text-white' : 'bg-[#111]/80 border-white/10 text-white'}`}>
-                                        Release {work.slug}
+                                <div className="absolute bottom-6 right-6 flex items-center gap-3">
+                                    <div className={`px-4 py-1.5 border rounded-full text-[0.5rem] font-bold tracking-widest uppercase transition-colors duration-500 ${isDark ? 'bg-black/60 border-white/10 text-white' : 'bg-[#111]/80 border-white/10 text-white'}`}>
+                                        {work.slug}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Content / Outcomes Side */}
-                        <div className={`lg:w-[52%] flex flex-col justify-center py-6 ${i % 2 === 0 ? 'lg:order-2' : 'lg:order-1'}`}>
+                        <div className={`lg:w-[58%] flex flex-col justify-center py-8 ${i % 2 === 0 ? 'lg:order-2' : 'lg:order-1'}`}>
                             <div className="text-[0.6rem] font-black text-[#F05E23] tracking-[0.5em] uppercase mb-6 flex items-center gap-4">
                                 <span className="w-10 h-[1px] bg-[#F05E23]/30"></span>
                                 {work.category}
@@ -173,7 +173,7 @@ export default function WorkPage() {
                             <h2 className={`text-[3rem] md:text-[5rem] font-extrabold tracking-tighter leading-[0.9] mb-8 group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
                                 {work.title}.
                             </h2>
-                            
+
                             <div className="grid md:grid-cols-2 gap-8 mb-10">
                                 <div className="space-y-4">
                                     <div className={`text-[0.6rem] font-black uppercase tracking-[0.3em] transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>Operational Problem</div>
@@ -210,8 +210,8 @@ export default function WorkPage() {
             {/* Industrial Verticals Section */}
             <section className={`w-full py-24 md:py-32 px-6 relative overflow-hidden mt-12 transition-colors duration-700 ${isDark ? 'bg-black' : 'bg-[#111]'}`}>
                 <div className="absolute inset-0 opacity-10 pointer-events-none"
-                     style={{ backgroundImage: `radial-gradient(#FFF 1px, transparent 1px)`, backgroundSize: '48px 48px' }} />
-                
+                    style={{ backgroundImage: `radial-gradient(#FFF 1px, transparent 1px)`, backgroundSize: '48px 48px' }} />
+
                 <div className="max-w-7xl mx-auto relative z-10">
                     <div className="flex flex-col md:flex-row items-end justify-between gap-12 mb-20">
                         <div className="max-w-2xl">
@@ -230,7 +230,7 @@ export default function WorkPage() {
 
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {industries.map((ind, i) => (
-                            <motion.div 
+                            <motion.div
                                 key={i}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
@@ -254,7 +254,7 @@ export default function WorkPage() {
 
             {/* Final CTA Section */}
             <section className={`w-full py-24 md:py-44 px-6 flex flex-col items-center text-center transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-transparent'}`}>
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     className="inline-flex items-center gap-3 px-5 py-2.5 bg-[#F05E23]/5 border border-[#F05E23]/10 rounded-full mb-12"
@@ -267,7 +267,7 @@ export default function WorkPage() {
                     Initialize Your <br /> <span className="text-[#F05E23]">Acquisition</span> Cycle.
                 </h2>
 
-                <Link 
+                <Link
                     href="/contact"
                     className={`group relative px-14 py-8 rounded-[2.5rem] font-black uppercase text-[0.8rem] tracking-[0.4em] overflow-hidden hover:scale-105 active:scale-95 transition-all duration-500 shadow-2xl border ${isDark ? 'bg-white text-[#111] border-black/5' : 'bg-[#111] text-white border-white/10'}`}
                 >
