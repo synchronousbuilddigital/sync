@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTheme } from "../components/ThemeContext";
 
 const selectedWorks = [
     {
@@ -82,11 +83,13 @@ const industries = [
 ];
 
 export default function WorkPage() {
+    const { isDark } = useTheme();
+
     return (
-        <main className="bg-[#FDFDFD] min-h-screen selection:bg-[#F05E23]/20 overflow-x-hidden">
+        <main className={`min-h-screen selection:bg-[#F05E23]/20 overflow-x-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FDFDFD]'}`}>
             {/* Minimalist Grid Pattern */}
-            <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]" 
-                 style={{ backgroundImage: 'radial-gradient(#000 1.2px, transparent 1.2px)', backgroundSize: '48px 48px' }}></div>
+            <div className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 ${isDark ? 'opacity-[0.08]' : 'opacity-[0.03]'}`} 
+                 style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
 
             {/* Header / Hero */}
             <header className="relative w-full pt-44 pb-12 md:pt-60 md:pb-16 px-6 overflow-hidden">
@@ -94,10 +97,10 @@ export default function WorkPage() {
                     <motion.div 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-slate-100 rounded-full mb-10 shadow-sm"
+                        className={`inline-flex items-center gap-3 px-5 py-2.5 border rounded-full mb-10 shadow-sm transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100'}`}
                     >
                         <span className="w-2 h-2 rounded-full bg-[#F05E23] animate-pulse"></span>
-                        <span className="text-[0.7rem] font-bold text-[#F05E23] tracking-[0.45em] uppercase">Impact Report 2026</span>
+                        <span className={`text-[0.7rem] font-bold tracking-[0.45em] uppercase border-none ${isDark ? 'text-[#F05E23]/80' : 'text-[#F05E23]'}`}>Impact Report 2026</span>
                     </motion.div>
 
                     <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-16 w-full">
@@ -105,7 +108,7 @@ export default function WorkPage() {
                             initial={{ opacity: 0, y: 40 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                            className="text-[3.5rem] sm:text-[5rem] md:text-[6.5rem] lg:text-[7.5rem] font-bold tracking-[-0.05em] text-[#111] leading-[0.85]"
+                            className={`text-[3.5rem] sm:text-[5rem] md:text-[6.5rem] lg:text-[7.5rem] font-bold tracking-[-0.05em] leading-[0.85] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}
                         >
                             High Performance. <br />
                             <span className="text-[#F05E23]">Scale Engineered.</span>
@@ -115,14 +118,14 @@ export default function WorkPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.6 }}
-                            className="max-w-xs border-l-2 border-[#F05E23] pl-8 pb-4 text-slate-500 font-medium leading-relaxed italic"
+                            className={`max-w-xs border-l-2 border-[#F05E23] pl-8 pb-4 font-medium leading-relaxed italic transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}
                         >
                             Verifiably shifting market caps and operational efficiency through relentless engineering.
                         </motion.div>
                     </div>
                 </div>
 
-                <div className="absolute top-[20%] right-[-10%] w-[800px] h-[800px] bg-[#F05E23]/5 rounded-full blur-[150px] -z-10" />
+                <div className={`absolute top-[20%] right-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] -z-10 transition-colors duration-700 ${isDark ? 'bg-[#F05E23]/10' : 'bg-[#F05E23]/5'}`} />
             </header>
 
             {/* Impact Cards Section - Tight Grid */}
@@ -138,23 +141,23 @@ export default function WorkPage() {
                     >
                         {/* Visual / Badge Side */}
                         <div className={`lg:w-[48%] flex flex-col justify-start ${i % 2 === 0 ? 'lg:order-1' : 'lg:order-2'}`}>
-                            <div className="relative aspect-[16/10] w-full rounded-[3.5rem] overflow-hidden group shadow-2xl border border-slate-50 bg-slate-50">
+                            <div className={`relative aspect-[16/10] w-full rounded-[3.5rem] overflow-hidden group shadow-2xl border transition-colors duration-500 ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-50 bg-slate-50'}`}>
                                 <Image 
                                     src={work.image} 
                                     alt={work.title}
                                     fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-[2s] ease-out"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-[2s] ease-out grayscale group-hover:grayscale-0"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#111]/40 to-transparent" />
                                 
                                 {/* Floating Metric Badge */}
-                                <div className="absolute top-8 left-8 p-5 backdrop-blur-3xl bg-white/90 border border-white rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-1 group-hover:scale-110 transition-transform duration-700">
+                                <div className={`absolute top-8 left-8 p-5 backdrop-blur-3xl border rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-1 group-hover:scale-110 transition-all duration-700 ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/90 border-white'}`}>
                                     <span className="text-[0.6rem] font-black text-[#F05E23] tracking-[0.4em] uppercase">Impact Metric</span>
-                                    <span className="text-2xl md:text-3xl font-black text-[#111] tracking-tighter uppercase">{work.metric}</span>
+                                    <span className={`text-2xl md:text-3xl font-black tracking-tighter uppercase transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>{work.metric}</span>
                                 </div>
 
                                 <div className="absolute bottom-8 right-8 flex items-center gap-3">
-                                    <div className="px-4 py-2 bg-[#111]/80 backdrop-blur-md rounded-full text-[0.6rem] font-bold text-white tracking-widest uppercase border border-white/10">
+                                    <div className={`px-4 py-2 border rounded-full text-[0.6rem] font-bold tracking-widest uppercase transition-colors duration-500 ${isDark ? 'bg-black/60 border-white/10 text-white' : 'bg-[#111]/80 border-white/10 text-white'}`}>
                                         Release {work.slug}
                                     </div>
                                 </div>
@@ -167,34 +170,34 @@ export default function WorkPage() {
                                 <span className="w-10 h-[1px] bg-[#F05E23]/30"></span>
                                 {work.category}
                             </div>
-                            <h2 className="text-[3rem] md:text-[5rem] font-extrabold text-[#111] tracking-tighter leading-[0.9] mb-8 group-hover:text-[#F05E23] transition-colors duration-500">
+                            <h2 className={`text-[3rem] md:text-[5rem] font-extrabold tracking-tighter leading-[0.9] mb-8 group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
                                 {work.title}.
                             </h2>
                             
                             <div className="grid md:grid-cols-2 gap-8 mb-10">
                                 <div className="space-y-4">
-                                    <div className="text-[0.6rem] font-black text-slate-300 uppercase tracking-[0.3em]">Operational Problem</div>
-                                    <p className="text-[0.95rem] text-slate-500 font-medium leading-relaxed italic pr-4">
+                                    <div className={`text-[0.6rem] font-black uppercase tracking-[0.3em] transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>Operational Problem</div>
+                                    <p className={`text-[0.95rem] font-medium leading-relaxed italic pr-4 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
                                         "{work.problem}"
                                     </p>
                                 </div>
                                 <div className="space-y-4">
-                                    <div className="text-[0.6rem] font-black text-[#F05E23]/40 uppercase tracking-[0.3em]">Surgical Solution</div>
-                                    <p className="text-[0.95rem] text-slate-600 font-bold leading-relaxed">
+                                    <div className="text-[0.6rem] font-black text-[#F05E23]/60 uppercase tracking-[0.3em]">Surgical Solution</div>
+                                    <p className={`text-[0.95rem] font-bold leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/80' : 'text-slate-600'}`}>
                                         {work.solution}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="w-full p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#F05E23]/10 transition-all duration-500">
-                                <div className="text-[0.6rem] font-black text-slate-300 uppercase tracking-[0.4em] mb-6">Verifiable Outcomes</div>
+                            <div className={`w-full p-8 rounded-[2.5rem] border shadow-sm hover:shadow-xl hover:border-[#F05E23]/10 transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-100'}`}>
+                                <div className={`text-[0.6rem] font-black uppercase tracking-[0.4em] mb-6 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>Verifiable Outcomes</div>
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     {work.results.map((r, rid) => (
-                                        <div key={rid} className="flex items-center gap-4 text-slate-600 group/row">
-                                            <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-[#111] transition-colors">
-                                                <CheckCircle2 className="w-4 h-4 text-slate-300 group-hover:text-[#F05E23]" />
+                                        <div key={rid} className="flex items-center gap-4 group/row">
+                                            <div className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/10 group-hover:bg-[#111]' : 'bg-slate-50 border-slate-100 group-hover:bg-[#111]'}`}>
+                                                <CheckCircle2 className={`w-4 h-4 transition-colors duration-500 ${isDark ? 'text-white/20 group-hover:text-[#F05E23]' : 'text-slate-300 group-hover:text-[#F05E23]'}`} />
                                             </div>
-                                            <span className="text-[0.9rem] font-bold group-hover:text-[#111] transition-colors">{r}</span>
+                                            <span className={`text-[0.9rem] font-bold transition-colors duration-500 ${isDark ? 'text-white/60 group-hover:text-white' : 'text-slate-600 group-hover:text-[#111]'}`}>{r}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -205,9 +208,9 @@ export default function WorkPage() {
             </section>
 
             {/* Industrial Verticals Section */}
-            <section className="w-full bg-[#111] py-24 md:py-32 px-6 relative overflow-hidden mt-12">
+            <section className={`w-full py-24 md:py-32 px-6 relative overflow-hidden mt-12 transition-colors duration-700 ${isDark ? 'bg-black' : 'bg-[#111]'}`}>
                 <div className="absolute inset-0 opacity-10 pointer-events-none"
-                     style={{ backgroundImage: 'radial-gradient(#FFF 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+                     style={{ backgroundImage: `radial-gradient(#FFF 1px, transparent 1px)`, backgroundSize: '48px 48px' }} />
                 
                 <div className="max-w-7xl mx-auto relative z-10">
                     <div className="flex flex-col md:flex-row items-end justify-between gap-12 mb-20">
@@ -250,7 +253,7 @@ export default function WorkPage() {
             </section>
 
             {/* Final CTA Section */}
-            <section className="w-full py-24 md:py-44 px-6 flex flex-col items-center text-center">
+            <section className={`w-full py-24 md:py-44 px-6 flex flex-col items-center text-center transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-transparent'}`}>
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -260,15 +263,15 @@ export default function WorkPage() {
                     <span className="text-[0.65rem] font-black text-[#F05E23] tracking-[0.4em] uppercase">Direct Performance Loop</span>
                 </motion.div>
 
-                <h2 className="text-[3.5rem] md:text-[6rem] font-bold text-[#111] tracking-tighter leading-[0.9] mb-12">
+                <h2 className={`text-[3.5rem] md:text-[6rem] font-bold tracking-tighter leading-[0.9] mb-12 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
                     Initialize Your <br /> <span className="text-[#F05E23]">Acquisition</span> Cycle.
                 </h2>
 
                 <Link 
                     href="/contact"
-                    className="group relative px-14 py-8 rounded-[2.5rem] bg-[#111] text-white font-black uppercase text-[0.8rem] tracking-[0.4em] overflow-hidden hover:scale-105 active:scale-95 transition-all duration-500 shadow-2xl"
+                    className={`group relative px-14 py-8 rounded-[2.5rem] font-black uppercase text-[0.8rem] tracking-[0.4em] overflow-hidden hover:scale-105 active:scale-95 transition-all duration-500 shadow-2xl border ${isDark ? 'bg-white text-[#111] border-black/5' : 'bg-[#111] text-white border-white/10'}`}
                 >
-                    <span className="relative z-10">Start Your Build</span>
+                    <span className="relative z-10 transition-colors duration-500">Start Your Build</span>
                     <div className="absolute inset-0 bg-[#F05E23] translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                 </Link>
             </section>

@@ -1,10 +1,11 @@
 "use client";
 
-import Link from 'next/link';
-import { motion } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
-import Image from "next/image";
 import { useRef } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowUpRight } from "lucide-react";
+import { useTheme } from './ThemeContext';
 
 const expertiseItems = [
     {
@@ -42,14 +43,15 @@ const expertiseItems = [
 ];
 
 export default function AboutSection() {
+    const { isDark } = useTheme();
     const sectionRef = useRef(null);
 
     return (
-        <section ref={sectionRef} className="w-full py-24 bg-white relative overflow-hidden font-sans">
-            {/* Grid Background with vertical fade at top/bottom removed for hard cut */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <section ref={sectionRef} className={`w-full py-24 relative overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
+            {/* Grid Background */}
+            <div className={`absolute inset-0 z-0 pointer-events-none overflow-hidden transition-colors duration-700`}>
                 <div className="absolute inset-0" style={{
-                    backgroundImage: 'linear-gradient(to right, rgba(255, 107, 53, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 107, 53, 0.05) 1px, transparent 1px)',
+                    backgroundImage: `linear-gradient(to right, rgba(255, 107, 53, ${isDark ? '0.08' : '0.05'}) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 107, 53, ${isDark ? '0.08' : '0.05'}) 1px, transparent 1px)`,
                     backgroundSize: '100px 100px'
                 }}></div>
             </div>
@@ -61,7 +63,7 @@ export default function AboutSection() {
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black mb-8 text-[0.65rem] font-black uppercase tracking-[0.3em] text-white"
+                    className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-[0.65rem] font-black uppercase tracking-[0.3em] transition-colors duration-500 ${isDark ? 'bg-white text-[#111]' : 'bg-black text-white'}`}
                 >
                     <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B35]"></div>
                     Expertise
@@ -74,7 +76,7 @@ export default function AboutSection() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        className="text-[4rem] sm:text-[5rem] lg:text-[7rem] font-bold tracking-[-0.04em] text-[#111] leading-[0.85]"
+                        className={`text-[4rem] sm:text-[5rem] lg:text-[7rem] font-bold tracking-[-0.04em] leading-[0.85] transition-colors duration-700 ${isDark ? 'text-white' : 'text-[#111]'}`}
                     >
                         Visualizing <span className="text-[#FF6B35]">Solutions.</span>
                     </motion.h2>
@@ -85,7 +87,7 @@ export default function AboutSection() {
                             whileInView={{ opacity: 1 }}
                             viewport={{ once: true }}
                             transition={{ delay: 0.3 }}
-                            className="text-[0.75rem] font-medium text-slate-500 uppercase tracking-wider leading-relaxed"
+                            className={`text-[0.75rem] font-medium uppercase tracking-wider leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}
                         >
                             Cutting-edge strategies powered by AI, data, and world-class design logic.
                         </motion.p>
@@ -95,7 +97,7 @@ export default function AboutSection() {
                             viewport={{ once: true }}
                             transition={{ delay: 0.4 }}
                         >
-                            <Link href="/directory" className="inline-flex items-center gap-2 text-[0.7rem] font-black uppercase tracking-widest hover:text-[#FF6B35] transition-colors">
+                            <Link href="/directory" className={`inline-flex items-center gap-2 text-[0.7rem] font-black uppercase tracking-widest transition-colors duration-500 ${isDark ? 'text-white/60 hover:text-[#FF6B35]' : 'text-[#111] hover:text-[#FF6B35]'}`}>
                                 Explore Full Directory <ArrowUpRight className="w-4 h-4" />
                             </Link>
                         </motion.div>
@@ -113,24 +115,24 @@ export default function AboutSection() {
                             transition={{ delay: idx * 0.1, duration: 0.8 }}
                             className="group relative"
                         >
-                            <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] bg-white border border-black/5 hover:border-[#FF6B35]/20 transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(255,107,53,0.08)] overflow-hidden flex flex-col min-h-[400px] sm:min-h-[550px] h-full">
+                            <div className={`p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(255,107,53,0.15)] overflow-hidden flex flex-col min-h-[400px] sm:min-h-[550px] h-full ${isDark ? 'bg-[#111] border-white/5 hover:border-[#FF6B35]/30' : 'bg-white border-black/5 hover:border-[#FF6B35]/20'}`}>
 
                                 {/* Card Header */}
                                 <div className="space-y-2 sm:space-y-4 mb-4 sm:mb-6">
-                                    <div className="flex items-center gap-2 text-[0.5rem] sm:text-[0.6rem] font-black text-black/30 tracking-widest uppercase">
+                                    <div className={`flex items-center gap-2 text-[0.5rem] sm:text-[0.6rem] font-black tracking-widest uppercase transition-colors duration-500 ${isDark ? 'text-white/10' : 'text-black/30'}`}>
                                         {item.id} // <span className="opacity-50">{item.version}</span>
                                     </div>
-                                    <h3 className="text-sm sm:text-lg lg:text-xl font-black text-[#111] tracking-tighter leading-tight group-hover:text-[#FF6B35] transition-colors">
+                                    <h3 className={`text-sm sm:text-lg lg:text-xl font-black tracking-tighter leading-tight transition-colors duration-500 group-hover:text-[#FF6B35] ${isDark ? 'text-white' : 'text-[#111]'}`}>
                                         {item.title}
                                     </h3>
                                 </div>
 
-                                <p className="text-slate-500 text-[0.7rem] sm:text-[0.85rem] leading-relaxed font-medium mb-6 sm:mb-8 line-clamp-3 sm:line-clamp-none">
+                                <p className={`text-[0.7rem] sm:text-[0.85rem] leading-relaxed font-medium mb-6 sm:mb-8 line-clamp-3 sm:line-clamp-none transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
                                     {item.desc}
                                 </p>
 
                                 {/* Card Image Container */}
-                                <div className="mt-auto relative w-full h-[120px] sm:h-[220px] rounded-[1rem] sm:rounded-[1.2rem] overflow-hidden bg-[#F9F9F9] border border-black/[0.03]">
+                                <div className={`mt-auto relative w-full h-[120px] sm:h-[220px] rounded-[1rem] sm:rounded-[1.2rem] overflow-hidden border transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/10 shadow-inner' : 'bg-[#F9F9F9] border-black/[0.03]'}`}>
                                     <Image
                                         src={item.image}
                                         alt={item.title}
@@ -143,7 +145,7 @@ export default function AboutSection() {
 
                                 <Link
                                     href={item.link}
-                                    className="mt-4 sm:mt-6 inline-flex items-center gap-2 text-[0.5rem] sm:text-[0.6rem] font-black uppercase tracking-[0.2em] text-[#111] hover:text-[#FF6B35] transition-colors"
+                                    className={`mt-4 sm:mt-6 inline-flex items-center gap-2 text-[0.5rem] sm:text-[0.6rem] font-black uppercase tracking-[0.2em] transition-colors duration-500 ${isDark ? 'text-white/60 hover:text-[#FF6B35]' : 'text-[#111] hover:text-[#FF6B35]'}`}
                                 >
                                     Learn More <ArrowUpRight className="w-2.5 h-2.5 sm:w-3 h-3" />
                                 </Link>
@@ -156,4 +158,5 @@ export default function AboutSection() {
         </section>
     );
 }
+
 

@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { Mail, Linkedin, Twitter, Instagram, ArrowRight, ShieldCheck, Globe, Clock, ArrowUpRight } from "lucide-react";
-import { motion } from "framer-motion";
 import { useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowRight, ShieldCheck, Globe, Clock, ArrowUpRight, Linkedin, Twitter, Instagram, Mail } from "lucide-react";
+import { useTheme } from './ThemeContext';
 
-function NewsletterInput({ placeholder }) {
+function NewsletterInput({ placeholder, isDark }) {
     const [value, setValue] = useState("");
     const [focused, setFocused] = useState(false);
 
@@ -18,12 +19,12 @@ function NewsletterInput({ placeholder }) {
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
                 onChange={(e) => setValue(e.target.value)}
-                className="relative w-full bg-white border border-slate-200 rounded-xl px-6 py-4 text-[0.95rem] font-semibold text-[#111] caret-[#F05E23] focus:outline-none focus:border-[#F05E23] transition-all pr-36 placeholder:text-slate-400 shadow-sm"
+                className={`relative w-full border rounded-xl px-6 py-4 text-[0.95rem] font-semibold caret-[#F05E23] focus:outline-none focus:border-[#F05E23] transition-all pr-36 shadow-sm duration-500 ${isDark ? 'bg-white/5 border-white/10 text-white placeholder:text-white/20' : 'bg-white border-slate-200 text-[#111] placeholder:text-slate-400'}`}
                 placeholder={placeholder}
             />
             <button
                 type="submit"
-                className="absolute right-1.5 top-1.5 bottom-1.5 px-6 bg-[#111] text-white rounded-lg transition-all duration-500 flex items-center justify-center font-black text-[0.65rem] uppercase tracking-[0.2em] group/btn hover:bg-[#F05E23] active:scale-95 shadow-lg overflow-hidden"
+                className={`absolute right-1.5 top-1.5 bottom-1.5 px-6 rounded-lg transition-all duration-500 flex items-center justify-center font-black text-[0.65rem] uppercase tracking-[0.2em] group/btn hover:bg-[#F05E23] active:scale-95 shadow-lg overflow-hidden ${isDark ? 'bg-white text-[#111]' : 'bg-[#111] text-white'}`}
             >
                 <span className="relative z-10 text-xs">Sync</span>
                 <ArrowRight className="relative z-10 w-3.5 h-3.5 ml-2 transform group-hover/btn:translate-x-1 transition-transform duration-300" />
@@ -33,17 +34,18 @@ function NewsletterInput({ placeholder }) {
 }
 
 export default function Footer() {
+    const { isDark } = useTheme();
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="relative pt-16 pb-8 mt-auto z-10 w-full overflow-hidden bg-white border-t border-slate-100">
+        <footer className={`relative pt-16 pb-8 mt-auto z-10 w-full overflow-hidden border-t transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-slate-100'}`}>
             {/* Background Texture */}
-            <div className="absolute inset-0 z-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1.5px, transparent 1.5px)', backgroundSize: '48px 48px' }} />
+            <div className={`absolute inset-0 z-0 opacity-[0.015] pointer-events-none transition-colors duration-700`} style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.5px, transparent 1.5px)`, backgroundSize: '48px 48px' }} />
             
             <div className="max-w-7xl mx-auto px-6 relative z-10">
                 
                 {/* Top Section: CTA & Newsletter */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 mb-12 border-b border-slate-100/80">
+                <div className={`grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 mb-12 border-b transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-100/80'}`}>
                     <div className="lg:col-span-7">
                         <motion.div 
                             initial={{ opacity: 0, x: -10 }}
@@ -54,20 +56,20 @@ export default function Footer() {
                             <ShieldCheck className="w-3.5 h-3.5 text-[#F05E23]" />
                             <span className="text-[0.55rem] font-black uppercase tracking-[0.3em] text-[#F05E23]">Synchronous Intelligence</span>
                         </motion.div>
-                        <h2 className="text-3xl md:text-5xl font-bold text-[#111] tracking-[-0.04em] leading-[0.95] mb-4">
+                        <h2 className={`text-3xl md:text-5xl font-bold tracking-[-0.04em] leading-[0.95] mb-4 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
                             Empowering high-growth <br /> <span className="text-[#F05E23]">elite brands.</span>
                         </h2>
-                        <p className="text-lg text-slate-500 font-medium max-w-xl leading-relaxed">
+                        <p className={`text-lg font-medium max-w-xl leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
                             Architecting sustainable, high-velocity digital ecosystems for high-growth elite brands.
                         </p>
                     </div>
                     
                     <div className="lg:col-span-5 flex flex-col justify-end">
-                        <div className="bg-[#F9F9F9] p-6 md:p-8 rounded-[2rem] border border-slate-100 relative group overflow-hidden">
+                        <div className={`p-6 md:p-8 rounded-[2rem] border relative group overflow-hidden transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-[#F9F9F9] border-slate-100'}`}>
                             <div className="absolute top-0 right-0 w-24 h-24 bg-[#F05E23]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                            <h4 className="text-lg font-bold text-[#111] mb-1">Market Intelligence</h4>
-                            <p className="text-slate-500 font-medium mb-6 text-xs">Join 2,500+ founders receiving our operational news.</p>
-                            <NewsletterInput placeholder="Your work email" />
+                            <h4 className={`text-lg font-bold mb-1 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Market Intelligence</h4>
+                            <p className={`font-medium mb-6 text-xs transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>Join 2,500+ founders receiving our operational news.</p>
+                            <NewsletterInput placeholder="Your work email" isDark={isDark} />
                         </div>
                     </div>
                 </div>
@@ -78,16 +80,16 @@ export default function Footer() {
                     <div className="col-span-2 md:col-span-4 lg:col-span-2">
                         <div className="mb-6">
                             <div className="flex items-center gap-3 mb-4 group cursor-pointer inline-flex">
-                                <div className="w-10 h-10 rounded-xl bg-[#111] flex items-center justify-center text-white transition-transform duration-500 group-hover:rotate-[15deg]">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 group-hover:rotate-[15deg] ${isDark ? 'bg-white text-[#111]' : 'bg-[#111] text-white'}`}>
                                     <span className="text-lg font-black italic">S</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[1rem] font-black uppercase tracking-[0.35em] text-[#111] leading-none">Sync.</span>
+                                    <span className={`text-[1rem] font-black uppercase tracking-[0.35em] leading-none transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Sync.</span>
                                     <span className="text-[0.55rem] font-bold uppercase tracking-[0.4em] text-[#F05E23] mt-1">Build Digital</span>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex flex-col gap-3 text-slate-400 font-semibold text-[0.6rem] tracking-[0.2em] uppercase">
+                        <div className={`flex flex-col gap-3 font-semibold text-[0.6rem] tracking-[0.2em] uppercase transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>
                             <div className="flex items-center gap-2">
                                 <Globe className="w-3.5 h-3.5 text-[#F05E23]/40" />
                                 <span>Global Operations / Remote First</span>
@@ -101,7 +103,7 @@ export default function Footer() {
 
                     {/* Organization Column */}
                     <div className="col-span-1 lg:col-start-4">
-                        <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-[#111] mb-6 opacity-30">Organization</h5>
+                        <h5 className={`text-[0.6rem] font-black uppercase tracking-[0.4em] mb-6 opacity-30 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Organization</h5>
                         <ul className="flex flex-col gap-4">
                             {[
                                 { name: "Our Work", href: "/work" },
@@ -110,7 +112,7 @@ export default function Footer() {
                                 { name: "Contact", href: "/contact" }
                             ].map((link, i) => (
                                 <li key={i}>
-                                    <Link href={link.href} className="text-[0.75rem] font-bold text-slate-500 hover:text-[#F05E23] transition-all duration-300 flex items-center gap-2 group/item overflow-hidden">
+                                    <Link href={link.href} className={`text-[0.75rem] font-bold transition-all duration-300 flex items-center gap-2 group/item overflow-hidden ${isDark ? 'text-white/40 hover:text-[#F05E23]' : 'text-slate-500 hover:text-[#F05E23]'}`}>
                                         <span className="tracking-tight hover:tracking-[0.1em] transition-all duration-300">{link.name}</span>
                                         <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -translate-y-1 translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-y-0 group-hover/item:translate-x-0 transition-all duration-300 transform" />
                                     </Link>
@@ -121,7 +123,7 @@ export default function Footer() {
 
                     {/* Resources Column */}
                     <div className="col-span-1">
-                        <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-[#111] mb-6 opacity-30">Resources</h5>
+                        <h5 className={`text-[0.6rem] font-black uppercase tracking-[0.4em] mb-6 opacity-30 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Resources</h5>
                         <ul className="flex flex-col gap-4">
                             {[
                                 { name: "Case Studies", href: "/work" },
@@ -129,7 +131,7 @@ export default function Footer() {
                                 { name: "Privacy Policy", href: "/privacy" }
                             ].map((link, i) => (
                                 <li key={i}>
-                                    <Link href={link.href} className="text-[0.75rem] font-bold text-slate-500 hover:text-[#F05E23] transition-all duration-300 flex items-center gap-2 group/item overflow-hidden">
+                                    <Link href={link.href} className={`text-[0.75rem] font-bold transition-all duration-300 flex items-center gap-2 group/item overflow-hidden ${isDark ? 'text-white/40 hover:text-[#F05E23]' : 'text-slate-500 hover:text-[#F05E23]'}`}>
                                         <span className="tracking-tight hover:tracking-[0.1em] transition-all duration-300">{link.name}</span>
                                         <ArrowUpRight className="w-2.5 h-2.5 opacity-0 -translate-y-1 translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-y-0 group-hover/item:translate-x-0 transition-all duration-300 transform" />
                                     </Link>
@@ -140,7 +142,7 @@ export default function Footer() {
 
                     {/* Socials Connection */}
                     <div className="col-span-2 md:col-span-1 min-w-max">
-                        <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-[#111] mb-6 opacity-30">Connect</h5>
+                        <h5 className={`text-[0.6rem] font-black uppercase tracking-[0.4em] mb-6 opacity-30 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Connect</h5>
                         <div className="flex flex-row items-center gap-3">
                             {[
                                 { icon: Linkedin, href: "#" },
@@ -148,7 +150,7 @@ export default function Footer() {
                                 { icon: Instagram, href: "#" },
                                 { icon: Mail, href: "mailto:biz@synchronousbuilddigital.com" }
                             ].map((social, i) => (
-                                <a key={i} href={social.href} className="w-10 h-10 rounded-xl bg-[#F9F9F9] border border-slate-100 flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#111] transition-all duration-500 shadow-sm group">
+                                <a key={i} href={social.href} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-500 shadow-sm group ${isDark ? 'bg-white/5 border-white/10 text-white/40 hover:bg-white hover:text-[#111]' : 'bg-[#F9F9F9] border-slate-100 text-slate-400 hover:text-white hover:bg-[#111]'}`}>
                                     <social.icon className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                                 </a>
                             ))}
@@ -157,7 +159,7 @@ export default function Footer() {
                 </div>
 
                 {/* Compact Bottom Bar */}
-                <div className="pt-8 border-t border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className={`pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-50'}`}>
                     <p className="text-[0.6rem] font-bold text-slate-300 uppercase tracking-widest text-center md:text-left">
                         &copy; {currentYear} Synchronous Build Digital Group. All rights reserved.
                     </p>
@@ -169,7 +171,8 @@ export default function Footer() {
             </div>
 
             {/* Top Accent Gradient */}
-            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+            <div className={`absolute top-0 left-0 w-full h-px bg-gradient-to-r transition-all duration-700 ${isDark ? 'from-transparent via-white/10 to-transparent' : 'from-transparent via-slate-200 to-transparent'}`}></div>
         </footer>
     );
 }
+
