@@ -55,7 +55,7 @@ export default function Home() {
 
       {/* Work Showcase Section */}
       <WorkShowcase />
-      
+
       {/* Seamless Transition to Why Choose Us */}
       <WhyChooseUs dark={isDark} />
 

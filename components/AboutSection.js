@@ -72,7 +72,7 @@ export default function AboutSection() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        className={`text-[4rem] sm:text-[5rem] lg:text-[7rem] font-bold tracking-[-0.04em] leading-[0.85] transition-colors duration-700 ${isDark ? 'text-white' : 'text-[#111]'}`}
+                        className={`text-[5rem] sm:text-[7rem] lg:text-[10rem] font-bold tracking-[-0.04em] leading-[0.85] transition-colors duration-700 ${isDark ? 'text-white' : 'text-[#111]'}`}
                     >
                         Visualizing <span className="text-[#FF6B35]">Solutions.</span>
                     </motion.h2>

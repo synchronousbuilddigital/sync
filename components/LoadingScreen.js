@@ -194,44 +194,103 @@ export default function LoadingScreen() {
                         </p>
                     </div>
 
-                    {/* Service Modules - Enhanced Grid */}
-                    <div className="grid grid-cols-3 gap-3 md:gap-5 mb-6 w-full max-w-md">
+                    {/* Service Modules - Advanced 3D Staggered Layout */}
+                    <div className="relative mb-8 w-full max-w-2xl h-96 perspective" style={{ perspective: '1200px' }}>
                         {modules.map((module, index) => {
                             const Icon = module.icon;
                             const isActive = activeModule === index;
+                            
+                            // Staggered positioning and rotation
+                            const positionData = [
+                                { top: '0%', left: '10%', rotate: '-8deg', skewY: '2deg' },
+                                { top: '35%', left: '30%', rotate: '0deg', skewY: '0deg' },
+                                { top: '55%', left: '15%', rotate: '6deg', skewY: '-2deg' }
+                            ];
+                            
+                            const position = positionData[index];
+                            
                             return (
                                 <div
                                     key={module.name}
-                                    className="module-slide w-full"
-                                    style={{ animationDelay: `${0.2 + index * 0.1}s` }}
+                                    className="module-slide absolute"
+                                    style={{
+                                        top: position.top,
+                                        left: position.left,
+                                        animationDelay: `${0.2 + index * 0.1}s`,
+                                        width: '280px',
+                                        height: '160px'
+                                    }}
                                 >
-                                    <div className="relative group h-full">
-                                        {/* Glow Background */}
+                                    <div className="relative group w-full h-full" style={{ 
+                                        transform: `perspective(800px) rotateY(${isActive ? '0deg' : '-5deg'}) rotateX(${isActive ? '0deg' : '2deg'}) rotateZ(${position.rotate}) skewY(${position.skewY})`,
+                                        transformStyle: 'preserve-3d',
+                                        transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                                    }}>
+                                        {/* Glow Background with stronger effect */}
                                         <div 
-                                            className={`absolute inset-0 rounded-xl transition-all duration-500 ${isActive ? 'opacity-100' : 'opacity-0'}`}
+                                            className={`absolute inset-0 rounded-2xl transition-all duration-500`}
                                             style={{ 
                                                 backgroundColor: module.lightColor,
-                                                boxShadow: isActive ? `0 0 40px ${module.shadowColor}` : 'none'
+                                                boxShadow: isActive ? `0 20px 60px ${module.shadowColor}, 0 0 60px ${module.shadowColor}` : `0 10px 30px rgba(0, 0, 0, 0.3)`,
+                                                filter: isActive ? 'blur(8px)' : 'blur(6px)',
+                                                transform: 'translateZ(-10px)'
                                             }}
                                         ></div>
 
-                                        {/* Card */}
+                                        {/* Premium Card with Border */}
                                         <div 
-                                            className="relative backdrop-blur-md bg-white/[0.08] border border-white/20 rounded-xl p-4 md:p-5 flex flex-col items-center justify-center h-full transition-all duration-500 hover:border-white/30"
+                                            className="relative w-full h-full rounded-2xl p-6 flex flex-col items-start justify-start transition-all duration-500 overflow-hidden group cursor-pointer"
                                             style={{
-                                                boxShadow: isActive ? `0 0 30px ${module.shadowColor}, inset 0 0 20px rgba(255, 255, 255, 0.08)` : 'inset 0 0 20px rgba(255, 255, 255, 0.04)'
+                                                background: `linear-gradient(135deg, ${module.color}cc 0%, ${module.color}88 100%)`,
+                                                border: `2px solid ${module.color}44`,
+                                                boxShadow: isActive 
+                                                    ? `0 25px 50px ${module.shadowColor}, inset 0 0 30px rgba(255, 255, 255, 0.15), 0 0 40px ${module.shadowColor}` 
+                                                    : `0 15px 35px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.08)`,
+                                                backdropFilter: 'blur(10px)',
+                                                transform: isActive ? 'scale(1.02) translateZ(20px)' : 'scale(1) translateZ(0)',
+                                                transformStyle: 'preserve-3d'
                                             }}
                                         >
-                                            <Icon 
-                                                className={`w-7 h-7 md:w-8 md:h-8 mb-2 transition-all duration-500 ${isActive ? 'scale-110' : 'scale-100'}`}
-                                                style={{ 
-                                                    color: isActive ? module.color : 'rgba(255, 255, 255, 0.4)',
-                                                    filter: isActive ? `drop-shadow(0 0 12px ${module.shadowColor})` : 'none'
+                                            {/* Subtle shine effect */}
+                                            <div 
+                                                className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500"
+                                                style={{
+                                                    background: 'linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)',
+                                                    pointerEvents: 'none'
                                                 }}
-                                            />
-                                            <p className={`text-[0.6rem] md:text-xs tracking-[0.12em] font-bold transition-all duration-500 ${isActive ? 'text-white' : 'text-white/50'}`}>
+                                            ></div>
+
+                                            {/* Icon */}
+                                            <div className="relative z-10 mb-3">
+                                                <Icon 
+                                                    className="w-10 h-10 transition-all duration-500 drop-shadow-lg"
+                                                    style={{ 
+                                                        color: 'rgba(255, 255, 255, 0.95)',
+                                                        filter: `drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))`,
+                                                        transform: isActive ? 'scale(1.15) rotate(0deg)' : 'scale(1) rotate(-5deg)',
+                                                        transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                                                    }}
+                                                />
+                                            </div>
+
+                                            {/* Text Label */}
+                                            <p className="relative z-10 text-lg md:text-2xl font-black tracking-wider" style={{ 
+                                                color: 'rgba(255, 255, 255, 0.98)',
+                                                textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                                                transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                                                transform: isActive ? 'translateX(0)' : 'translateX(0)'
+                                            }}>
                                                 {module.name}
                                             </p>
+
+                                            {/* Decorative accent line */}
+                                            <div 
+                                                className="absolute top-2 right-3 w-2 h-2 rounded-full opacity-60"
+                                                style={{ 
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                                                    boxShadow: `0 0 8px rgba(255, 255, 255, 0.4)`
+                                                }}
+                                            ></div>
                                         </div>
                                     </div>
                                 </div>

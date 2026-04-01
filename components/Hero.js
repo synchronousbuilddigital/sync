@@ -13,13 +13,13 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
     const isActive = activeIdx === index;
     const isHovered = hoveredIdx === index;
     const cardRef = useRef(null);
-    
+
     // Advanced mouse tracking for parallax
     const mouseX = useMotionValue(0.5);
     const mouseY = useMotionValue(0.5);
     const rotXMouse = useMotionValue(0);
     const rotYMouse = useMotionValue(0);
-    
+
     // Spring animations for smooth follow
     const springRotX = useSpring(rotXMouse, { stiffness: 100, damping: 25 });
     const springRotY = useSpring(rotYMouse, { stiffness: 100, damping: 25 });
@@ -28,15 +28,15 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
 
     const handleMouseMove = (e) => {
         if (!cardRef.current) return;
-        
+
         const { left, top, width, height } = cardRef.current.getBoundingClientRect();
         const x = (e.clientX - left) / width;
         const y = (e.clientY - top) / height;
-        
+
         // Advanced parallax rotation based on mouse position
         const rotX = (y - 0.5) * 15; // Increased rotation range
         const rotY = (x - 0.5) * -15;
-        
+
         mouseX.set(x);
         mouseY.set(y);
         rotXMouse.set(rotX);
@@ -86,7 +86,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 zIndex: isActive ? 500 : (isHovered ? 400 : (10 + index)),
                 height: (isHovered || isActive) ? "152px" : "144px"
             }}
-            style={{ 
+            style={{
                 transformPerspective: 1200,
                 rotateX: isHovered ? springRotX : 0,
                 rotateY: isHovered ? springRotY : 0,
@@ -102,7 +102,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
             <motion.div
                 className="absolute -inset-2 rounded-2xl opacity-0 group-hover/card:opacity-60 transition-opacity duration-500 -z-10 blur-xl"
                 animate={{
-                    background: isHovered 
+                    background: isHovered
                         ? `conic-gradient(from 0deg, rgba(240,94,35,0.8), rgba(99,102,241,0.6), rgba(240,94,35,0.8))`
                         : `conic-gradient(from 0deg, rgba(240,94,35,0), rgba(99,102,241,0), rgba(240,94,35,0))`
                 }}
@@ -151,7 +151,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
             <div className="absolute inset-0 p-5 flex flex-col justify-between z-10 bg-white/[0.02]">
                 <div className="flex justify-between items-start">
                     <motion.div
-                        animate={{ 
+                        animate={{
                             scale: isHovered ? 1.1 : 1,
                             filter: isHovered ? "drop-shadow(0 0 12px rgba(240, 94, 35, 0.6))" : "drop-shadow(none)"
                         }}
@@ -172,7 +172,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                         <div className="w-1.5 h-[1.5px] bg-white/60" />
                     </motion.div>
                 </div>
-                <motion.div 
+                <motion.div
                     animate={{
                         letterSpacing: isHovered ? "0.1em" : "0em",
                     }}
@@ -198,7 +198,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 {/* Animated top border */}
                 <motion.div
                     className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#F05E23] to-transparent rounded-t-2xl"
-                    animate={{ 
+                    animate={{
                         opacity: (isStackHovered || isHovered || isActive) ? 1 : 0,
                         boxShadow: (isStackHovered || isHovered || isActive) ? "0 0 15px rgba(240, 94, 35, 0.6)" : "none"
                     }}
@@ -206,17 +206,17 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 />
 
                 {/* Module header with staggered reveal */}
-                <motion.div 
+                <motion.div
                     className="flex items-center gap-3 mb-6"
                     animate={{ y: (isStackHovered || isHovered || isActive) ? 0 : -5, opacity: (isStackHovered || isHovered || isActive) ? 1 : 0 }}
                     transition={{ duration: 0.4 }}
                 >
-                    <motion.div 
+                    <motion.div
                         className="w-1.5 h-1.5 rounded-full bg-[#F05E23] shadow-[0_0_12px_#F05E23]"
                         animate={{ scale: [1, 1.3, 1] }}
                         transition={{ duration: 2, repeat: Infinity }}
                     />
-                    <motion.span 
+                    <motion.span
                         className="text-[9px] uppercase font-black text-white/40 tracking-[0.3em]"
                         animate={{ opacity: [0.4, 1, 0.4] }}
                         transition={{ duration: 2.5, repeat: Infinity }}
@@ -232,15 +232,15 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                             key={i}
                             initial={{ opacity: 0, x: -15, y: 10 }}
                             animate={{ opacity: (isStackHovered || isHovered || isActive) ? 1 : 0, x: (isStackHovered || isHovered || isActive) ? 0 : -15, y: (isStackHovered || isHovered || isActive) ? 0 : 10 }}
-                            transition={{ 
-                                delay: (isStackHovered || isHovered || isActive) ? (i * 0.08 + 0.15) : 0, 
-                                duration: 0.5, 
+                            transition={{
+                                delay: (isStackHovered || isHovered || isActive) ? (i * 0.08 + 0.15) : 0,
+                                duration: 0.5,
                                 ease: [0.34, 1.56, 0.64, 1] // cubic-bezier for bouncy feel
                             }}
                             whileHover={{ x: 6, color: "rgba(240, 94, 35, 1)" }}
                             className="flex items-center gap-4 group/service cursor-pointer"
                         >
-                            <motion.div 
+                            <motion.div
                                 className="w-1.5 h-1.5 rounded-full bg-[#F05E23]/40 group-hover/service:bg-[#F05E23]"
                                 animate={{ scale: [1, 1.4, 1] }}
                                 transition={{ duration: 2, repeat: Infinity, delay: i * 0.1 }}
@@ -253,7 +253,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 </div>
 
                 {/* Animated progress bar with gradient */}
-                <motion.div 
+                <motion.div
                     className="mt-auto h-[1.5px] w-full bg-gradient-to-r from-transparent via-[#F05E23]/50 to-transparent rounded-full overflow-hidden"
                     animate={{ opacity: (isStackHovered || isHovered || isActive) ? 1 : 0 }}
                     transition={{ duration: 0.4 }}

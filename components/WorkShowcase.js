@@ -1,309 +1,210 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Zap, CheckCircle, Clock, Smile } from "lucide-react";
 import { useTheme } from './ThemeContext';
 
-// Featured Projects Data
+// Featured Projects Data - Simple & Friendly Language
 const projects = [
     {
+        id: "01",
         title: "BOXFOX",
-        summary: "AI-integrated custom packaging platform and 3D design ecosystem.",
-        problem: "Needed modern custom packaging tools and automated ordering workflows.",
-        solution: "Engineered a 3D AI-based design engine with direct-to-order manufacturing integration.",
-        results: ["3D AI Design", "Custom Packaging", "Order Automation"],
-        tags: ["Branding", "AI Tech"],
-        image: "/website ss/boxfox.png"
+        summary: "An easy-to-use custom gift box and 3D design shop.",
+        solution: "We designed a smart 3D tool so customers can make their own boxes and order them instantly.",
+        results: ["Custom 3D Shop", "Easy Ordering"],
+        image: "/website ss/boxfox.png",
+        plan: "Step: Design & Build"
     },
     {
+        id: "02",
         title: "RYM Grenergy",
-        summary: "Clean energy ecosystems driven by smart AI and IoT automation.",
-        problem: "Required intelligent energy auditing and smart grid infrastructure.",
-        solution: "Built smart systems with AI-based inverters and IoT-driven storage automation.",
-        results: ["Smart Inverters", "IoT Automation", "Clean Energy"],
-        tags: ["Clean Energy", "AI IoT"],
-        image: "/website ss/RYM.png"
+        summary: "Smart solar and energy systems for cleaner homes.",
+        solution: "We built a simple system that uses smart tech to manage solar energy and storage automatically.",
+        results: ["Better Solar Energy", "Smarter Saving"],
+        image: "/website ss/RYM.png",
+        plan: "Step: Simple Setup"
     },
     {
+        id: "03",
         title: "Vegavruddhi",
-        summary: "Field-level sales execution and operational growth platform.",
-        problem: "Fragmented field teams and missing digital-to-offline lead fulfillment.",
-        solution: "Managed sales architecture with real-time retail audits and campaign activation.",
-        results: ["Sales Growth", "Field Accuracy", "Retail Audits"],
-        tags: ["Sales Ops", "Market Growth"],
-        image: "/website ss/vega.png"
+        summary: "A helpful app for sales teams to track their work and grow.",
+        solution: "We created a mobile app that helps sales teams see where to go and how to close more deals.",
+        results: ["Fast Sales Growth", "Better Tracking"],
+        image: "/website ss/vega.png",
+        plan: "Step: Team Support"
     },
     {
+        id: "04",
         title: "BWorth",
-        summary: "Sustainable circular fashion marketplace powered by coin rewards.",
-        problem: "Low resale engagement and high textile waste in the fashion sector.",
-        solution: "Circular economy app for apparel resale with integrated BWorth Coin ecosystem.",
-        results: ["Sustainable Tech", "Eco-Rewards", "Circular Fashion"],
-        tags: ["Eco-Tech", "Marketplace"],
-        image: "/website ss/bworth.png"
+        summary: "A friendly online store for buying and selling pre-owned clothes.",
+        solution: "We made a simple app where users can sell clothes and earn rewards for choosing eco-friendly options.",
+        results: ["Better Shopping", "Eco Rewards"],
+        image: "/website ss/bworth.png",
+        plan: "Step: Smart Marketplace"
     },
     {
+        id: "05",
         title: "Fashquick",
-        summary: "Wear it. Flaunt it. Return it. — Affordable fashion rentals starting at ₹50/day.",
-        problem: "Expensive luxury purchases and excessive closet waste.",
-        solution: "Gen-Z focused rental model offering premium outfits at highly affordable daily rates.",
-        results: ["Fashion Rental", "Shared Wardrobe", "₹50/Day Access"],
-        tags: ["Rental Tech", "Gen-Z"],
-        image: "/website ss/fashquick.png"
+        summary: "Premium fashion rentals for any occasion starting today.",
+        solution: "We built an affordable rental shop where anyone can rent high-end outfits for a low daily price.",
+        results: ["Fashion Rental", "Affordable Price"],
+        image: "/website ss/fashquick.png",
+        plan: "Step: Daily Rentals"
     }
 ];
 
-// Double projects for infinite-feeling loop
-const allProjects = [...projects, ...projects, ...projects];
-
 export default function WorkShowcase() {
     const { isDark } = useTheme();
-    const scrollRef = useRef(null);
-    const [isPaused, setIsPaused] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
-    const [scrollLeftState, setScrollLeftState] = useState(0);
-    const resumeTimerRef = useRef(null);
+    const [activeIndex, setActiveIndex] = useState(0);
 
-    // Manual Scroll Logic
-    const scroll = (direction) => {
-        setIsPaused(true);
-        if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
-
-        if (scrollRef.current) {
-            const { scrollLeft, clientWidth } = scrollRef.current;
-            const scrollAmount = clientWidth * 0.8;
-            const target = direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount;
-            scrollRef.current.scrollTo({
-                left: target,
-                behavior: 'smooth'
-            });
-        }
-
-        // Scroll resume timer removed to keep carousel stopped after manual interaction
-    };
-
-    // Initial Position setup (one-time)
+    // Auto-Cycle Engine (Smoothly Switch Projects every 4 seconds for better reading)
     useEffect(() => {
-        const scrollContainer = scrollRef.current;
-        if (!scrollContainer) return;
+        const interval = setInterval(() => {
+            setActiveIndex((prev) => (prev + 1) % projects.length);
+        }, 4000);
 
-        // Ensure we wait for layout
-        const initScroll = () => {
-            const singleSetWidth = scrollContainer.scrollWidth / 3;
-            if (singleSetWidth > 0) {
-                scrollContainer.scrollLeft = singleSetWidth;
-            }
-        };
-
-        // Small timeout to ensure content is measured after layout
-        const timer = setTimeout(initScroll, 100);
-        return () => clearTimeout(timer);
-    }, []);
-
-    // Smooth Infinite Loop Animation Loop
-    useEffect(() => {
-        const scrollContainer = scrollRef.current;
-        if (!scrollContainer) return;
-
-        let animationFrameId;
-        let lastTime = 0;
-
-        const animate = (time) => {
-            if (!isPaused && !isDragging) {
-                const deltaTime = time - lastTime;
-                if (deltaTime > 16) { // ~60fps throttle
-                    const singleSetWidth = scrollContainer.scrollWidth / 3;
-
-                    // Infinite wrap-around logic
-                    if (scrollContainer.scrollLeft <= 0) {
-                        scrollContainer.scrollLeft = singleSetWidth;
-                    } else if (scrollContainer.scrollLeft >= singleSetWidth * 2) {
-                        scrollContainer.scrollLeft = singleSetWidth;
-                    }
-
-                    scrollContainer.scrollLeft -= 1.2; // Precise speed (left-to-right)
-                    lastTime = time;
-                }
-            }
-            animationFrameId = requestAnimationFrame(animate);
-        };
-
-        animationFrameId = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(animationFrameId);
-    }, [isPaused, isDragging]);
-
-    // Horizontal Wheel & Smooth Auto-scroll pausing
-    useEffect(() => {
-        const scrollContainer = scrollRef.current;
-        if (!scrollContainer) return;
-
-        const handleWheel = (e) => {
-            // Only pause if the user is intentionally scrolling horizontally with their wheel
-            if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-                setIsPaused(true);
-                if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
-                // Auto-resume removed to keep carousel stopped after horizontal wheel usage
-            }
-        };
-
-        scrollContainer.addEventListener('wheel', handleWheel, { passive: true });
-        return () => scrollContainer.removeEventListener('wheel', handleWheel);
+        return () => clearInterval(interval);
     }, []);
 
     return (
-        <section className={`w-full pt-16 md:pt-24 pb-12 md:pb-16 relative overflow-hidden transition-colors duration-700 selection:bg-[#F05E23]/20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
-            <div className="max-w-[1440px] mx-auto px-6 w-full mb-8 md:mb-12">
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                    <div className="max-w-3xl">
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className={`inline-flex items-center gap-3 px-4 py-2 border rounded-full mb-6 shadow-sm transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}
-                        >
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#F05E23] animate-pulse"></span>
-                            <span className={`text-[0.65rem] font-black tracking-[0.4em] uppercase transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>Showcase v4.2</span>
-                        </motion.div>
-                        <motion.h2
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className={`text-[3rem] sm:text-[4rem] md:text-[5rem] lg:text-[6rem] font-bold tracking-tighter leading-[0.9] transition-colors duration-700 ${isDark ? 'text-white' : 'text-[#111]'}`}
-                        >
-                            Selected <em className="not-italic text-[#F05E23]">Cases.</em>
-                        </motion.h2>
-                    </div>
-
-                    {/* Navigation Controls */}
-                    <div className="flex gap-4 md:mb-4">
-                        <button
-                            onClick={() => scroll('left')}
-                            className={`w-14 h-14 rounded-full border flex items-center justify-center transition-all duration-500 group shadow-md active:scale-95 ${isDark ? 'bg-white/5 border-white/10 text-white/40 hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]' : 'bg-white border-slate-200 text-slate-400 hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]'}`}
-                        >
-                            <ChevronLeft className="w-6 h-6 transition-transform group-hover:-translate-x-1" />
-                        </button>
-                        <button
-                            onClick={() => scroll('right')}
-                            className={`w-14 h-14 rounded-full border flex items-center justify-center transition-all duration-500 group shadow-md active:scale-95 ${isDark ? 'bg-white/5 border-white/10 text-white/40 hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]' : 'bg-white border-slate-200 text-slate-400 hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]'}`}
-                        >
-                            <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
-                        </button>
-                    </div>
-                </div>
+        <section className={`w-full py-24 lg:py-40 relative overflow-hidden transition-all duration-1000 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FAFAF9]'}`}>
+            
+            {/* Background Aesthetic - Clean & Simple */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.04]">
+                <div className="absolute inset-x-0 h-[1.5px] bg-[#F05E23] w-full top-0"></div>
+                <div className="absolute inset-0" style={{
+                    backgroundImage: `radial-gradient(circle at 1.5px 1.5px, #F05E23 0.8px, transparent 0)`,
+                    backgroundSize: '100px 100px'
+                }}></div>
             </div>
 
-            {/* Scrolling Projects Container */}
-            <div
-                className="relative w-full"
-                onMouseEnter={() => setIsPaused(true)}
-                onMouseLeave={() => setIsPaused(false)}
-            >
-                <div
-                    ref={scrollRef}
-                    className="flex items-stretch overflow-x-hidden scrollbar-hide gap-6 px-6 md:px-12 pb-10 no-scrollbar touch-pan-x pointer-events-auto"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                    {allProjects.map((project, i) => (
-                        <div
-                            key={i}
-                            className={`w-[85vw] sm:w-[450px] md:w-[480px] lg:w-[520px] group relative flex flex-col rounded-[3rem] border overflow-hidden hover:shadow-[0_40px_100px_-30px_rgba(0,0,0,0.1)] transition-all duration-700 shrink-0 select-none ${isDark ? 'bg-[#111] border-white/5 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)]'}`}
-                        >
-                            {/* Card Content Overlay */}
-                            <div className="relative aspect-[16/10] overflow-hidden shrink-0">
-                                <Image
-                                    src={project.image}
-                                    alt={project.title}
-                                    fill
-                                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-[1200ms] group-hover:scale-105"
-                                />
-                                <div className={`absolute inset-0 bg-gradient-to-t from-[#111]/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
+            <div className="max-w-[1700px] mx-auto h-auto lg:h-screen flex flex-col lg:flex-row relative z-10">
+                
+                {/* LEFT SIDE: ALL PROJECTS LIST */}
+                <div className="w-full lg:w-[50%] h-full flex flex-col justify-center px-8 sm:px-12 lg:px-24 py-32 lg:py-0">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        className="mb-14 flex items-center gap-4"
+                    >
+                        <div className="w-1.5 h-12 bg-[#F05E23]"></div>
+                        <div className="flex flex-col">
+                            <span className={`text-[0.75rem] font-bold tracking-[0.2em] uppercase ${isDark ? 'text-white/40' : 'text-black/40'}`}>Our Best Work</span>
+                            <span className={`text-[0.6rem] ${isDark ? 'text-white/20' : 'text-black/20'}`}>Real results, every time.</span>
+                        </div>
+                    </motion.div>
 
-                                <div className="absolute top-8 right-8 z-20">
-                                    <div className={`w-12 h-12 md:w-16 md:h-16 rounded-[1.5rem] bg-white/40 backdrop-blur-md border border-white/20 flex items-center justify-center text-white group-hover:bg-[#F05E23] group-hover:border-[#F05E23] transition-all duration-700 group-hover:rotate-45 shadow-2xl`}>
-                                        <ArrowUpRight className="w-6 h-6 md:w-8 md:h-8" strokeWidth={2} />
+                    <div className="space-y-6">
+                        {projects.map((project, i) => (
+                            <motion.div
+                                key={i}
+                                onMouseEnter={() => setActiveIndex(i)}
+                                className={`group relative py-2 block cursor-pointer transition-all duration-500 h-20 lg:h-28 flex items-center`}
+                            >
+                                <span className={`absolute -left-12 text-[0.8rem] font-bold text-[#F05E23] transition-opacity duration-500 ${activeIndex === i ? 'opacity-100' : 'opacity-0'}`}>
+                                    {i + 1}
+                                </span>
+                                
+                                <h3 className={`text-4xl sm:text-6xl lg:text-[6.5rem] font-black tracking-tight leading-none transition-all duration-700 ${activeIndex === i ? (isDark ? 'text-white' : 'text-black') : (isDark ? 'text-white/5' : 'text-black/5')} group-hover:pl-4`}>
+                                    {project.title}
+                                </h3>
+
+                                <motion.div 
+                                    animate={{ height: activeIndex === i ? '100%' : '0px' }}
+                                    className="absolute left-0 w-1 bg-[#F05E23]"
+                                />
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* RIGHT SIDE: SELECTED PROJECT DETAILS (Friendly Layout) */}
+                <div className={`w-full lg:w-[50%] h-full relative transition-all duration-1000 border-l ${isDark ? 'bg-[#0D0D14] border-white/5' : 'bg-white border-black/5'}`}>
+                    
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeIndex}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                            className="w-full h-full flex flex-col p-8 sm:p-12 lg:p-20"
+                        >
+                            {/* TOP IMAGE */}
+                            <div className="w-full aspect-video rounded-[1.5rem] overflow-hidden relative shadow-2xl mb-12 shrink-0 border border-white/5">
+                                <Image
+                                    src={projects[activeIndex].image}
+                                    alt={projects[activeIndex].title}
+                                    fill
+                                    className="object-cover transition-all duration-[2s]"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                                
+                                <div className="absolute bottom-10 left-10">
+                                    <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight mb-2">
+                                        {projects[activeIndex].title}
+                                    </h2>
+                                    <div className="flex items-center gap-4">
+                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                        <span className="text-[0.65rem] font-bold tracking-widest text-white uppercase">Project Complete</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Details Section */}
-                            <div className={`p-6 lg:p-8 relative flex-grow flex flex-col transition-colors duration-500 ${isDark ? 'bg-[#111]' : 'bg-white'}`}>
-                                <div className="mb-6">
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        {project.tags.map((tag, idx) => (
-                                            <span key={idx} className={`text-[0.55rem] font-bold tracking-[0.2em] uppercase px-3 py-1 border rounded-lg transition-all duration-500 ${isDark ? 'bg-white/5 border-white/10 text-white/40 group-hover:text-[#F05E23] group-hover:border-[#F05E23]/30 group-hover:bg-[#F05E23]/5' : 'bg-slate-50 border-slate-100 text-slate-400 group-hover:text-[#F05E23] group-hover:border-[#F05E23]/30 group-hover:bg-[#F05E23]/5'}`}>
-                                                {tag}
-                                            </span>
+                            {/* BELOW: SIMPLE DETAILS */}
+                            <div className="flex-1 flex flex-col justify-between">
+                                <div className="space-y-10">
+                                    {/* Project Goal */}
+                                    <div className="space-y-2">
+                                        <span className="text-[0.7rem] font-bold text-[#F05E23] uppercase block mb-2">The Goal</span>
+                                        <p className={`text-[1rem] lg:text-[1.1rem] font-semibold leading-relaxed ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
+                                            {projects[activeIndex].summary}
+                                        </p>
+                                    </div>
+
+                                    {/* Results Highlights */}
+                                    <div className="grid grid-cols-2 gap-8 pt-10 border-t border-white/5">
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <Clock className="w-5 h-5 text-[#F05E23]" />
+                                                <span className="text-[0.7rem] font-bold text-neutral-400 uppercase">Process</span>
+                                            </div>
+                                            <span className={`text-[0.9rem] font-bold ${isDark ? 'text-white' : 'text-black'}`}>{projects[activeIndex].plan}</span>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <Smile className="w-5 h-5 text-[#F05E23]" />
+                                                <span className="text-[0.7rem] font-bold text-neutral-400 uppercase">Happiness</span>
+                                            </div>
+                                            <span className={`text-[0.9rem] font-bold ${isDark ? 'text-white' : 'text-black'}`}>Client Loved The Result</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Call to action */}
+                                <div className="mt-auto flex items-end justify-between pt-12 border-t border-white/5">
+                                    <div className="flex flex-wrap gap-4">
+                                        {projects[activeIndex].results.map((res, idx) => (
+                                            <div key={idx} className="px-4 py-1.5 rounded-full border border-[#F05E23]/20 bg-[#F05E23]/5">
+                                                <span className={`text-[0.65rem] font-bold ${isDark ? 'text-orange-200' : 'text-orange-700'}`}>{res}</span>
+                                            </div>
                                         ))}
                                     </div>
-                                    <h3 className={`text-2xl md:text-3xl font-black tracking-tighter leading-tight mb-2 group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
-                                        {project.title}
-                                    </h3>
-                                    <p className={`text-[0.7rem] md:text-[0.75rem] font-bold leading-relaxed max-w-sm uppercase tracking-[0.1em] transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
-                                        {project.summary}
-                                    </p>
-                                </div>
-
-                                <div className={`mt-auto pt-6 border-t transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-50'}`}>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#F05E23] animate-pulse"></div>
-                                                <h4 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-[#F05E23]">Solution</h4>
-                                            </div>
-                                            <p className={`text-[0.8rem] font-medium leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/60' : 'text-slate-500'}`}>{project.solution}</p>
+                                    <button className="flex items-center gap-4 group">
+                                        <span className={`text-[0.7rem] font-bold uppercase tracking-widest ${isDark ? 'text-white' : 'text-black'}`}>Learn More</span>
+                                        <div className="w-14 h-14 rounded-full bg-[#F05E23] flex items-center justify-center text-white shadow-xl shadow-[#F05E23]/20 group-hover:scale-110 transition-transform">
+                                            <ArrowUpRight strokeWidth={4} className="w-8 h-8" />
                                         </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${isDark ? 'bg-white/20 group-hover:bg-[#F05E23]' : 'bg-slate-200 group-hover:bg-[#F05E23]'}`}></div>
-                                                <h4 className={`text-[0.6rem] font-black uppercase tracking-[0.4em] transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>Yield</h4>
-                                            </div>
-                                            <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                                {project.results.map((res, idx) => (
-                                                    <span key={idx} className={`text-[0.7rem] font-bold tracking-tight transition-colors duration-500 ${isDark ? 'text-white/80' : 'text-slate-800'}`}>{res}</span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                    {/* Final spacer */}
-                    <div className="shrink-0 w-12 md:w-24 h-full"></div>
-                </div>
 
-                {/* Floating Navigation Arrows (Side Overlay) */}
-                <div className="hidden xl:flex absolute inset-y-0 left-0 items-center pl-8 pointer-events-none group/left">
-                    <button
-                        onClick={() => scroll('left')}
-                        className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl pointer-events-auto opacity-0 group-hover/left:opacity-100 -translate-x-10 group-hover/left:translate-x-0 ${isDark ? 'bg-[#111]/80 backdrop-blur-xl border-white/5 text-white/40 hover:text-white hover:bg-[#F05E23] hover:border-[#F05E23]' : 'bg-white/80 backdrop-blur-xl border border-slate-100 text-slate-400 hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]'}`}
-                    >
-                        <ChevronLeft className="w-8 h-8" />
-                    </button>
-                </div>
-                <div className="hidden xl:flex absolute inset-y-0 right-0 items-center pr-8 pointer-events-none group/right">
-                    <button
-                        onClick={() => scroll('right')}
-                        className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl pointer-events-auto opacity-0 group-hover/right:opacity-100 translate-x-10 group-hover/right:translate-x-0 ${isDark ? 'bg-[#111]/80 backdrop-blur-xl border-white/5 text-white/40 hover:text-white hover:bg-[#F05E23] hover:border-[#F05E23]' : 'bg-white/80 backdrop-blur-xl border border-slate-100 text-slate-400 hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]'}`}
-                    >
-                        <ChevronRight className="w-8 h-8" />
-                    </button>
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </div>
-
-            <style jsx global>{`
-                .no-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .no-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-            `}</style>
 
         </section>
     );
