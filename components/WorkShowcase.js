@@ -62,7 +62,7 @@ export default function WorkShowcase() {
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveIndex((prev) => (prev + 1) % projects.length);
-        }, 5000);
+        }, 8000); // Increased from 5s to 8s
         return () => clearInterval(interval);
     }, []);
 
@@ -104,11 +104,34 @@ export default function WorkShowcase() {
                 </motion.div>
             </div>
 
+            {/* Project Navigation - All Company Names */}
+            <div className="flex flex-wrap justify-center gap-6 sm:gap-12 mb-16 relative z-20 px-6">
+                {projects.map((project, i) => (
+                    <motion.button
+                        key={project.id}
+                        onClick={() => setActiveIndex(i)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={`relative group px-2 py-1 flex flex-col items-center gap-2`}
+                    >
+                        <span className={`text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] transition-all duration-500 ${activeIndex === i ? 'text-[#F05E23]' : (isDark ? 'text-white/20 group-hover:text-white/50' : 'text-black/20 group-hover:text-black/50')}`}>
+                            {project.title}
+                        </span>
+                        {activeIndex === i && (
+                            <motion.div 
+                                layoutId="activeUnderline"
+                                className="w-full h-[2px] bg-[#F05E23] rounded-full shadow-[0_0_10px_#F05E23]" 
+                            />
+                        )}
+                    </motion.button>
+                ))}
+            </div>
+
             {/* Horizontal Filmstrip Wrapper - "At a time card, no gap" */}
-            <div className="relative w-full max-w-7xl h-[650px] sm:h-[800px] z-10">
+            <div className="relative w-full max-w-6xl h-[550px] sm:h-[700px] z-10">
                 <motion.div 
                     animate={{ x: `-${activeIndex * 100}%` }}
-                    transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
+                    transition={{ duration: 1.8, ease: [0.32, 0.72, 0, 1] }}
                     className="flex w-full h-full"
                 >
                     {projects.map((project, index) => (
@@ -120,74 +143,69 @@ export default function WorkShowcase() {
                                     filter: activeIndex === index ? "blur(0px)" : "blur(4px)"
                                 }}
                                 transition={{ duration: 1 }}
-                                className={`w-full max-w-6xl h-full rounded-[3.5rem] overflow-hidden border relative flex flex-col lg:flex-row ${isDark ? 'bg-[#0D0D14]/80 backdrop-blur-3xl border-white/5' : 'bg-white border-black/5 shadow-2xl shadow-black/5'}`}
+                                className={`w-full max-w-5xl h-full rounded-[2.5rem] overflow-hidden border relative flex flex-col ${isDark ? 'bg-[#0D0D14]/80 backdrop-blur-3xl border-white/5' : 'bg-white border-black/5 shadow-2xl shadow-black/5'}`}
                             >
-                                {/* Card Image */}
-                                <div className="w-full lg:w-[55%] h-[40%] lg:h-full relative overflow-hidden">
+                                {/* Card Image - Now on Top */}
+                                <div className="w-full h-[65%] relative overflow-hidden border-b border-white/5">
                                     <Image
                                         src={project.image}
                                         alt={project.title}
                                         fill
-                                        className="object-cover transition-transform duration-[3s]"
-                                        style={{ transform: activeIndex === index ? 'scale(1.1)' : 'scale(1)' }}
+                                        className="object-cover object-top transition-transform duration-[3s]"
+                                        style={{ transform: activeIndex === index ? 'scale(1.05)' : 'scale(1)' }}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/90 via-black/20 to-transparent" />
-                                    <div className="absolute bottom-10 left-10 lg:bottom-16 lg:left-16">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <span className="text-[14px] font-black text-[#F05E23] uppercase tracking-[0.3em]">{project.id}</span>
-                                            <div className="w-16 h-[2px] bg-[#F05E23]" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                                    <div className="absolute bottom-8 left-8 sm:bottom-12 sm:left-12">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="text-[12px] font-black text-[#F05E23] uppercase tracking-[0.3em]">{project.id}</span>
+                                            <div className="w-12 h-[1px] bg-[#F05E23]" />
                                         </div>
-                                        <h3 className="text-4xl lg:text-7xl font-black text-white uppercase tracking-tighter leading-none">{project.title}</h3>
+                                        <h3 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">{project.title}</h3>
                                     </div>
                                 </div>
-
-                                {/* Card Content */}
-                                <div className="w-full lg:w-[45%] h-[60%] lg:h-full p-8 lg:p-16 flex flex-col justify-between">
-                                    <div className="space-y-12">
-                                        <div className="flex items-center gap-4">
-                                            <div className="relative">
-                                                <div className="w-3.5 h-3.5 rounded-full bg-green-500 shadow-[0_0_15px_#22c55e]" />
-                                                <div className="absolute inset-0 w-3.5 h-3.5 rounded-full bg-green-500 animate-ping opacity-75" />
+                                
+                                {/* Card Content - Now on Bottom */}
+                                <div className="w-full h-[35%] p-6 sm:p-10 flex flex-col justify-between">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                                        <div className="space-y-2 max-w-2xl">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="relative">
+                                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
+                                                    <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-green-500 animate-ping opacity-75" />
+                                                </div>
+                                                <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/30' : 'text-black/30'}`}>Verified Partner</span>
                                             </div>
-                                            <span className={`text-[12px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/40' : 'text-black/40'}`}>Project Verified</span>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <span className="text-[11px] font-black text-[#F05E23] uppercase tracking-[0.5em] block">The Goal</span>
-                                            <p className={`text-2xl lg:text-4xl font-black tracking-tighter leading-[1.05] ${isDark ? 'text-white' : 'text-black'}`}>
+                                            <p className={`text-xl sm:text-2xl font-black tracking-tight leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
                                                 {project.summary}
                                             </p>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-10 pt-12 border-t border-white/5">
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-3">
-                                                    <Clock className="w-5 h-5 text-[#F05E23]" />
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/30' : 'text-black/30'}`}>Strategy</span>
-                                                </div>
-                                                <p className={`text-sm font-black uppercase leading-snug ${isDark ? 'text-white/90' : 'text-black/90'}`}>{project.plan}</p>
+                                        <div className="flex gap-8 border-l border-white/10 pl-8">
+                                            <div className="space-y-1">
+                                                <span className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/20' : 'text-black/20'}`}>Strategy</span>
+                                                <p className={`text-[11px] font-black uppercase ${isDark ? 'text-white/80' : 'text-black/80'}`}>{project.plan}</p>
                                             </div>
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-3">
-                                                    <Smile className="w-5 h-5 text-[#F05E23]" />
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/30' : 'text-black/30'}`}>Happiness</span>
-                                                </div>
-                                                <p className={`text-sm font-black uppercase leading-snug ${isDark ? 'text-white/90' : 'text-black/90'}`}>Client Loved Result</p>
+                                            <div className="space-y-1">
+                                                <span className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/20' : 'text-black/20'}`}>Happiness</span>
+                                                <p className={`text-[11px] font-black uppercase ${isDark ? 'text-white/80' : 'text-black/80'}`}>100% Success</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-12 border-t border-white/5 flex items-center justify-between">
-                                        <div className="flex flex-wrap gap-2.5">
+                                    <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                                        <div className="flex flex-wrap gap-2">
                                             {project.results.map((tag, i) => (
-                                                <span key={i} className={`text-[9px] font-black uppercase py-2 px-4 rounded-lg border ${isDark ? 'border-white/10 text-white/50 bg-white/5' : 'border-[#F05E23]/20 text-[#F05E23] bg-[#F05E23]/5'}`}>
+                                                <span key={i} className={`text-[8px] font-black uppercase py-1.5 px-3 rounded-md border ${isDark ? 'border-white/10 text-white/40 bg-white/5' : 'border-[#F05E23]/20 text-[#F05E23] bg-[#F05E23]/5'}`}>
                                                     {tag}
                                                 </span>
                                             ))}
                                         </div>
-                                        <div className="w-16 h-16 rounded-[2rem] bg-[#F05E23] flex items-center justify-center text-white shadow-2xl shadow-[#F05E23]/30">
-                                            <ArrowUpRight strokeWidth={4} className="w-8 h-8" />
-                                        </div>
+                                        <motion.div 
+                                            whileHover={{ scale: 1.1, rotate: 45 }}
+                                            className="w-12 h-12 rounded-2xl bg-[#F05E23] flex items-center justify-center text-white shadow-xl shadow-[#F05E23]/20 transition-transform"
+                                        >
+                                            <ArrowUpRight strokeWidth={4} className="w-6 h-6" />
+                                        </motion.div>
                                     </div>
                                 </div>
                             </motion.div>

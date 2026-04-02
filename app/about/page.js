@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Target, Zap, Shield, Rocket, Users2, Sparkles, Network, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const highlights = [
     {
@@ -214,15 +215,16 @@ export default function AboutPage() {
                     >
                         <div className="absolute inset-0 bg-[#F05E23] rounded-[3rem] rotate-3 group-hover:rotate-0 transition-transform duration-700 -z-10 opacity-10"></div>
                         <div className="relative aspect-[4/5] rounded-[3rem] bg-slate-200 overflow-hidden shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]">
-                            {/* Fallback pattern if no image */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-20">
-                                <div className="text-[200px] font-black text-[#F05E23]/10 select-none">D</div>
-                                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-white/40 to-transparent"></div>
-                            </div>
+                            <Image 
+                                src="/WhatsApp Image 2026-04-02 at 2.15.21 PM.jpeg"
+                                alt="Devam Srivastava - Founder & CEO"
+                                fill
+                                className="object-cover"
+                            />
                         </div>
                         <div className="absolute -bottom-8 -right-8 bg-white p-10 rounded-3xl shadow-xl border border-[rgba(0,0,0,0.04)] z-20">
                             <div className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.4em] mb-2">FOUNDER & CEO</div>
-                            <div className="text-2xl font-bold text-[#111] tracking-tight">Devam.</div>
+                            <div className="text-2xl font-bold text-[#111] tracking-tight">Devam Srivastava</div>
                         </div>
                     </motion.div>
 

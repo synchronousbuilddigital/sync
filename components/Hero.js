@@ -79,7 +79,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 opacity: 1,
                 scale: isActive ? 1.15 : (isHovered ? 1.08 : 1),
                 y: isStackHovered ? (index * 50) : (index * 2),
-                x: isStackHovered ? (index * -60 - 60) : (index * 9),
+                x: isStackHovered ? (index * -60 - 60) : (index * 14),
                 rotateZ: isStackHovered
                     ? (index * 12 - 12)
                     : (index !== undefined ? [0, -12, -6, 3][index + 1] : 0),
@@ -205,27 +205,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                     transition={{ duration: 0.4 }}
                 />
 
-                {/* Module header with staggered reveal */}
-                <motion.div
-                    className="flex items-center gap-3 mb-6"
-                    animate={{ y: (isStackHovered || isHovered || isActive) ? 0 : -5, opacity: (isStackHovered || isHovered || isActive) ? 1 : 0 }}
-                    transition={{ duration: 0.4 }}
-                >
-                    <motion.div
-                        className="w-1.5 h-1.5 rounded-full bg-[#F05E23] shadow-[0_0_12px_#F05E23]"
-                        animate={{ scale: [1, 1.3, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                    />
-                    <motion.span
-                        className="text-[9px] uppercase font-black text-white/40 tracking-[0.3em]"
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 2.5, repeat: Infinity }}
-                    >
-                        Module_Node_{index + 1}
-                    </motion.span>
-                </motion.div>
 
-                {/* Services list with advanced stagger */}
                 <div className="space-y-3 flex-1">
                     {card.services.map((service, i) => (
                         <motion.div
@@ -365,7 +345,7 @@ export default function Hero() {
                 <div className="relative w-full flex flex-col items-center">
 
                     <div
-                        className="absolute -top-32 sm:-top-24 -left-16 lg:-left-24 xl:-left-32 z-20 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
+                        className="absolute -top-32 sm:-top-24 left-0 lg:left-6 xl:left-12 z-20 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
                         onMouseEnter={() => setStackHovered(true)}
                         onMouseLeave={() => setStackHovered(false)}
                     >
