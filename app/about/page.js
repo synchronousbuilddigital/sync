@@ -205,7 +205,7 @@ export default function AboutPage() {
             {/* Founder Section */}
             <section className="w-full max-w-[1400px] mx-auto px-6 py-32 relative z-10 border-t border-[rgba(0,0,0,0.04)]">
                 <div className="flex flex-col lg:flex-row items-center gap-20">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, x: -50 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
@@ -235,8 +235,8 @@ export default function AboutPage() {
                         >
                             <span className="text-[0.65rem] font-bold text-[#F05E23] tracking-[0.3em] uppercase">The Visionary Force</span>
                         </motion.div>
-                        
-                        <motion.h3 
+
+                        <motion.h3
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
@@ -246,7 +246,7 @@ export default function AboutPage() {
                             Defining the <br /> <span className="italic font-light text-[#F05E23]">Next Era</span> of Digital.
                         </motion.h3>
 
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
@@ -274,7 +274,7 @@ export default function AboutPage() {
                         <span className="not-italic text-[#F05E23] block mt-6">Aesthetic & Performance.</span>
                     </h2>
                     <Link href="/process">
-                        <motion.div 
+                        <motion.div
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.98 }}
                             className="inline-flex items-center gap-4 px-10 py-5 bg-[#111] text-white rounded-full text-[0.8rem] font-black uppercase tracking-[0.3em] shadow-2xl shadow-orange-500/20 cursor-pointer group"

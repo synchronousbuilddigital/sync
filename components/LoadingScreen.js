@@ -194,17 +194,17 @@ export default function LoadingScreen() {
                         </p>
                     </div>
 
-                    {/* Service Modules - Advanced 3D Staggered Layout */}
-                    <div className="relative mb-8 w-full max-w-2xl h-96 perspective" style={{ perspective: '1200px' }}>
+                    {/* Service Modules - Advanced Row Layout */}
+                    <div className="relative mb-12 w-full max-w-6xl flex flex-nowrap justify-center items-center gap-3 md:gap-10 perspective overflow-visible px-4" style={{ perspective: '1200px' }}>
                         {modules.map((module, index) => {
                             const Icon = module.icon;
                             const isActive = activeModule === index;
                             
-                            // Staggered positioning and rotation
+                            // Staggered rotation for the row
                             const positionData = [
-                                { top: '0%', left: '10%', rotate: '-8deg', skewY: '2deg' },
-                                { top: '35%', left: '30%', rotate: '0deg', skewY: '0deg' },
-                                { top: '55%', left: '15%', rotate: '6deg', skewY: '-2deg' }
+                                { rotate: '-4deg', skewY: '1deg' },
+                                { rotate: '0deg', skewY: '0deg' },
+                                { rotate: '4deg', skewY: '-1deg' }
                             ];
                             
                             const position = positionData[index];
@@ -212,13 +212,11 @@ export default function LoadingScreen() {
                             return (
                                 <div
                                     key={module.name}
-                                    className="module-slide absolute"
+                                    className="module-slide relative shrink-0 sm:shrink"
                                     style={{
-                                        top: position.top,
-                                        left: position.left,
                                         animationDelay: `${0.2 + index * 0.1}s`,
-                                        width: '280px',
-                                        height: '160px'
+                                        width: 'clamp(95px, 30vw, 300px)',
+                                        height: 'clamp(100px, 20vh, 170px)'
                                     }}
                                 >
                                     <div className="relative group w-full h-full" style={{ 

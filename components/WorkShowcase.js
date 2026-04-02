@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { ArrowUpRight, Zap, CheckCircle, Clock, Smile } from "lucide-react";
+import { ArrowUpRight, CheckCircle, Clock, Smile } from "lucide-react";
 import { useTheme } from './ThemeContext';
 
-// Featured Projects Data - Simple & Friendly Language
 const projects = [
     {
         id: "01",
@@ -59,153 +58,159 @@ export default function WorkShowcase() {
     const { isDark } = useTheme();
     const [activeIndex, setActiveIndex] = useState(0);
 
-    // Auto-Cycle Engine (Smoothly Switch Projects every 4 seconds for better reading)
+    // Auto-scroll logic (continuous felt sliding)
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveIndex((prev) => (prev + 1) % projects.length);
-        }, 4000);
-
+        }, 5000);
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <section className={`w-full py-24 lg:py-40 relative overflow-hidden transition-all duration-1000 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FAFAF9]'}`}>
-            
-            {/* Background Aesthetic - Clean & Simple */}
-            <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.04]">
-                <div className="absolute inset-x-0 h-[1.5px] bg-[#F05E23] w-full top-0"></div>
-                <div className="absolute inset-0" style={{
-                    backgroundImage: `radial-gradient(circle at 1.5px 1.5px, #F05E23 0.8px, transparent 0)`,
-                    backgroundSize: '100px 100px'
-                }}></div>
+        <section 
+            className={`relative w-full min-h-screen py-24 sm:py-32 flex flex-col items-center justify-center overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FFF9F5]'}`}
+        >
+            {/* Soft Light Orange Background Flair */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className={`absolute inset-0 opacity-[0.05] ${isDark ? 'mix-blend-overlay' : ''}`} 
+                    style={{ backgroundImage: 'radial-gradient(#F05E23 1px, transparent 0)', backgroundSize: '50px 50px' }} 
+                />
+                <motion.div 
+                    animate={{ 
+                        scale: [1, 1.2, 1],
+                        opacity: [0.1, 0.2, 0.1]
+                    }}
+                    transition={{ duration: 12, repeat: Infinity }}
+                    className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full blur-[150px] bg-[#F05E23]/10" 
+                />
             </div>
 
-            <div className="max-w-[1700px] mx-auto h-auto lg:h-screen flex flex-col lg:flex-row relative z-10">
-                
-                {/* LEFT SIDE: ALL PROJECTS LIST */}
-                <div className="w-full lg:w-[50%] h-full flex flex-col justify-center px-8 sm:px-12 lg:px-24 py-32 lg:py-0">
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        className="mb-14 flex items-center gap-4"
-                    >
-                        <div className="w-1.5 h-12 bg-[#F05E23]"></div>
-                        <div className="flex flex-col">
-                            <span className={`text-[0.75rem] font-bold tracking-[0.2em] uppercase ${isDark ? 'text-white/40' : 'text-black/40'}`}>Our Best Work</span>
-                            <span className={`text-[0.6rem] ${isDark ? 'text-white/20' : 'text-black/20'}`}>Real results, every time.</span>
-                        </div>
-                    </motion.div>
-
-                    <div className="space-y-6">
-                        {projects.map((project, i) => (
-                            <motion.div
-                                key={i}
-                                onMouseEnter={() => setActiveIndex(i)}
-                                className={`group relative py-2 block cursor-pointer transition-all duration-500 h-20 lg:h-28 flex items-center`}
-                            >
-                                <span className={`absolute -left-12 text-[0.8rem] font-bold text-[#F05E23] transition-opacity duration-500 ${activeIndex === i ? 'opacity-100' : 'opacity-0'}`}>
-                                    {i + 1}
-                                </span>
-                                
-                                <h3 className={`text-4xl sm:text-6xl lg:text-[6.5rem] font-black tracking-tight leading-none transition-all duration-700 ${activeIndex === i ? (isDark ? 'text-white' : 'text-black') : (isDark ? 'text-white/5' : 'text-black/5')} group-hover:pl-4`}>
-                                    {project.title}
-                                </h3>
-
-                                <motion.div 
-                                    animate={{ height: activeIndex === i ? '100%' : '0px' }}
-                                    className="absolute left-0 w-1 bg-[#F05E23]"
-                                />
-                            </motion.div>
-                        ))}
+            {/* Title */}
+            <div className="max-w-7xl mx-auto px-6 w-full mb-16 relative z-20 text-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="space-y-4"
+                >
+                    <div className="flex items-center justify-center gap-4">
+                        <div className="w-12 h-[2px] bg-[#F05E23]" />
+                        <span className={`text-[12px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/30' : 'text-black/30'}`}>Work Spotlight</span>
+                        <div className="w-12 h-[2px] bg-[#F05E23]" />
                     </div>
-                </div>
+                    <h2 className={`text-5xl sm:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-none ${isDark ? 'text-white' : 'text-black'}`}>
+                        Our best <span className="text-[#F05E23]">Work.</span>
+                    </h2>
+                </motion.div>
+            </div>
 
-                {/* RIGHT SIDE: SELECTED PROJECT DETAILS (Friendly Layout) */}
-                <div className={`w-full lg:w-[50%] h-full relative transition-all duration-1000 border-l ${isDark ? 'bg-[#0D0D14] border-white/5' : 'bg-white border-black/5'}`}>
-                    
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeIndex}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                            className="w-full h-full flex flex-col p-8 sm:p-12 lg:p-20"
-                        >
-                            {/* TOP IMAGE */}
-                            <div className="w-full aspect-video rounded-[1.5rem] overflow-hidden relative shadow-2xl mb-12 shrink-0 border border-white/5">
-                                <Image
-                                    src={projects[activeIndex].image}
-                                    alt={projects[activeIndex].title}
-                                    fill
-                                    className="object-cover transition-all duration-[2s]"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                                
-                                <div className="absolute bottom-10 left-10">
-                                    <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight mb-2">
-                                        {projects[activeIndex].title}
-                                    </h2>
-                                    <div className="flex items-center gap-4">
-                                        <CheckCircle className="w-5 h-5 text-green-500" />
-                                        <span className="text-[0.65rem] font-bold tracking-widest text-white uppercase">Project Complete</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* BELOW: SIMPLE DETAILS */}
-                            <div className="flex-1 flex flex-col justify-between">
-                                <div className="space-y-10">
-                                    {/* Project Goal */}
-                                    <div className="space-y-2">
-                                        <span className="text-[0.7rem] font-bold text-[#F05E23] uppercase block mb-2">The Goal</span>
-                                        <p className={`text-[1rem] lg:text-[1.1rem] font-semibold leading-relaxed ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`}>
-                                            {projects[activeIndex].summary}
-                                        </p>
-                                    </div>
-
-                                    {/* Results Highlights */}
-                                    <div className="grid grid-cols-2 gap-8 pt-10 border-t border-white/5">
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-3">
-                                                <Clock className="w-5 h-5 text-[#F05E23]" />
-                                                <span className="text-[0.7rem] font-bold text-neutral-400 uppercase">Process</span>
-                                            </div>
-                                            <span className={`text-[0.9rem] font-bold ${isDark ? 'text-white' : 'text-black'}`}>{projects[activeIndex].plan}</span>
+            {/* Horizontal Filmstrip Wrapper - "At a time card, no gap" */}
+            <div className="relative w-full max-w-7xl h-[650px] sm:h-[800px] z-10">
+                <motion.div 
+                    animate={{ x: `-${activeIndex * 100}%` }}
+                    transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
+                    className="flex w-full h-full"
+                >
+                    {projects.map((project, index) => (
+                        <div key={project.id} className="w-full flex-shrink-0 px-4 sm:px-10 h-full flex items-center justify-center">
+                            <motion.div 
+                                animate={{ 
+                                    scale: activeIndex === index ? 1 : 0.85,
+                                    opacity: activeIndex === index ? 1 : 0.4,
+                                    filter: activeIndex === index ? "blur(0px)" : "blur(4px)"
+                                }}
+                                transition={{ duration: 1 }}
+                                className={`w-full max-w-6xl h-full rounded-[3.5rem] overflow-hidden border relative flex flex-col lg:flex-row ${isDark ? 'bg-[#0D0D14]/80 backdrop-blur-3xl border-white/5' : 'bg-white border-black/5 shadow-2xl shadow-black/5'}`}
+                            >
+                                {/* Card Image */}
+                                <div className="w-full lg:w-[55%] h-[40%] lg:h-full relative overflow-hidden">
+                                    <Image
+                                        src={project.image}
+                                        alt={project.title}
+                                        fill
+                                        className="object-cover transition-transform duration-[3s]"
+                                        style={{ transform: activeIndex === index ? 'scale(1.1)' : 'scale(1)' }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/90 via-black/20 to-transparent" />
+                                    <div className="absolute bottom-10 left-10 lg:bottom-16 lg:left-16">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <span className="text-[14px] font-black text-[#F05E23] uppercase tracking-[0.3em]">{project.id}</span>
+                                            <div className="w-16 h-[2px] bg-[#F05E23]" />
                                         </div>
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-3">
-                                                <Smile className="w-5 h-5 text-[#F05E23]" />
-                                                <span className="text-[0.7rem] font-bold text-neutral-400 uppercase">Happiness</span>
-                                            </div>
-                                            <span className={`text-[0.9rem] font-bold ${isDark ? 'text-white' : 'text-black'}`}>Client Loved The Result</span>
-                                        </div>
+                                        <h3 className="text-4xl lg:text-7xl font-black text-white uppercase tracking-tighter leading-none">{project.title}</h3>
                                     </div>
                                 </div>
 
-                                {/* Call to action */}
-                                <div className="mt-auto flex items-end justify-between pt-12 border-t border-white/5">
-                                    <div className="flex flex-wrap gap-4">
-                                        {projects[activeIndex].results.map((res, idx) => (
-                                            <div key={idx} className="px-4 py-1.5 rounded-full border border-[#F05E23]/20 bg-[#F05E23]/5">
-                                                <span className={`text-[0.65rem] font-bold ${isDark ? 'text-orange-200' : 'text-orange-700'}`}>{res}</span>
+                                {/* Card Content */}
+                                <div className="w-full lg:w-[45%] h-[60%] lg:h-full p-8 lg:p-16 flex flex-col justify-between">
+                                    <div className="space-y-12">
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative">
+                                                <div className="w-3.5 h-3.5 rounded-full bg-green-500 shadow-[0_0_15px_#22c55e]" />
+                                                <div className="absolute inset-0 w-3.5 h-3.5 rounded-full bg-green-500 animate-ping opacity-75" />
                                             </div>
-                                        ))}
+                                            <span className={`text-[12px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/40' : 'text-black/40'}`}>Project Verified</span>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <span className="text-[11px] font-black text-[#F05E23] uppercase tracking-[0.5em] block">The Goal</span>
+                                            <p className={`text-2xl lg:text-4xl font-black tracking-tighter leading-[1.05] ${isDark ? 'text-white' : 'text-black'}`}>
+                                                {project.summary}
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-10 pt-12 border-t border-white/5">
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Clock className="w-5 h-5 text-[#F05E23]" />
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/30' : 'text-black/30'}`}>Strategy</span>
+                                                </div>
+                                                <p className={`text-sm font-black uppercase leading-snug ${isDark ? 'text-white/90' : 'text-black/90'}`}>{project.plan}</p>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Smile className="w-5 h-5 text-[#F05E23]" />
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/30' : 'text-black/30'}`}>Happiness</span>
+                                                </div>
+                                                <p className={`text-sm font-black uppercase leading-snug ${isDark ? 'text-white/90' : 'text-black/90'}`}>Client Loved Result</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button className="flex items-center gap-4 group">
-                                        <span className={`text-[0.7rem] font-bold uppercase tracking-widest ${isDark ? 'text-white' : 'text-black'}`}>Learn More</span>
-                                        <div className="w-14 h-14 rounded-full bg-[#F05E23] flex items-center justify-center text-white shadow-xl shadow-[#F05E23]/20 group-hover:scale-110 transition-transform">
+
+                                    <div className="pt-12 border-t border-white/5 flex items-center justify-between">
+                                        <div className="flex flex-wrap gap-2.5">
+                                            {project.results.map((tag, i) => (
+                                                <span key={i} className={`text-[9px] font-black uppercase py-2 px-4 rounded-lg border ${isDark ? 'border-white/10 text-white/50 bg-white/5' : 'border-[#F05E23]/20 text-[#F05E23] bg-[#F05E23]/5'}`}>
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <div className="w-16 h-16 rounded-[2rem] bg-[#F05E23] flex items-center justify-center text-white shadow-2xl shadow-[#F05E23]/30">
                                             <ArrowUpRight strokeWidth={4} className="w-8 h-8" />
                                         </div>
-                                    </button>
+                                    </div>
                                 </div>
-                            </div>
+                            </motion.div>
+                        </div>
+                    ))}
+                </motion.div>
 
-                        </motion.div>
-                    </AnimatePresence>
+                {/* Progress Indicators */}
+                <div className="absolute -bottom-16 flex gap-4 left-1/2 -translate-x-1/2">
+                    {projects.map((_, i) => (
+                        <div 
+                            key={i} 
+                            onClick={() => setActiveIndex(i)}
+                            className={`h-2 rounded-full transition-all duration-700 cursor-pointer ${activeIndex === i ? 'w-16 bg-[#F05E23]' : 'w-4 bg-[#F05E23]/20'}`} 
+                        />
+                    ))}
                 </div>
             </div>
-
+            
+            {/* Ambient Background Number */}
+            <div className="absolute -bottom-10 -right-10 pointer-events-none opacity-[0.02] select-none">
+                <span className={`text-[20rem] font-black ${isDark ? 'text-white' : 'text-black'}`}>0{activeIndex + 1}</span>
+            </div>
         </section>
     );
 }

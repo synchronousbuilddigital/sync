@@ -79,7 +79,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 opacity: 1,
                 scale: isActive ? 1.15 : (isHovered ? 1.08 : 1),
                 y: isStackHovered ? (index * 50) : (index * 2),
-                x: isStackHovered ? (index * -35 + 10) : (index * 12),
+                x: isStackHovered ? (index * -60 - 60) : (index * 9),
                 rotateZ: isStackHovered
                     ? (index * 12 - 12)
                     : (index !== undefined ? [0, -12, -6, 3][index + 1] : 0),
@@ -365,7 +365,7 @@ export default function Hero() {
                 <div className="relative w-full flex flex-col items-center">
 
                     <div
-                        className="absolute -top-32 sm:-top-24 -left-20 lg:-left-32 xl:-left-40 z-20 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
+                        className="absolute -top-32 sm:-top-24 -left-16 lg:-left-24 xl:-left-32 z-20 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
                         onMouseEnter={() => setStackHovered(true)}
                         onMouseLeave={() => setStackHovered(false)}
                     >

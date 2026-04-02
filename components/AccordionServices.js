@@ -143,7 +143,7 @@ export default function AccordionServices() {
 
                 {/* Cards Container */}
                 <div 
-                    className="relative flex flex-col lg:flex-row gap-4 mb-4 lg:mb-10 lg:h-[700px] min-h-[500px]"
+                    className="relative flex flex-col lg:flex-row gap-4 mb-4 lg:mb-10 lg:h-[600px] min-h-[500px]"
                     onMouseLeave={() => setOpenIndex(null)}
                 >
                     {services.map((service, index) => {
@@ -154,17 +154,22 @@ export default function AccordionServices() {
                             <motion.div
                                 key={index}
                                 layout
-                                className={`group border rounded-3xl overflow-hidden cursor-pointer relative flex flex-col lg:flex-row transition-all duration-300 ${isDark ? 'border-neutral-800 bg-[#0A0A0A]' : 'border-neutral-200 bg-white shadow-xl shadow-black/5'} ${isOpen ? 'grayscale-0 opacity-100 ring-1 ring-blue-500/20' : (isSomethingHovered ? 'grayscale opacity-20' : 'grayscale-0 opacity-100')}`}
-                                onMouseEnter={() => setOpenIndex(index)}
+                                className={`group border rounded-3xl overflow-hidden cursor-pointer relative flex flex-col lg:flex-row ${isDark ? 'border-neutral-800 bg-[#0A0A0A]' : 'border-neutral-200 bg-white shadow-xl shadow-black/5'} ${isOpen ? 'ring-1 ring-[#F05E23]/20' : ''}`}
+                                onMouseEnter={(e) => {
+                                    e.stopPropagation();
+                                    setOpenIndex(index);
+                                }}
                                 animate={{
-                                    flex: !isSomethingHovered ? "1 1 0%" : (isOpen ? "1 1 auto" : "0 0 100px"),
+                                    flex: !isSomethingHovered ? "1 1 0%" : (isOpen ? "3 1 0%" : "1 1 0%"),
+                                    filter: isOpen ? "grayscale(0%)" : (isSomethingHovered ? "grayscale(100%)" : "grayscale(0%)"),
+                                    opacity: isOpen ? 1 : (isSomethingHovered ? 0.35 : 1)
                                 }}
                                 transition={{ 
-                                    duration: 0.5, 
-                                    ease: [0.22, 1, 0.36, 1],
+                                    duration: 0.6, 
+                                    ease: [0.16, 1, 0.3, 1],
                                 }}
                                 style={{ 
-                                    willChange: "flex, opacity",
+                                    willChange: "flex, opacity, filter",
                                 }}
                             >
                                 {/* Spine / Tab */}
@@ -184,7 +189,7 @@ export default function AccordionServices() {
 
                                 {/* Content area */}
                                 <div className="flex-1 overflow-hidden relative h-full">
-                                    <div className={`p-8 lg:p-12 xl:p-16 flex flex-col justify-between h-full w-full absolute inset-0 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
+                                    <div className={`p-8 lg:p-10 xl:p-12 flex flex-col justify-between h-full w-full absolute inset-0 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
                                         
                                         <div className="relative z-10 w-full lg:max-w-4xl">
                                             {/* Header Content */}
@@ -196,7 +201,7 @@ export default function AccordionServices() {
                                                     )}
                                                 </div>
                                                 
-                                                <h3 className={`font-black tracking-tight leading-[1.02] transition-all duration-500 ${isDark ? 'text-white' : 'text-black'} ${isOpen ? 'text-3xl sm:text-5xl lg:text-7xl mb-8' : 'text-xl sm:text-2xl lg:text-3xl'}`}>
+                                                <h3 className={`font-black tracking-tight leading-[1.02] transition-all duration-500 ${isDark ? 'text-white' : 'text-black'} ${isOpen ? 'text-3xl sm:text-5xl lg:text-5xl mb-8' : 'text-xl sm:text-2xl lg:text-3xl'}`}>
                                                     {service.title}
                                                 </h3>
 
@@ -226,11 +231,11 @@ export default function AccordionServices() {
                                                             {service.desc}
                                                         </p>
 
-                                                        <div className="grid grid-cols-3 gap-6 p-6 rounded-2xl bg-[#F05E23]/[0.03] border border-[#F05E23]/10">
+                                                        <div className="flex flex-wrap gap-6 p-4 rounded-2xl bg-[#F05E23]/[0.03] border border-[#F05E23]/10">
                                                             {Object.entries(service.metrics).map(([key, val]) => (
-                                                                <div key={key} className="flex flex-col">
-                                                                    <span className="text-[0.6rem] font-black text-[#F05E23] uppercase opacity-70 mb-1">{key}</span>
-                                                                    <span className={`text-xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-black'}`}>{val}</span>
+                                                                <div key={key} className="flex flex-col min-w-[70px]">
+                                                                    <span className="text-[0.55rem] font-black text-[#F05E23] uppercase opacity-70 mb-1">{key}</span>
+                                                                    <span className={`text-sm sm:text-base font-black tracking-tight ${isDark ? 'text-white' : 'text-black'}`}>{val}</span>
                                                                 </div>
                                                             ))}
                                                         </div>
