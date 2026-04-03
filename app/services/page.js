@@ -26,7 +26,7 @@ const serviceCategories = [
         icon: Fingerprint,
         desc: "We don't just design logos; we engineer visual and verbal identities that command market authority. Establish a premium presence that builds long-term brand equity.",
         services: ["Visual Identity System", "Strategic Brand Positioning", "Verbal Identity & Messaging", "Premium Packaging Design"],
-        image: "/services/brand-architecture.png",
+        image: "/ChatGPT Image Apr 3, 2026, 11_35_08 AM.png",
         accent: "from-[#F05E23]/10",
         href: "/services/brand-systems"
     },
@@ -36,7 +36,7 @@ const serviceCategories = [
         icon: Layout,
         desc: "Architecting high-performance digital infrastructure. We build scalable platforms where supreme aesthetic precision meets rigorous, high-conversion engineering.",
         services: ["Enterprise Web Platforms", "High-Conversion E-commerce", "Interactive Web Applications", "Custom SaaS Interfaces"],
-        image: "/services/digital-ecosystems.png",
+        image: "/ChatGPT Image Apr 3, 2026, 11_36_48 AM.png",
         accent: "from-blue-500/10",
         href: "/services/digital-platforms"
     },
@@ -46,7 +46,7 @@ const serviceCategories = [
         icon: BarChart3,
         desc: "Transforming attention into revenue. We execute data-backed, precision-targeted campaigns designed to drive exponential growth and measurable ROI.",
         services: ["Performance Advertising", "SEO & Search Dominance", "Strategic Content Architecture", "Growth Analytics & Audits"],
-        image: "/services/growth-engineering.png",
+        image: "/ChatGPT Image Apr 3, 2026, 11_39_48 AM.png",
         accent: "from-green-500/10",
         href: "/services/growth-engine"
     },
@@ -56,7 +56,7 @@ const serviceCategories = [
         icon: Cpu,
         desc: "Integrating autonomous intelligence into your operations. Deploy custom AI agents and workflows that revolutionize efficiency and user engagement.",
         services: ["Custom AI Chatbots", "Generative AI Systems", "Intelligent Process Automation", "Neural Search Integration"],
-        image: "/services/ai-automation.png",
+        image: "/ChatGPT Image Apr 3, 2026, 11_39_44 AM.png",
         accent: "from-purple-500/10",
         href: "/services/ai-automation"
     }

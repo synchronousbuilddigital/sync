@@ -3,35 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, Globe, Clock, ArrowUpRight, Linkedin, Twitter, Instagram, Mail } from "lucide-react";
+import { ShieldCheck, Globe, Clock, ArrowUpRight, Linkedin, Twitter, Instagram, Mail } from "lucide-react";
 import { useTheme } from './ThemeContext';
-
-function NewsletterInput({ placeholder, isDark }) {
-    const [value, setValue] = useState("");
-    const [focused, setFocused] = useState(false);
-
-    return (
-        <form className="relative w-full group" onSubmit={(e) => e.preventDefault()}>
-            <div className={`absolute inset-0 bg-[#F05E23]/5 rounded-2xl blur-xl transition-opacity duration-500 ${focused ? 'opacity-100' : 'opacity-0'}`} />
-            <input
-                type="email"
-                value={value}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                onChange={(e) => setValue(e.target.value)}
-                className={`relative w-full border rounded-xl px-6 py-4 text-[0.95rem] font-semibold caret-[#F05E23] focus:outline-none focus:border-[#F05E23] transition-all pr-36 shadow-sm duration-500 ${isDark ? 'bg-white/5 border-white/10 text-white placeholder:text-white/20' : 'bg-white border-slate-200 text-[#111] placeholder:text-slate-400'}`}
-                placeholder={placeholder}
-            />
-            <button
-                type="submit"
-                className={`absolute right-1.5 top-1.5 bottom-1.5 px-6 rounded-lg transition-all duration-500 flex items-center justify-center font-black text-[0.65rem] uppercase tracking-[0.2em] group/btn hover:bg-[#F05E23] active:scale-95 shadow-lg overflow-hidden ${isDark ? 'bg-white text-[#111]' : 'bg-[#111] text-white'}`}
-            >
-                <span className="relative z-10 text-xs">Sync</span>
-                <ArrowRight className="relative z-10 w-3.5 h-3.5 ml-2 transform group-hover/btn:translate-x-1 transition-transform duration-300" />
-            </button>
-        </form>
-    );
-}
 
 export default function Footer() {
     const { isDark } = useTheme();
@@ -44,33 +17,24 @@ export default function Footer() {
             
             <div className="max-w-7xl mx-auto px-6 relative z-10">
                 
-                {/* Top Section: CTA & Newsletter */}
+                {/* Top Section: Extended Brand Message */}
                 <div className={`grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 mb-12 border-b transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-100/80'}`}>
-                    <div className="lg:col-span-7">
+                    <div className="lg:col-span-12 items-center text-center flex flex-col pt-4">
                         <motion.div 
-                            initial={{ opacity: 0, x: -10 }}
-                            whileInView={{ opacity: 1, x: 0 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
                             viewport={{ once: true }}
                             className="inline-flex items-center gap-2 px-3 py-1 bg-[#F05E23]/5 border border-[#F05E23]/10 rounded-full mb-6"
                         >
                             <ShieldCheck className="w-3.5 h-3.5 text-[#F05E23]" />
                             <span className="text-[0.55rem] font-black uppercase tracking-[0.3em] text-[#F05E23]">Synchronous Intelligence</span>
                         </motion.div>
-                        <h2 className={`text-3xl md:text-5xl font-bold tracking-[-0.04em] leading-[0.95] mb-4 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
+                        <h2 className={`text-4xl md:text-6xl font-bold tracking-[-0.04em] leading-[0.95] mb-6 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
                             Empowering high-growth <br /> <span className="text-[#F05E23]">elite brands.</span>
                         </h2>
-                        <p className={`text-lg font-medium max-w-xl leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                        <p className={`text-lg sm:text-xl font-medium max-w-2xl leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
                             Architecting sustainable, high-velocity digital ecosystems for high-growth elite brands.
                         </p>
-                    </div>
-                    
-                    <div className="lg:col-span-5 flex flex-col justify-end">
-                        <div className={`p-6 md:p-8 rounded-[2rem] border relative group overflow-hidden transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-[#F9F9F9] border-slate-100'}`}>
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#F05E23]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                            <h4 className={`text-lg font-bold mb-1 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Market Intelligence</h4>
-                            <p className={`font-medium mb-6 text-xs transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>Join 2,500+ founders receiving our operational news.</p>
-                            <NewsletterInput placeholder="Your work email" isDark={isDark} />
-                        </div>
                     </div>
                 </div>
 
@@ -175,4 +139,3 @@ export default function Footer() {
         </footer>
     );
 }
-

@@ -83,7 +83,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 rotateZ: isStackHovered
                     ? (index * 12 - 12)
                     : (index !== undefined ? [0, -12, -6, 3][index + 1] : 0),
-                zIndex: isActive ? 500 : (isHovered ? 400 : (10 + index)),
+                zIndex: isActive ? 500 : (isHovered ? 400 : (20 - index)),
                 height: (isHovered || isActive) ? "152px" : "144px"
             }}
             style={{
@@ -100,13 +100,13 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
         >
             {/* Advanced glow effect */}
             <motion.div
-                className="absolute -inset-2 rounded-2xl opacity-0 group-hover/card:opacity-60 transition-opacity duration-500 -z-10 blur-xl"
+                className="absolute -inset-2 rounded-2xl opacity-0 group-hover/card:opacity-60 transition-opacity duration-500 -z-10 blur-xl pointer-events-none"
                 animate={{
-                    background: isHovered
+                    background: (isHovered || isActive)
                         ? `conic-gradient(from 0deg, rgba(240,94,35,0.8), rgba(99,102,241,0.6), rgba(240,94,35,0.8))`
                         : `conic-gradient(from 0deg, rgba(240,94,35,0), rgba(99,102,241,0), rgba(240,94,35,0))`
                 }}
-                transition={{ duration: 2, repeat: isHovered ? Infinity : 0 }}
+                transition={{ duration: 2, repeat: (isHovered || isActive) ? Infinity : 0 }}
             />
 
             {/* Connecting line between cards when fanned */}
@@ -187,12 +187,14 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
             <motion.div
                 initial={false}
                 animate={{
-                    opacity: (isStackHovered || isHovered || isActive) ? 1 : 0,
-                    backdropFilter: (isStackHovered || isHovered || isActive) ? "blur(25px)" : "blur(0px)",
-                    pointerEvents: (isStackHovered || isHovered || isActive) ? "auto" : "none",
-                    backgroundColor: isHovered ? "rgba(0, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.90)"
+                    opacity: (isHovered || isActive) ? 1 : 0,
+                    backdropFilter: (isHovered || isActive) ? "blur(25px)" : "blur(0px)",
+                    pointerEvents: (isHovered || isActive) ? "auto" : "none",
+                    backgroundColor: (isHovered || isActive) ? "rgba(0, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.90)",
+                    scale: (isHovered || isActive) ? 1 : 0.95,
+                    y: (isHovered || isActive) ? 0 : 10
                 }}
-                transition={{ duration: 0.4 }}
+                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                 className="absolute inset-0 bg-black/90 p-6 flex flex-col z-30 rounded-2xl border border-white/5"
             >
                 {/* Animated top border */}
@@ -210,10 +212,13 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                     {card.services.map((service, i) => (
                         <motion.div
                             key={i}
-                            initial={{ opacity: 0, x: -15, y: 10 }}
-                            animate={{ opacity: (isStackHovered || isHovered || isActive) ? 1 : 0, x: (isStackHovered || isHovered || isActive) ? 0 : -15, y: (isStackHovered || isHovered || isActive) ? 0 : 10 }}
+                            animate={{ 
+                                opacity: (isHovered || isActive) ? 1 : 0, 
+                                x: (isHovered || isActive) ? 0 : -15, 
+                                y: (isHovered || isActive) ? 0 : 10 
+                            }}
                             transition={{
-                                delay: (isStackHovered || isHovered || isActive) ? (i * 0.08 + 0.15) : 0,
+                                delay: (isHovered || isActive) ? (i * 0.08 + 0.15) : 0,
                                 duration: 0.5,
                                 ease: [0.34, 1.56, 0.64, 1] // cubic-bezier for bouncy feel
                             }}
@@ -235,7 +240,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 {/* Animated progress bar with gradient */}
                 <motion.div
                     className="mt-auto h-[1.5px] w-full bg-gradient-to-r from-transparent via-[#F05E23]/50 to-transparent rounded-full overflow-hidden"
-                    animate={{ opacity: (isStackHovered || isHovered || isActive) ? 1 : 0 }}
+                    animate={{ opacity: (isHovered || isActive) ? 1 : 0 }}
                     transition={{ duration: 0.4 }}
                 >
                     <motion.div
@@ -345,11 +350,11 @@ export default function Hero() {
                 <div className="relative w-full flex flex-col items-center">
 
                     <div
-                        className="absolute -top-32 sm:-top-24 left-0 lg:left-6 xl:left-12 z-20 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
+                        className="absolute -top-32 sm:-top-24 left-4 lg:left-12 xl:left-20 z-40 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
                         onMouseEnter={() => setStackHovered(true)}
                         onMouseLeave={() => setStackHovered(false)}
                     >
-                        <motion.div style={{ y: y1, x: useTransform(springX, x => x * -1.5) }} className="relative h-[200px] w-[300px]">
+                        <motion.div style={{ y: y1, x: useTransform(springX, x => x * -1.5) }} className="relative h-[200px] w-[350px]">
                             {cardData.map((card, index) => (
                                 <FloatingCard
                                     key={card.title}

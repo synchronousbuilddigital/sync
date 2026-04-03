@@ -9,6 +9,7 @@ const services = [
         num: "01",
         title: "WE BUILD YOUR BRAND.",
         desc: "We help you stand out with a professional brand look and a strategy that helps you grow for years to come.",
+        image: "/ChatGPT Image Apr 3, 2026, 11_35_08 AM.png",
         metrics: { Growth: "+42%", Speed: "Fast", Value: "High" },
         features: [
             "Logo & Visual Design",
@@ -24,6 +25,7 @@ const services = [
         num: "02",
         title: "DIGITAL SHOP & APPS.",
         desc: "High-speed websites and mobile apps that work perfectly and help you turn more visitors into customers.",
+        image: "/ChatGPT Image Apr 3, 2026, 11_36_48 AM.png",
         metrics: { Growth: "+58%", Speed: "Instant", Value: "Premium" },
         features: [
             "Modern Online Stores",
@@ -39,6 +41,7 @@ const services = [
         num: "03",
         title: "GROW YOUR SALES.",
         desc: "Smart marketing plans that find your best customers and help you get the most out of your budget.",
+        image: "/ChatGPT Image Apr 3, 2026, 11_39_48 AM.png",
         metrics: { Growth: "+71%", Speed: "Steady", Value: "High ROAS" },
         features: [
             "Smart Ad Campaigns",
@@ -54,6 +57,7 @@ const services = [
         num: "04",
         title: "SMART AI TOOLS.",
         desc: "Use friendly AI assistants to handle everyday tasks so you and your team can focus on what matters most.",
+        image: "/ChatGPT Image Apr 3, 2026, 11_39_44 AM.png",
         metrics: { Growth: "Large", Speed: "Instant", Value: "Auto" },
         features: [
             "Custom AI Assistants",
@@ -143,7 +147,7 @@ export default function AccordionServices() {
 
                 {/* Cards Container */}
                 <div 
-                    className="relative flex flex-col lg:flex-row gap-4 mb-4 lg:mb-10 lg:h-[600px] min-h-[500px]"
+                    className="relative flex flex-col lg:flex-row gap-4 mb-4 lg:mb-10 lg:h-[850px] min-h-[600px]"
                     onMouseLeave={() => setOpenIndex(null)}
                 >
                     {services.map((service, index) => {
@@ -189,7 +193,7 @@ export default function AccordionServices() {
 
                                 {/* Content area */}
                                 <div className="flex-1 overflow-hidden relative h-full">
-                                    <div className={`p-8 lg:p-10 xl:p-12 flex flex-col justify-between h-full w-full absolute inset-0 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
+                                    <div className={`p-8 lg:p-10 xl:p-12 flex flex-col justify-between h-full w-full relative z-10 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
                                         
                                         <div className="relative z-10 w-full lg:max-w-4xl">
                                             {/* Header Content */}
@@ -206,13 +210,29 @@ export default function AccordionServices() {
                                                 </h3>
 
                                                 {!isSomethingHovered && (
-                                                    <motion.p 
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        className={`mt-6 text-sm lg:text-base font-light leading-relaxed transition-colors duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}
-                                                    >
-                                                        {service.desc}
-                                                    </motion.p>
+                                                    <>
+                                                        <motion.p 
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            className={`mt-6 text-sm lg:text-base font-light leading-relaxed transition-colors duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}
+                                                        >
+                                                            {service.desc}
+                                                        </motion.p>
+                                                        
+                                                        {/* Idle State Image Preview */}
+                                                        <motion.div 
+                                                            initial={{ opacity: 0, y: 20 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: 0.2 }}
+                                                            className="mt-12 rounded-2xl overflow-hidden aspect-video w-full border border-neutral-500/10 shadow-lg"
+                                                        >
+                                                            <img 
+                                                                src={service.image} 
+                                                                alt={service.title}
+                                                                className="w-full h-full object-cover opacity-80"
+                                                            />
+                                                        </motion.div>
+                                                    </>
                                                 )}
                                             </div>
                                             
@@ -225,13 +245,13 @@ export default function AccordionServices() {
                                                 transition={{ duration: 0.4 }}
                                                 className={isOpen ? "block" : "hidden"}
                                             >
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-20">
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-20 mb-12">
                                                     <div>
                                                         <p className={`text-sm lg:text-base xl:text-lg font-medium leading-relaxed mb-10 ${isDark ? 'text-neutral-300' : 'text-neutral-600'}`}>
                                                             {service.desc}
                                                         </p>
 
-                                                        <div className="flex flex-wrap gap-6 p-4 rounded-2xl bg-[#F05E23]/[0.03] border border-[#F05E23]/10">
+                                                        <div className="flex flex-wrap gap-6 p-4 rounded-2xl bg-[#F05E23]/[0.03] border border-[#F05E23]/10 backdrop-blur-sm">
                                                             {Object.entries(service.metrics).map(([key, val]) => (
                                                                 <div key={key} className="flex flex-col min-w-[70px]">
                                                                     <span className="text-[0.55rem] font-black text-[#F05E23] uppercase opacity-70 mb-1">{key}</span>
@@ -241,9 +261,9 @@ export default function AccordionServices() {
                                                         </div>
                                                     </div>
 
-                                                    <div>
+                                                    <div className="relative">
                                                         <h4 className="text-[0.7rem] font-black text-[#F05E23] uppercase mb-6 opacity-60">Key Features</h4>
-                                                        <ul className="grid grid-cols-1 gap-y-4">
+                                                        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-y-4">
                                                             {service.features.map((feature, i) => (
                                                                 <li
                                                                     key={i}
@@ -254,6 +274,21 @@ export default function AccordionServices() {
                                                                 </li>
                                                             ))}
                                                         </ul>
+                                                    </div>
+                                                </div>
+
+                                                {/* Full Width Preview Image */}
+                                                <div className="rounded-3xl overflow-hidden border border-[#F05E23]/20 shadow-2xl relative group aspect-video w-full bg-neutral-900/5">
+                                                    <img 
+                                                        src={service.image} 
+                                                        alt={service.title} 
+                                                        className="w-full h-full object-cover object-top transition-transform duration-[1.5s] group-hover:scale-105" 
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-8">
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className="text-[0.55rem] text-[#F05E23] font-black uppercase tracking-[0.4em]">Visual Showcase</span>
+                                                            <span className="text-sm text-white font-black uppercase tracking-widest">{service.title}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </motion.div>
@@ -292,6 +327,23 @@ export default function AccordionServices() {
                     })}
                 </div>
 
+                {/* Bottom Pagination/Counter */}
+                <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="flex items-center justify-between mt-4 mb-2 opacity-50"
+                >
+                    <div className="flex items-center gap-4">
+                        <span className={`text-xs font-black tracking-widest ${isDark ? 'text-white' : 'text-black'}`}>01</span>
+                        <div className={`w-12 h-[1px] ${isDark ? 'bg-white/20' : 'bg-black/20'}`} />
+                        <span className={`text-xs font-black tracking-widest ${isDark ? 'text-white' : 'text-black'}`}>0{services.length}</span>
+                    </div>
+                    
+                    <div className={`text-[0.6rem] font-black uppercase tracking-[0.3em] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                        Premium Operations
+                    </div>
+                </motion.div>
             </div>
         </section>
     );
