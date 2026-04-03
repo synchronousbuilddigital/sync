@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
-import { Send, X, Sparkles, Bot, Globe, Zap, Cpu } from "lucide-react";
+import { Send, X, Bot, Zap } from "lucide-react";
 import { useTheme } from './ThemeContext';
 import InteractiveEye from './InteractiveEye';
 
@@ -10,7 +10,7 @@ export default function ChatBot() {
     const { isDark } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { role: "assistant", content: "Neural architecture synchronized. AETHER is online. How shall we orbit your vision today?" }
+        { role: "assistant", content: "Neural architecture synchronized. AETHER is online. How shall I envision your digital future today?" }
     ]);
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -38,12 +38,14 @@ export default function ChatBot() {
             });
 
             const data = await response.json();
-            if (data.message) {
+            
+            if (response.ok && data.message) {
                 setMessages(prev => [...prev, { role: "assistant", content: data.message }]);
             } else {
+                const errorMessage = data.message || "Neural link desynchronized. Please re-initiate command logic.";
                 setMessages(prev => [...prev, {
                     role: "assistant",
-                    content: "Neural link desynchronized. Please re-initiate command logic."
+                    content: errorMessage
                 }]);
             }
         } catch (error) {
@@ -156,6 +158,28 @@ export default function ChatBot() {
                                             : (!isDark ? 'text-white bg-[#111] border-[#111] rounded-tr-none' : 'text-[#111] bg-white border-white rounded-tr-none')
                                         }`}>
                                             {msg.content}
+                                            {msg.role === 'assistant' && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    whileInView={{ opacity: 1, y: 0 }}
+                                                    viewport={{ once: false }}
+                                                    className="mt-5 pt-3 border-t border-black/5 dark:border-white/5 flex flex-col gap-2"
+                                                >
+                                                    <a 
+                                                        href="https://wa.me/919161391566"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl md:rounded-2xl text-[0.65rem] font-black uppercase tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95 group/wa ${
+                                                            !isDark 
+                                                            ? 'bg-[#111] text-white hover:bg-green-600' 
+                                                            : 'bg-white text-[#111] hover:bg-green-500 hover:text-white'
+                                                        }`}
+                                                    >
+                                                        <Zap className="w-3 h-3 fill-current" />
+                                                        Launch Strategy Session
+                                                    </a>
+                                                </motion.div>
+                                            )}
                                         </div>
                                     </motion.div>
                                 ))}
