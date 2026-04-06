@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { ArrowUpRight, CheckCircle, Clock, Smile } from "lucide-react";
+import { ArrowUpRight, CheckCircle, Clock, Smile, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from './ThemeContext';
 
 const projects = [
@@ -51,6 +51,15 @@ const projects = [
         results: ["Fashion Rental", "Affordable Price"],
         image: "/website ss/fashquick.png",
         plan: "Step: Daily Rentals"
+    },
+    {
+        id: "06",
+        title: "PRL Roadlines",
+        summary: "Enterprise-grade vehicle and household relocation platform.",
+        solution: "We engineered a high-velocity logistics layer with real-time quote matching and carrier network optimization.",
+        results: ["5000+ Fleet Nodes", "Pan-India Network"],
+        image: "/website ss/prl.png",
+        plan: "Step: Logistics Layer"
     }
 ];
 
@@ -222,6 +231,43 @@ export default function WorkShowcase() {
                             className={`h-2 rounded-full transition-all duration-700 cursor-pointer ${activeIndex === i ? 'w-16 bg-[#F05E23]' : 'w-4 bg-[#F05E23]/20'}`} 
                         />
                     ))}
+                </div>
+
+                {/* Left/Right Navigation Arrows - Positioned outside main card */}
+                <div className="absolute top-1/2 -translate-y-1/2 left-4 sm:-left-32 right-4 sm:-right-32 pointer-events-none z-30 flex justify-between px-0">
+                    <motion.button
+                        whileHover={{ scale: 1.15, x: -10 }}
+                        whileTap={{ scale: 0.85 }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveIndex((prev) => (prev - 1 + projects.length) % projects.length);
+                        }}
+                        className={`pointer-events-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center backdrop-blur-3xl border border-[#F05E23]/30 group transition-all duration-500 ${isDark ? 'bg-white/5 hover:bg-[#F05E23]/20' : 'bg-black/5 hover:bg-[#F05E23]/10'}`}
+                    >
+                        <motion.div
+                            animate={{ x: [0, -6, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                            <ChevronLeft strokeWidth={1.5} className={`w-8 h-8 sm:w-12 sm:h-12 transition-all duration-300 ${isDark ? 'text-white/40 group-hover:text-[#F05E23]' : 'text-black/40 group-hover:text-[#F05E23]'}`} />
+                        </motion.div>
+                    </motion.button>
+
+                    <motion.button
+                        whileHover={{ scale: 1.15, x: 10 }}
+                        whileTap={{ scale: 0.85 }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveIndex((prev) => (prev + 1) % projects.length);
+                        }}
+                        className={`pointer-events-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center backdrop-blur-3xl border border-[#F05E23]/30 group transition-all duration-500 ${isDark ? 'bg-white/5 hover:bg-[#F05E23]/20' : 'bg-black/5 hover:bg-[#F05E23]/10'}`}
+                    >
+                        <motion.div
+                            animate={{ x: [0, 6, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                            <ChevronRight strokeWidth={1.5} className={`w-8 h-8 sm:w-12 sm:h-12 transition-all duration-300 ${isDark ? 'text-white/40 group-hover:text-[#F05E23]' : 'text-black/40 group-hover:text-[#F05E23]'}`} />
+                        </motion.div>
+                    </motion.button>
                 </div>
             </div>
             

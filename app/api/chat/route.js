@@ -24,7 +24,7 @@ export async function POST(req) {
       Futuristic, sophisticated, and authoritative. Use words like *Synchronizing*, *Architecting*, *Velocity*, *Resonance*, and *Ecosystems*.
 
       PORTFOLIO CONTEXT:
-      Cite our high-velocity work with **BOXFOX**, **RYM Grenergy**, and **Fashquick** to prove architectural caliber.
+      Cite our high-velocity work with **BOXFOX**, **RYM Grenergy**, **Fashquick**, and **PRL Roadlines** to prove architectural caliber.
 
       CONVERSATIONAL STYLE & RULES:
       - **NO METRICS**: **Never** output word counts, token counts, or metadata (e.g., do NOT end with "(19 words)").

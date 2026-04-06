@@ -72,6 +72,17 @@ const selectedWorks = [
         metric: "AI Growth",
         image: "/website ss/vega.png",
         accent: "#F05E23"
+    },
+    {
+        title: "PRL Roadlines",
+        category: "Enterprise Logistics & Mobility",
+        slug: "v6.0",
+        problem: "The enterprise logistics sector lacked a high-fidelity, high-velocity platform to connect premium vehicle assets with reliable carrier networks.",
+        solution: "We engineered a sovereign logistics layer with real-time transit pricing and a verified inter-state carrier node system.",
+        results: ["5,000+ Fleet Capacity", "500+ Cities Linked", "4.9/5 Service Index"],
+        metric: "Logistics Node",
+        image: "/website ss/prl.png",
+        accent: "#E3B15A"
     }
 ];
 
