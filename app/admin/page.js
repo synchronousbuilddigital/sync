@@ -294,7 +294,7 @@ export default function AdminDashboard() {
                 </motion.div>
               ))}
               {leaves.length === 0 && (
-                <div className="p-20 text-center opacity-20 font-black uppercase tracking-widest italic">No holiday requests filed. System clear.</div>
+                <div key="no-leaves" className="p-20 text-center opacity-20 font-black uppercase tracking-widest italic">No holiday requests filed. System clear.</div>
               )}
             </AnimatePresence>
           </div>
@@ -354,10 +354,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Modals */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isAddingIntern && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
-             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-10 rounded-[3rem] shadow-2xl border border-white/10">
+             <motion.div key="add-intern-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-10 rounded-[3rem] shadow-2xl border border-white/10">
                 <h2 className="text-3xl font-black uppercase mb-10 tracking-tight">Onboard <span className="text-[#F05E23]">Intern</span></h2>
                 <form onSubmit={handleAddIntern} className="space-y-6">
                    <div className="space-y-2">
@@ -379,7 +379,7 @@ export default function AdminDashboard() {
 
         {isAssigningTask && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
-             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-2xl p-10 rounded-[3rem] shadow-2xl border border-white/10">
+             <motion.div key="assign-task-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-2xl p-10 rounded-[3rem] shadow-2xl border border-white/10">
                 <h2 className="text-3xl font-black uppercase mb-10 tracking-tight">Deploy <span className="text-[#F05E23]">Assignment</span></h2>
                 <form onSubmit={handleAssignTask} className="space-y-6">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -426,15 +426,15 @@ export default function AdminDashboard() {
         )}
 
         {statusMsg.msg && (
-           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-[200] p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>
+           <motion.div key="status-notification" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-[200] p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>
              {statusMsg.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
              <span className="font-black text-[0.7rem] uppercase tracking-[0.1em]">{statusMsg.msg}</span>
            </motion.div>
         )}
-        {/* Discussion Modal */}
+        
         {chatTaskId && chatTask && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-             <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[80vh]">
+             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[80vh]">
                 <div className="p-8 bg-black text-white flex items-center justify-between">
                    <div className="flex items-center gap-4">
                       <div className="p-3 bg-[#F05E23] rounded-2xl shadow-lg shadow-[#F05E23]/20"><Mail className="w-6 h-6 text-white" /></div>
@@ -466,7 +466,7 @@ export default function AdminDashboard() {
                 <form onSubmit={handleSendChat} className="p-8 border-t border-black/5 dark:border-white/10 bg-white dark:bg-black/20">
                    <div className="flex gap-4">
                       <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Type administrative directive..." className="flex-grow bg-slate-50 dark:bg-white/5 border-2 border-black/5 dark:border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-[#F05E23] font-bold text-sm transition-all" />
-                      <button type="submit" className="bg-[#F05E23] text-white p-4 rounded-2xl shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
+                      <button type="submit" className="bg-[#F05E23] text-white p-4 rounded-2xl shadow-lg shadow-[#F05E23]/20 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
                    </div>
                 </form>
              </motion.div>

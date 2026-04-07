@@ -232,10 +232,10 @@ export default function InternDashboard() {
       </div>
 
       {/* Update Modal */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selectedTask && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-12 shadow-2xl border border-white/10">
+            <motion.div key="task-update-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-12 shadow-2xl border border-white/10">
                 <div className="bg-[#F05E23] w-20 h-20 rounded-[2rem] flex items-center justify-center mb-10 shadow-xl shadow-[#F05E23]/30">
                    <PlusCircle className="w-10 h-10 text-white" />
                 </div>
@@ -270,7 +270,7 @@ export default function InternDashboard() {
         {/* Discussion Modal */}
         {chatTask && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-             <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[80vh]">
+             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[80vh]">
                 <div className="p-8 bg-[#F05E23] text-white flex items-center justify-between">
                    <div className="flex items-center gap-4">
                       <div className="p-3 bg-white/20 rounded-2xl"><MessageSquare className="w-6 h-6" /></div>
@@ -311,7 +311,7 @@ export default function InternDashboard() {
         {/* Holiday Request Modal */}
         {isLeaveModalOpen && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-12 shadow-2xl border border-white/10">
+              <motion.div key="leave-request-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-12 shadow-2xl border border-white/10">
                  <h2 className="text-4xl font-black uppercase tracking-tight mb-8">Request <span className="text-[#F05E23]">Holiday</span></h2>
                  <form onSubmit={handleApplyLeave} className="space-y-6">
                     <div className="grid grid-cols-2 gap-6">
@@ -338,7 +338,7 @@ export default function InternDashboard() {
         )}
 
         {statusMsg.msg && (
-           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-[200] p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>
+           <motion.div key="status-notification" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-[200] p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>
              <CheckCircle2 className="w-6 h-6" />
              <span className="font-black text-[0.7rem] uppercase tracking-[0.1em]">{statusMsg.msg}</span>
            </motion.div>
