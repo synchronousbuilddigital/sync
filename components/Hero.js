@@ -79,7 +79,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 opacity: 1,
                 scale: isActive ? 1.15 : (isHovered ? 1.08 : 1),
                 y: isStackHovered ? (index * 50) : (index * 2),
-                x: isStackHovered ? (index * -60 - 60) : (index * 14),
+                x: isStackHovered ? (index * -60 - 60) : (index * -6),
                 rotateZ: isStackHovered
                     ? (index * 12 - 12)
                     : (index !== undefined ? [0, -12, -6, 3][index + 1] : 0),
@@ -212,10 +212,10 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                     {card.services.map((service, i) => (
                         <motion.div
                             key={i}
-                            animate={{ 
-                                opacity: (isHovered || isActive) ? 1 : 0, 
-                                x: (isHovered || isActive) ? 0 : -15, 
-                                y: (isHovered || isActive) ? 0 : 10 
+                            animate={{
+                                opacity: (isHovered || isActive) ? 1 : 0,
+                                x: (isHovered || isActive) ? 0 : -15,
+                                y: (isHovered || isActive) ? 0 : 10
                             }}
                             transition={{
                                 delay: (isHovered || isActive) ? (i * 0.08 + 0.15) : 0,
@@ -350,7 +350,7 @@ export default function Hero() {
                 <div className="relative w-full flex flex-col items-center">
 
                     <div
-                        className="absolute -top-32 sm:-top-24 left-4 lg:left-12 xl:left-20 z-40 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
+                        className="absolute -top-32 sm:-top-24 left-1 sm:left-4 lg:left-8 xl:left-12 z-40 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
                         onMouseEnter={() => setStackHovered(true)}
                         onMouseLeave={() => setStackHovered(false)}
                     >
