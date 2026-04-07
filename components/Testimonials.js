@@ -48,6 +48,48 @@ const testimonials = [
 // Double pack for infinite loop
 const displayTestimonials = [...testimonials, ...testimonials];
 
+const CardContent = ({ t, isDark }) => (
+    <>
+        {/* Abstract card texture */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-[#F05E23]/5 rounded-full blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        
+        <div className="relative z-10">
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex gap-1">
+                    {[...Array(t.rating)].map((_, s) => (
+                        <Star key={s} className="w-3 h-3 fill-[#F05E23] text-[#F05E23]" />
+                    ))}
+                </div>
+                <div className={`text-[0.55rem] font-black tracking-[0.4em] uppercase transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>Verified Partner</div>
+            </div>
+
+            <blockquote className={`text-[1.4rem] md:text-[1.8rem] font-semibold leading-[1.1] mb-8 tracking-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
+                <span className="text-[#F05E23]/30 mr-1 text-2xl">"</span>
+                {t.quote.split('. ')[0]}.
+                <span className="text-[#F05E23]/30 ml-1 text-2xl">"</span>
+                <footer className={`mt-4 text-[0.85rem] font-medium leading-relaxed block italic opacity-80 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                    {t.quote.split('. ').slice(1).join('. ')}
+                </footer>
+            </blockquote>
+        </div>
+
+        <div className={`flex items-center gap-5 pt-8 mt-auto border-t relative z-10 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-50'}`}>
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden shrink-0 transition-all duration-500 shadow-inner ${isDark ? 'bg-white/5 border border-white/10 group-hover:border-[#F05E23]/30' : 'bg-slate-50 border border-slate-100 group-hover:border-[#F05E23]/30'}`}>
+                <div className={`w-full h-full flex items-center justify-center font-bold text-sm tracking-tighter transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
+                    {t.author.split(' ').map(n => n[0]).join('')}
+                </div>
+            </div>
+            <div className="space-y-0.5">
+                <h4 className={`font-bold text-lg tracking-tight leading-none group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>{t.author}</h4>
+                <p className={`text-[0.55rem] font-black tracking-[0.4em] uppercase leading-none pt-1.5 flex items-center gap-2 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                    <span className="w-1 h-1 rounded-full bg-[#F05E23]/40"></span>
+                    {t.role.split(',')[0]}
+                </p>
+            </div>
+        </div>
+    </>
+);
+
 export default function Testimonials() {
     const { isDark } = useTheme();
     const containerRef = useRef(null);
@@ -56,6 +98,11 @@ export default function Testimonials() {
     const [isDragging, setIsDragging] = useState(false);
     const x = useMotionValue(0);
     const [trackWidth, setTrackWidth] = useState(0);
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     // Calculate layout dimensions
     useEffect(() => {
@@ -212,60 +259,34 @@ export default function Testimonials() {
                 <div className={`absolute inset-y-0 left-0 w-32 md:w-64 z-20 pointer-events-none transition-colors duration-700 bg-gradient-to-r ${isDark ? 'from-[#0A0A0A]' : 'from-[#F9F9F9]'} to-transparent`} />
                 <div className={`absolute inset-y-0 right-0 w-32 md:w-64 z-20 pointer-events-none transition-colors duration-700 bg-gradient-to-l ${isDark ? 'from-[#0A0A0A]' : 'from-[#F9F9F9]'} to-transparent`} />
 
-                <motion.div 
-                    ref={trackRef}
-                    drag="x"
-                    style={{ x }}
-                    dragConstraints={{ left: -trackWidth, right: 0 }}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    className="flex gap-8 px-[10vw]"
-                >
-                    {displayTestimonials.map((t, i) => (
-                        <div
-                            key={i}
-                            className={`w-[85vw] sm:w-[400px] md:w-[500px] shrink-0 group relative p-10 md:p-12 rounded-[3.5rem] border transition-all duration-1000 flex flex-col justify-between min-h-[420px] select-none ${isDark ? 'bg-[#111] border-white/5 hover:border-[#F05E23]/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-100/50 hover:border-[#F05E23]/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.02)]'}`}
-                        >
-                            {/* Abstract card texture */}
-                            <div className="absolute top-0 right-0 w-48 h-48 bg-[#F05E23]/5 rounded-full blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                            
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="flex gap-1">
-                                        {[...Array(t.rating)].map((_, s) => (
-                                            <Star key={s} className="w-3 h-3 fill-[#F05E23] text-[#F05E23]" />
-                                        ))}
-                                    </div>
-                                    <div className={`text-[0.55rem] font-black tracking-[0.4em] uppercase transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>Verified Partner</div>
-                                </div>
-
-                                <blockquote className={`text-[1.4rem] md:text-[1.8rem] font-semibold leading-[1.1] mb-8 tracking-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
-                                    <span className="text-[#F05E23]/30 mr-1 text-2xl">"</span>
-                                    {t.quote.split('. ')[0]}.
-                                    <span className="text-[#F05E23]/30 ml-1 text-2xl">"</span>
-                                    <footer className={`mt-4 text-[0.85rem] font-medium leading-relaxed block italic opacity-80 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
-                                        {t.quote.split('. ').slice(1).join('. ')}
-                                    </footer>
-                                </blockquote>
+                {!hasMounted ? (
+                    <div className="flex gap-8 px-[10vw]">
+                        {displayTestimonials.map((t, i) => (
+                            <div key={i} className={`w-[85vw] sm:w-[400px] md:w-[500px] shrink-0 group relative p-10 md:p-12 rounded-[3.5rem] border transition-all duration-1000 flex flex-col justify-between min-h-[420px] select-none ${isDark ? 'bg-[#111] border-white/5 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-100/50 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.02)]'}`}>
+                                <CardContent t={t} isDark={isDark} />
                             </div>
-
-                            <div className={`flex items-center gap-5 pt-8 mt-auto border-t relative z-10 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-50'}`}>
-                                <div className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden shrink-0 transition-all duration-500 shadow-inner ${isDark ? 'bg-white/5 border border-white/10 group-hover:border-[#F05E23]/30' : 'bg-slate-50 border border-slate-100 group-hover:border-[#F05E23]/30'}`}>
-                                    <div className={`w-full h-full flex items-center justify-center font-bold text-sm tracking-tighter transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
-                                        {t.author.split(' ').map(n => n[0]).join('')}
-                                    </div>
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h4 className={`font-bold text-lg tracking-tight leading-none group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>{t.author}</h4>
-                                    <p className={`text-[0.55rem] font-black tracking-[0.4em] uppercase leading-none pt-1.5 flex items-center gap-2 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
-                                        <span className="w-1 h-1 rounded-full bg-[#F05E23]/40"></span>
-                                        {t.role.split(',')[0]}
-                                    </p>
-                                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <motion.div 
+                        ref={trackRef}
+                        drag="x"
+                        style={{ x }}
+                        dragConstraints={{ left: -trackWidth, right: 0 }}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        className="flex gap-8 px-[10vw]"
+                    >
+                        {displayTestimonials.map((t, i) => (
+                            <div
+                                key={i}
+                                className={`w-[85vw] sm:w-[400px] md:w-[500px] shrink-0 group relative p-10 md:p-12 rounded-[3.5rem] border transition-all duration-1000 flex flex-col justify-between min-h-[420px] select-none ${isDark ? 'bg-[#111] border-white/5 hover:border-[#F05E23]/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-100/50 hover:border-[#F05E23]/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.02)]'}`}
+                            >
+                                <CardContent t={t} isDark={isDark} />
                             </div>
-                        </div>
-                    ))}
-                </motion.div>
+                        ))}
+                    </motion.div>
+                )}
             </div>
 
             

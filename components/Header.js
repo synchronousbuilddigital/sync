@@ -7,6 +7,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight, Zap } from "lucide-react";
 import { useTheme } from './ThemeContext';
+import { useAuth } from "./AuthContext";
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -19,6 +20,7 @@ const navLinks = [
 
 export default function Header() {
   const { isDark } = useTheme();
+  const { user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -39,8 +41,8 @@ export default function Header() {
       
       <div className={`transition-all duration-500 w-full ${isScrolled
         ? isDark 
-            ? 'bg-[#0A0A0A]/85 backdrop-blur-md border border-white/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] max-w-5xl py-2'
-            : 'bg-white/85 backdrop-blur-md border border-black/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)] max-w-5xl py-2'
+            ? 'bg-[#0A0A0A]/85 backdrop-blur-md border border-white/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] max-w-6xl py-2'
+            : 'bg-white/85 backdrop-blur-md border border-black/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)] max-w-6xl py-2'
         : isDark
             ? 'bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
             : 'bg-[#F9F9F9]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
@@ -70,16 +72,37 @@ export default function Header() {
         </Link>
 
         {/* Desktop Navigation Link Pill */}
-        <div className={`hidden md:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
+        <div className={`hidden lg:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
           {navLinks.map((link) => (
             <NavLink key={link.name} href={link.href} active={pathname === link.href} isDark={isDark} isScrolled={isScrolled}>
               {link.name}
             </NavLink>
           ))}
+          {user && (
+            <NavLink href={user.role === 'admin' ? '/admin' : '/intern'} active={pathname === '/admin' || pathname === '/intern'} isDark={isDark} isScrolled={isScrolled}>
+              Dashboard
+            </NavLink>
+          )}
         </div>
 
         {/* Action Button Section Area */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-2 lg:gap-4">
+          {!user ? (
+            <Link
+              href="/login"
+              className={`relative overflow-hidden ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-6 py-3 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-black/5 border-black/5 text-[#111] hover:bg-black/10'}`}
+            >
+              Login
+            </Link>
+          ) : (
+            <button
+              onClick={logout}
+              className={`relative overflow-hidden ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-6 py-3 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400' : 'bg-black/5 border-black/5 text-[#111] hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-600'}`}
+            >
+              Logout
+            </button>
+          )}
+          
           <a
             href="https://wa.me/919161391566?text=I'd like to start growing my business with Synchronous Build Digital."
             target="_blank"

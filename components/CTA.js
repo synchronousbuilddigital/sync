@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Calendar, Rocket, ArrowRight } from "lucide-react";
 import { useTheme } from './ThemeContext';
 
 export default function CTA() {
     const { isDark } = useTheme();
+    const pathname = usePathname();
     const [subValue, setSubValue] = useState("");
+
+    const isDashboardRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/intern');
+
+    if (isDashboardRoute) return null;
 
     return (
         <section className={`w-full relative py-20 md:py-28 overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>

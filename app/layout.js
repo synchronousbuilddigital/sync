@@ -18,6 +18,7 @@ export const metadata = {
 };
 
 import { ThemeProvider } from "../components/ThemeContext";
+import { AuthProvider } from "../components/AuthContext";
 
 export default function RootLayout({ children }) {
   return (
@@ -27,14 +28,16 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
       >
         <ThemeProvider>
-          <LoadingScreen />
-          <Header />
-          <div className="relative z-10 flex-grow pt-28 transition-colors duration-500">
-            {children}
-          </div>
-          <CTA />
-          <Footer />
-          <ChatBot />
+          <AuthProvider>
+            <LoadingScreen />
+            <Header />
+            <div className="relative z-10 flex-grow pt-28 transition-colors duration-500">
+              {children}
+            </div>
+            <CTA />
+            <Footer />
+            <ChatBot />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

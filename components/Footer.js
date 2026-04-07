@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShieldCheck, Globe, Clock, ArrowUpRight, Linkedin, Twitter, Instagram, Mail } from "lucide-react";
@@ -8,35 +9,42 @@ import { useTheme } from './ThemeContext';
 
 export default function Footer() {
     const { isDark } = useTheme();
+    const pathname = usePathname();
     const currentYear = new Date().getFullYear();
+
+    const isDashboardRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/intern');
+
+    if (isDashboardRoute) return null;
 
     return (
         <footer className={`relative pt-16 pb-8 mt-auto z-10 w-full overflow-hidden border-t transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-slate-100'}`}>
-            {/* Background Texture */}
+            {/* Background Texture */ }
             <div className={`absolute inset-0 z-0 opacity-[0.015] pointer-events-none transition-colors duration-700`} style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.5px, transparent 1.5px)`, backgroundSize: '48px 48px' }} />
-            
+
             <div className="max-w-7xl mx-auto px-6 relative z-10">
-                
+
                 {/* Top Section: Extended Brand Message */}
-                <div className={`grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 mb-12 border-b transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-100/80'}`}>
-                    <div className="lg:col-span-12 items-center text-center flex flex-col pt-4">
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            className="inline-flex items-center gap-2 px-3 py-1 bg-[#F05E23]/5 border border-[#F05E23]/10 rounded-full mb-6"
-                        >
-                            <ShieldCheck className="w-3.5 h-3.5 text-[#F05E23]" />
-                            <span className="text-[0.55rem] font-black uppercase tracking-[0.3em] text-[#F05E23]">Synchronous Intelligence</span>
-                        </motion.div>
-                        <h2 className={`text-4xl md:text-6xl font-bold tracking-[-0.04em] leading-[0.95] mb-6 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
-                            Empowering high-growth <br /> <span className="text-[#F05E23]">elite brands.</span>
-                        </h2>
-                        <p className={`text-lg sm:text-xl font-medium max-w-2xl leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
-                            Architecting sustainable, high-velocity digital ecosystems for high-growth elite brands.
-                        </p>
+                {!isDashboardRoute && (
+                    <div className={`grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 mb-12 border-b transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-100/80'}`}>
+                        <div className="lg:col-span-12 items-center text-center flex flex-col pt-4">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                className="inline-flex items-center gap-2 px-3 py-1 bg-[#F05E23]/5 border border-[#F05E23]/10 rounded-full mb-6"
+                            >
+                                <ShieldCheck className="w-3.5 h-3.5 text-[#F05E23]" />
+                                <span className="text-[0.55rem] font-black uppercase tracking-[0.3em] text-[#F05E23]">Synchronous Intelligence</span>
+                            </motion.div>
+                            <h2 className={`text-4xl md:text-6xl font-bold tracking-[-0.04em] leading-[0.95] mb-6 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
+                                Empowering high-growth <br /> <span className="text-[#F05E23]">elite brands.</span>
+                            </h2>
+                            <p className={`text-lg sm:text-xl font-medium max-w-2xl leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                                Architecting sustainable, high-velocity digital ecosystems for high-growth elite brands.
+                            </p>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Main Navigation Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 mb-16">
