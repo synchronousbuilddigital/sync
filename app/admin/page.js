@@ -10,12 +10,13 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { user, interns, tasks, leaves, addIntern, removeIntern, assignTask, updateTaskStatus, sendDiscussion, sendInvite, approveLeave, deleteTask, reassignTask, loading } = useAuth();
+  const { user, interns, tasks, leaves, addIntern, removeIntern, assignTask, updateTaskStatus, sendDiscussion, sendInvite, approveLeave, deleteTask, reassignTask, announceToAll, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("interns");
   const [isAddingIntern, setIsAddingIntern] = useState(false);
   const [isAssigningTask, setIsAssigningTask] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
   
-  const [newIntern, setNewIntern] = useState({ name: "", email: "" });
+  const [broadcastMsg, setBroadcastMsg] = useState("");
   const [newTask, setNewTask] = useState({ 
     title: "", 
     description: "", 
@@ -87,6 +88,19 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleBroadcast = async (e) => {
+    e.preventDefault();
+    if (!broadcastMsg.trim()) return;
+    const res = await announceToAll(broadcastMsg);
+    if (res.success) {
+      setStatusMsg({ type: "success", msg: res.message });
+      setBroadcastMsg("");
+      setIsBroadcasting(false);
+    } else {
+      setStatusMsg({ type: "error", msg: res.message });
+    }
+  };
+
   const stats = {
     totalInterns: interns.length,
     activeTasks: tasks.filter(t => t.status === "Pending").length,
@@ -132,6 +146,9 @@ export default function AdminDashboard() {
         </div>
         
         <div className="flex gap-4">
+          <button onClick={() => setIsBroadcasting(true)} className="bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all outline-none border border-black/5 dark:border-white/10">
+            <Send className="w-4 h-4" /> Strategic Broadcast
+          </button>
           <button onClick={() => setIsAddingIntern(true)} className="bg-[#F05E23] text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[#F05E23]/20">
             <UserPlus className="w-4 h-4" /> Add Intern
           </button>
@@ -410,6 +427,24 @@ export default function AdminDashboard() {
 
       {/* Modals */}
       <AnimatePresence mode="wait">
+        {isBroadcasting && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
+             <motion.div key="broadcast-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-10 rounded-[3rem] shadow-2xl border border-white/10">
+                <h2 className="text-3xl font-black uppercase mb-10 tracking-tight">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
+                <form onSubmit={handleBroadcast} className="space-y-6">
+                   <div className="space-y-2">
+                     <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Broadcast Message</label>
+                     <textarea rows={6} required value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} placeholder="Enter administrative directive for all interns..." className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23] transition-all font-bold" />
+                   </div>
+                   <div className="flex gap-4 pt-4">
+                     <button type="button" onClick={() => setIsBroadcasting(false)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-xs border border-black/10 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5">Abort</button>
+                     <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Deploy Broadcast</button>
+                   </div>
+                </form>
+             </motion.div>
+           </div>
+        )}
+
         {isAddingIntern && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
              <motion.div key="add-intern-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-10 rounded-[3rem] shadow-2xl border border-white/10">

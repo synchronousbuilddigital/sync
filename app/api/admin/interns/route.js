@@ -2,6 +2,7 @@ import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "@/lib/auth";
+import { sendOnboardingEmail } from "@/lib/mail";
 
 export async function GET(req) {
   try {
@@ -39,6 +40,12 @@ export async function POST(req) {
       role: "intern",
       mustChangePassword: true,
     });
+
+    try {
+      await sendOnboardingEmail(email, name, defaultPassword);
+    } catch (mailErr) {
+      console.error("Failed to send onboarding email", mailErr);
+    }
 
     return Response.json({ success: true, intern: { ...intern._doc, password: defaultPassword } });
   } catch (err) {

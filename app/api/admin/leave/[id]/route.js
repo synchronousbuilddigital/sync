@@ -1,6 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import Leave from "@/models/Leave";
 import { verifyToken } from "@/lib/auth";
+import { sendLeaveStatusEmail } from "@/lib/mail";
 
 export async function PATCH(req, { params }) {
   try {
@@ -21,9 +22,15 @@ export async function PATCH(req, { params }) {
       id, 
       { status, adminNote }, 
       { returnDocument: 'after' }
-    );
+    ).populate("internId", "name email");
 
     if (!leave) return Response.json({ success: false, message: "Leave request not found" }, { status: 404 });
+
+    try {
+      await sendLeaveStatusEmail(leave.internId.email, leave.internId.name, status, adminNote);
+    } catch (mailErr) {
+      console.error("Failed to send leave update email", mailErr);
+    }
 
     return Response.json({ success: true, leave });
   } catch (err) {

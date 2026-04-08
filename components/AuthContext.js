@@ -272,12 +272,25 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const announceToAll = async (message) => {
+    const res = await fetch("/api/admin/announce", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ message })
+    });
+    return await res.json();
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
       interns, tasks, leaves, addIntern, removeIntern, assignTask, 
       updateTaskStatus, sendDiscussion, sendInvite, 
-      applyForLeave, approveLeave, deleteTask, reassignTask
+      applyForLeave, approveLeave, deleteTask, reassignTask,
+      announceToAll
     }}>
       {children}
     </AuthContext.Provider>
