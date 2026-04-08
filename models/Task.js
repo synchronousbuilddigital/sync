@@ -17,6 +17,7 @@ const TaskSchema = new mongoose.Schema({
   dueDate: { type: Date },
   isApproved: { type: Boolean, default: false },
   note: { type: String, default: "" }, // Intern's final note on completion
+  meetingLink: { type: String, default: "" }, // Auto-generated meeting link
   discussion: [{
     sender: { type: String }, // 'admin' or 'intern'
     content: { type: String },

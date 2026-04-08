@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, Clock, MessageSquare, 
   Send, ListTodo, TrendingUp, AlertCircle,
-  FileText, Calendar, PlusCircle
+  FileText, Calendar, PlusCircle, Activity
 } from "lucide-react";
 
 export default function InternDashboard() {
@@ -165,12 +165,17 @@ export default function InternDashboard() {
                           <h3 className="text-2xl font-black tracking-tight uppercase leading-none">{task.title}</h3>
                           <p className="text-sm text-slate-500 dark:text-white/40 font-medium leading-relaxed max-w-2xl">{task.description}</p>
                           
-                          <div className="flex items-center gap-4 pt-4">
-                             <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); }} className="bg-[#F05E23] text-white px-6 py-3 rounded-2xl text-[0.65rem] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#F05E23]/20">Update Progress</button>
-                             <button onClick={() => setChatTaskId(task._id)} className="bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white px-6 py-3 rounded-2xl text-[0.65rem] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-white/20 transition-all">
-                                <MessageSquare className="w-4 h-4" /> Discussion ({task.discussion?.length || 0})
-                             </button>
-                          </div>
+                           <div className="flex items-center gap-4 pt-4">
+                              <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); }} className="bg-[#F05E23] text-white px-6 py-3 rounded-2xl text-[0.65rem] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#F05E23]/20">Update Progress</button>
+                              <button onClick={() => setChatTaskId(task._id)} className="bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white px-6 py-3 rounded-2xl text-[0.65rem] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-white/20 transition-all">
+                                 <MessageSquare className="w-4 h-4" /> Discussion ({task.discussion?.length || 0})
+                              </button>
+                              {task.meetingLink && (
+                                <a href={task.meetingLink} target="_blank" className="bg-blue-500 text-white px-6 py-3 rounded-2xl text-[0.65rem] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                                   <Activity className="w-4 h-4" /> Join Sync Meeting
+                                </a>
+                              )}
+                           </div>
                        </div>
 
                        <div className="flex flex-col items-center gap-3 min-w-[120px]">

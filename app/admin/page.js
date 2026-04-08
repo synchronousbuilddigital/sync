@@ -350,19 +350,24 @@ export default function AdminDashboard() {
                     <p className="text-sm text-slate-500 dark:text-white/40 leading-relaxed max-w-3xl font-medium">{task.description}</p>
                   </div>
                   
-                  <div className="flex lg:flex-col gap-3 min-w-[200px]">
-                    <div className="flex gap-2">
-                      <button onClick={() => setChatTaskId(task._id)} className="flex-1 bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] flex items-center justify-center gap-2 border border-black/5 dark:border-white/10">
-                        <Mail className="w-3 h-3" /> Chat
-                      </button>
-                      <button onClick={() => deleteTask(task._id)} className="p-3 bg-red-500/10 text-red-500 rounded-2xl">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="flex lg:flex-col gap-3 min-w-[200px]">
+                      <div className="flex gap-2">
+                        <button onClick={() => setChatTaskId(task._id)} className="flex-1 bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] flex items-center justify-center gap-2 border border-black/5 dark:border-white/10">
+                          <Mail className="w-3 h-3" /> Chat
+                        </button>
+                        <button onClick={() => deleteTask(task._id)} className="p-3 bg-red-500/10 text-red-500 rounded-2xl">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {task.meetingLink && (
+                        <a href={task.meetingLink} target="_blank" className="bg-blue-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] flex items-center justify-center gap-2">
+                          <Activity className="w-3 h-3" /> Sync Link
+                        </a>
+                      )}
+                      {task.status === "Complete" && !task.isApproved && (
+                        <button onClick={() => handleApproveTask(task._id)} className="bg-green-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem]">Approve</button>
+                      )}
                     </div>
-                    {task.status === "Complete" && !task.isApproved && (
-                      <button onClick={() => handleApproveTask(task._id)} className="bg-green-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem]">Approve</button>
-                    )}
-                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -388,21 +393,34 @@ export default function AdminDashboard() {
                        </span>
                        <div className="flex justify-between items-start">
                          <h4 className="text-4xl font-black uppercase tracking-tighter italic">{project.projectName}</h4>
-                         <button 
-                            onClick={() => {
-                              if (confirm("Permanently purge this project matrix?")) {
-                                if (purgeClientProject) {
-                                  purgeClientProject(project._id);
-                                } else {
-                                  console.error("Purge function not found in context");
-                                  alert("System sync error. Please refresh.");
+                         <div className="flex gap-2">
+                           <button 
+                              onClick={() => {
+                                const url = `${window.location.origin}/brands/${project.publicId}`;
+                                navigator.clipboard.writeText(url);
+                                setStatusMsg({ type: "success", msg: "Strategic share link copied!" });
+                              }}
+                              className="p-3 bg-blue-500/10 text-blue-500 rounded-2xl hover:bg-blue-500 hover:text-white transition-all shrink-0"
+                              title="Copy Share Link"
+                           >
+                              <ExternalLink className="w-4 h-4" />
+                           </button>
+                           <button 
+                              onClick={() => {
+                                if (confirm("Permanently purge this project matrix?")) {
+                                  if (purgeClientProject) {
+                                    purgeClientProject(project._id);
+                                  } else {
+                                    console.error("Purge function not found in context");
+                                    alert("System sync error. Please refresh.");
+                                  }
                                 }
-                              }
-                            }}
-                            className="p-3 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shrink-0"
-                         >
-                            <Trash2 className="w-4 h-4" />
-                         </button>
+                              }}
+                              className="p-3 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shrink-0"
+                           >
+                              <Trash2 className="w-4 h-4" />
+                           </button>
+                         </div>
                        </div>
                        <p className="text-slate-500 dark:text-white/40 text-sm leading-relaxed">{project.description}</p>
                      </div>

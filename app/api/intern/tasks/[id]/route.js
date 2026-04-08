@@ -1,6 +1,8 @@
 import dbConnect from "@/lib/mongodb";
 import Task from "@/models/Task";
+import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
+import { sendMeetingRequestEmail } from "@/lib/mail";
 
 export async function PATCH(req, { params }) {
   try {
@@ -21,6 +23,10 @@ export async function PATCH(req, { params }) {
     const updateData = { status, note };
     if (isApproved !== undefined) updateData.isApproved = isApproved;
 
+    if (status === "Need Meeting") {
+      updateData.meetingLink = "https://meet.google.com/fvx-dgeh-dgb";
+    }
+
     const task = await Task.findOneAndUpdate(
       query, 
       updateData, 
@@ -29,6 +35,20 @@ export async function PATCH(req, { params }) {
 
     if (!task) {
       return Response.json({ success: false, message: "Task not found or access denied" }, { status: 404 });
+    }
+
+    // Notify Admin after successful DB update
+    if (status === "Need Meeting") {
+      try {
+        const admins = await User.find({ role: "admin" }).select("email");
+        const adminEmails = admins.map(a => a.email);
+        const intern = await User.findById(decoded.id);
+        if (adminEmails.length > 0 && intern) {
+          await sendMeetingRequestEmail(adminEmails, intern.name, task.title, updateData.meetingLink);
+        }
+      } catch (err) {
+        console.error("Failed to notify admin of meeting:", err);
+      }
     }
 
     return Response.json({ success: true, task });
