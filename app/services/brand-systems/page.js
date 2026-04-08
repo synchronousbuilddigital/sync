@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { Fingerprint, ArrowRight, CheckCircle2, Shield, Zap, Sparkles } from "lucide-react";
 import Link from "next/link";
-import CTA from "@/components/CTA";
 
 export default function BrandSystemsPage() {
     return (
@@ -12,7 +11,7 @@ export default function BrandSystemsPage() {
             <div className="absolute top-[5%] right-[-10%] w-[1000px] h-[1000px] rounded-full pointer-events-none z-0 opacity-10"
                 style={{ background: 'radial-gradient(circle, #F05E23, transparent 70%)', filter: 'blur(150px)' }}
             ></div>
-            
+
             {/* Hero Section */}
             <section className="w-full max-w-7xl mx-auto px-6 pt-32 pb-20 relative z-10">
                 <div className="flex flex-col items-start max-w-5xl">
@@ -25,7 +24,7 @@ export default function BrandSystemsPage() {
                         <span className="text-[0.65rem] font-black text-white tracking-[0.4em] uppercase">Service Architecture</span>
                     </motion.div>
 
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-[4rem] md:text-[6.5rem] lg:text-[7.5rem] font-bold tracking-tight leading-[0.9] text-[#111] mb-12"
@@ -34,7 +33,7 @@ export default function BrandSystemsPage() {
                         <span className="italic font-light text-slate-400">Systems.</span>
                     </motion.h1>
 
-                    <motion.p 
+                    <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
@@ -53,7 +52,7 @@ export default function BrandSystemsPage() {
                         <p className="text-xl text-slate-500 leading-relaxed">
                             A brand is more than a logo. It’s a synchronized system that communicates reliability, innovation, and market positioning in every interaction.
                         </p>
-                        
+
                         <div className="grid gap-6">
                             {[
                                 { title: "Visual Identity System", desc: "Cohesive design systems from typography to color theory." },
@@ -76,26 +75,25 @@ export default function BrandSystemsPage() {
 
                     <div className="relative">
                         <div className="sticky top-10 rounded-[3.5rem] bg-[#111] p-16 overflow-hidden h-full min-h-[500px] flex flex-col justify-between group shadow-2xl">
-                             <div className="absolute top-0 right-0 w-80 h-80 bg-[#F05E23]/20 rounded-full blur-[100px] translate-x-1/3 -translate-y-1/3"></div>
-                             
-                             <div className="relative z-10">
+                            <div className="absolute top-0 right-0 w-80 h-80 bg-[#F05E23]/20 rounded-full blur-[100px] translate-x-1/3 -translate-y-1/3"></div>
+
+                            <div className="relative z-10">
                                 <Fingerprint className="w-20 h-20 text-[#F05E23] mb-12" />
                                 <h3 className="text-4xl font-bold text-white mb-8 leading-tight">Delivering Pure <br /> <span className="text-[#F05E23] italic font-light">Market Authority.</span></h3>
                                 <p className="text-slate-400 text-lg">
                                     Our brand systems are engineered to eliminate market competition by sheer aesthetic and strategic superiority.
                                 </p>
-                             </div>
+                            </div>
 
-                             <Link href="/contact" className="relative z-10 flex items-center gap-4 text-white font-black uppercase tracking-[0.3em] text-[0.7rem] group-hover:text-[#F05E23] transition-colors mt-20">
+                            <Link href="/contact" className="relative z-10 flex items-center gap-4 text-white font-black uppercase tracking-[0.3em] text-[0.7rem] group-hover:text-[#F05E23] transition-colors mt-20">
                                 Initiate Project Brief
                                 <ArrowRight className="w-4 h-4" />
-                             </Link>
+                            </Link>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <CTA />
         </div>
     );
 }

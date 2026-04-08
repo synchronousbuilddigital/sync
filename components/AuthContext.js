@@ -12,6 +12,9 @@ export function AuthProvider({ children }) {
   const [interns, setInterns] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [leaves, setLeaves] = useState([]); // Holiday/Leave records
+  const [projects, setProjects] = useState([]); // Portfolio projects
+  const [clientProject, setClientProject] = useState(null); // High-level Brand workflow
+  const [adminClientProjects, setAdminClientProjects] = useState([]); // All brands (for admin)
   const router = useRouter();
 
   const fetchInterns = useCallback(async (authToken) => {
@@ -51,9 +54,99 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const fetchProjects = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/projects");
+      const data = await res.json();
+      if (data.success) setProjects(data.projects);
+    } catch (e) {
+      console.error("Failed to fetch projects", e);
+    }
+  }, []);
+
+  const fetchClientProject = useCallback(async (authToken) => {
+    try {
+      const res = await fetch("/api/client/project", {
+        headers: { "Authorization": `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      if (data.success) setClientProject(data.project);
+    } catch (e) {
+      console.error("Failed to fetch client project", e);
+    }
+  }, []);
+
+  const fetchAdminClientProjects = useCallback(async (authToken) => {
+    try {
+      const res = await fetch("/api/admin/client-projects", {
+        headers: { "Authorization": `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      if (data.success) setAdminClientProjects(data.projects);
+    } catch (e) {
+      console.error("Failed to fetch admin client projects", e);
+    }
+  }, []);
+
+  const createClient = async (name, email, password) => {
+    const res = await fetch("/api/admin/clients", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ name, email, password })
+    });
+    return await res.json();
+  };
+
+  const createClientProject = async (projectData) => {
+    const res = await fetch("/api/admin/client-projects", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(projectData)
+    });
+    const data = await res.json();
+    if (data.success) fetchAdminClientProjects(token);
+    return data;
+  };
+
+  const updateClientProject = async (id, updateData) => {
+    const res = await fetch(`/api/admin/client-projects/${id}`, {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(updateData)
+    });
+    const data = await res.json();
+    if (data.success) fetchAdminClientProjects(token);
+    return data;
+  };
+
+  const sendClientMessage = async (message) => {
+    const res = await fetch("/api/client/project", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ message })
+    });
+    const data = await res.json();
+    if (data.success) fetchClientProject(token);
+    return data;
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem("sync_user");
     const storedToken = localStorage.getItem("sync_token");
+
+    fetchProjects(); // Publicly fetch projects
 
     if (storedUser && storedToken) {
       const parsedUser = JSON.parse(storedUser);
@@ -61,13 +154,23 @@ export function AuthProvider({ children }) {
       setToken(storedToken);
       fetchTasks(parsedUser.role, storedToken);
       fetchLeaves(storedToken);
-      if (parsedUser.role === "admin") fetchInterns(storedToken);
+      
+      if (parsedUser.role === "admin") {
+        fetchInterns(storedToken);
+        fetchAdminClientProjects(storedToken);
+      }
+      if (parsedUser.role === "client") fetchClientProject(storedToken);
 
       // Real-time updates: Poll every 10 seconds
       const pollInterval = setInterval(() => {
         fetchTasks(parsedUser.role, storedToken);
         fetchLeaves(storedToken);
-        if (parsedUser.role === "admin") fetchInterns(storedToken);
+        fetchProjects();
+        if (parsedUser.role === "admin") {
+          fetchInterns(storedToken);
+          fetchAdminClientProjects(storedToken);
+        }
+        if (parsedUser.role === "client") fetchClientProject(storedToken);
       }, 10000);
 
       setLoading(false);
@@ -94,7 +197,7 @@ export function AuthProvider({ children }) {
         if (data.user.mustChangePassword) {
           router.push("/change-password");
         } else {
-          router.push(data.user.role === "admin" ? "/admin" : "/intern");
+          router.push(data.user.role === "admin" ? "/admin" : (data.user.role === "client" ? "/client" : "/intern"));
         }
         
         fetchTasks(data.user.role, data.token);
@@ -131,7 +234,7 @@ export function AuthProvider({ children }) {
       const updatedUser = { ...user, mustChangePassword: false };
       setUser(updatedUser);
       localStorage.setItem("sync_user", JSON.stringify(updatedUser));
-      router.push(user.role === "admin" ? "/admin" : "/intern");
+      router.push(user.role === "admin" ? "/admin" : (user.role === "client" ? "/client" : "/intern"));
     }
     return data;
   };
@@ -284,13 +387,52 @@ export function AuthProvider({ children }) {
     return await res.json();
   };
 
+  const addProject = async (projectData) => {
+    const res = await fetch("/api/admin/projects", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(projectData)
+    });
+    const data = await res.json();
+    if (data.success) fetchProjects();
+    return data;
+  };
+
+  const updateProject = async (id, projectData) => {
+    const res = await fetch(`/api/admin/projects/${id}`, {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(projectData)
+    });
+    const data = await res.json();
+    if (data.success) fetchProjects();
+    return data;
+  };
+
+  const deleteProject = async (id) => {
+    const res = await fetch(`/api/admin/projects/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchProjects();
+    return data;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
-      interns, tasks, leaves, addIntern, removeIntern, assignTask, 
-      updateTaskStatus, sendDiscussion, sendInvite, 
-      applyForLeave, approveLeave, deleteTask, reassignTask,
-      announceToAll
+      interns, tasks, leaves, projects, addIntern, removeIntern, assignTask, 
+      updateTaskStatus, deleteTask, reassignTask, approveLeave,
+      announceToAll, addProject, updateProject, deleteProject,
+      clientProject, adminClientProjects, createClient, createClientProject, 
+      updateClientProject, sendClientMessage
     }}>
       {children}
     </AuthContext.Provider>

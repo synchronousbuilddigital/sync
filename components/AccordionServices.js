@@ -1,4 +1,6 @@
-import { useState, useRef } from "react";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useMotionTemplate } from "framer-motion";
 import { ArrowUpRight, Star, Zap, TrendingUp, Cpu } from "lucide-react";
 import Link from "next/link";
@@ -75,6 +77,14 @@ export default function AccordionServices() {
     const [openIndex, setOpenIndex] = useState(null);
     const { isDark } = useTheme();
     const sectionRef = useRef(null);
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        setIsDesktop(window.innerWidth >= 1024);
+        const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
@@ -147,7 +157,7 @@ export default function AccordionServices() {
 
                 {/* Cards Container */}
                 <div 
-                    className="relative flex flex-col lg:flex-row gap-4 mb-4 lg:mb-10 lg:h-[850px] min-h-[600px]"
+                    className="relative grid grid-cols-2 lg:flex lg:flex-row gap-3 sm:gap-4 mb-4 lg:mb-10 lg:h-[850px] min-h-[600px]"
                     onMouseLeave={() => setOpenIndex(null)}
                 >
                     {services.map((service, index) => {
@@ -158,13 +168,16 @@ export default function AccordionServices() {
                             <motion.div
                                 key={index}
                                 layout
-                                className={`group border rounded-3xl overflow-hidden cursor-pointer relative flex flex-col lg:flex-row ${isDark ? 'border-neutral-800 bg-[#0A0A0A]' : 'border-neutral-200 bg-white shadow-xl shadow-black/5'} ${isOpen ? 'ring-1 ring-[#F05E23]/20' : ''}`}
+                                onClick={() => setOpenIndex(isOpen ? null : index)}
+                                className={`group border rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer relative flex flex-col lg:flex-row transition-all duration-500 ${isDark ? 'border-neutral-800 bg-[#0A0A0A]' : 'border-neutral-200 bg-white shadow-xl shadow-black/5'} ${isOpen ? 'col-span-2 ring-1 ring-[#F05E23]/20 shadow-2xl' : 'col-span-1 shadow-sm'}`}
                                 onMouseEnter={(e) => {
-                                    e.stopPropagation();
-                                    setOpenIndex(index);
+                                    if (isDesktop) {
+                                        e.stopPropagation();
+                                        setOpenIndex(index);
+                                    }
                                 }}
                                 animate={{
-                                    flex: !isSomethingHovered ? "1 1 0%" : (isOpen ? "3 1 0%" : "1 1 0%"),
+                                    flex: !isDesktop ? "none" : (!isSomethingHovered ? "1 1 0%" : (isOpen ? "3 1 0%" : "1 1 0%")),
                                     filter: isOpen ? "grayscale(0%)" : (isSomethingHovered ? "grayscale(100%)" : "grayscale(0%)"),
                                     opacity: isOpen ? 1 : (isSomethingHovered ? 0.35 : 1)
                                 }}
@@ -177,9 +190,9 @@ export default function AccordionServices() {
                                 }}
                             >
                                 {/* Spine / Tab */}
-                                <div className={`flex lg:flex-col items-center lg:items-center justify-between lg:justify-start p-4 lg:p-10 h-16 lg:h-full lg:w-24 shrink-0 transition-all duration-300 ${isOpen ? (isDark ? 'border-r border-neutral-800' : 'border-r border-neutral-100') : ''} ${!isOpen && isSomethingHovered ? 'flex' : 'hidden'}`}>
+                                <div className={`flex lg:flex-col items-center lg:items-center justify-between lg:justify-start p-3 sm:p-4 lg:p-10 h-12 sm:h-16 lg:h-full lg:w-24 shrink-0 transition-all duration-300 ${isOpen ? (isDark ? 'border-r border-neutral-800' : 'border-r border-neutral-100') : ''} ${!isOpen && isSomethingHovered && isDesktop ? 'flex' : 'hidden md:flex lg:flex'}`}>
                                     <div className="flex lg:flex-col items-center gap-3">
-                                        <span className={`text-base lg:text-xl font-black ${isOpen ? 'text-[#F05E23]' : (isDark ? 'text-neutral-700' : 'text-neutral-400')}`}>{service.num} .</span>
+                                        <span className={`text-sm sm:text-base lg:text-xl font-black ${isOpen ? 'text-[#F05E23]' : (isDark ? 'text-neutral-700' : 'text-neutral-400')}`}>{service.num} .</span>
                                     </div>
 
                                     {!isOpen && isSomethingHovered && (
@@ -205,26 +218,26 @@ export default function AccordionServices() {
                                                     )}
                                                 </div>
                                                 
-                                                <h3 className={`font-black tracking-tight leading-[1.02] transition-all duration-500 ${isDark ? 'text-white' : 'text-black'} ${isOpen ? 'text-3xl sm:text-5xl lg:text-5xl mb-8' : 'text-xl sm:text-2xl lg:text-3xl'}`}>
+                                                <h3 className={`font-black tracking-tight leading-[1.02] transition-all duration-500 ${isDark ? 'text-white' : 'text-black'} ${isOpen ? 'text-2xl sm:text-5xl lg:text-5xl mb-6' : 'text-sm sm:text-2xl lg:text-3xl'}`}>
                                                     {service.title}
                                                 </h3>
 
-                                                {!isSomethingHovered && (
+                                                {!isOpen && (
                                                     <>
                                                         <motion.p 
                                                             initial={{ opacity: 0 }}
                                                             animate={{ opacity: 1 }}
-                                                            className={`mt-6 text-sm lg:text-base font-light leading-relaxed transition-colors duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}
+                                                            className={`mt-3 sm:mt-6 text-[0.65rem] sm:text-sm lg:text-base font-light leading-relaxed transition-colors duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-500'} line-clamp-2 md:line-clamp-none`}
                                                         >
                                                             {service.desc}
                                                         </motion.p>
                                                         
                                                         {/* Idle State Image Preview */}
                                                         <motion.div 
-                                                            initial={{ opacity: 0, y: 20 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            transition={{ delay: 0.2 }}
-                                                            className="mt-12 rounded-2xl overflow-hidden aspect-video w-full border border-neutral-500/10 shadow-lg"
+                                                            initial={{ opacity: 0, scale: 0.9 }}
+                                                            animate={{ opacity: 1, scale: 1 }}
+                                                            transition={{ delay: 0.1 }}
+                                                            className="mt-4 sm:mt-12 rounded-xl sm:rounded-2xl overflow-hidden aspect-[4/3] sm:aspect-video w-full border border-neutral-500/10 shadow-lg"
                                                         >
                                                             <img 
                                                                 src={service.image} 
@@ -294,31 +307,29 @@ export default function AccordionServices() {
                                             </motion.div>
                                         </div>
 
-                                        <div className="mt-auto relative z-10 w-full border-t border-neutral-500/10 pt-6">
+                                        <div className="mt-auto relative z-10 w-full border-t border-neutral-500/10 pt-4 sm:pt-6">
                                             {/* Open State Button */}
                                             <motion.div 
                                                 animate={{ 
                                                     opacity: isOpen ? 1 : 0,
                                                     y: isOpen ? 0 : 20
                                                 }}
-                                                className={isOpen ? "block mt-4" : "hidden"}
+                                                className={isOpen ? "block mt-2 sm:mt-4" : "hidden"}
                                             >
                                                 <Link
                                                     href={service.link}
-                                                    className={`group/btn inline-flex items-center justify-center gap-6 px-12 py-5 rounded-full font-black text-[0.7rem] tracking-widest uppercase transition-all duration-300 shadow-xl ${isDark ? 'bg-white text-black hover:bg-[#F05E23] hover:text-white' : 'bg-black text-white hover:bg-[#F05E23]'}`}
+                                                    className={`group/btn inline-flex items-center justify-center gap-4 sm:gap-6 px-6 sm:px-12 py-3 sm:py-5 rounded-full font-black text-[0.6rem] sm:text-[0.7rem] tracking-widest uppercase transition-all duration-300 shadow-xl ${isDark ? 'bg-white text-black hover:bg-[#F05E23] hover:text-white' : 'bg-black text-white hover:bg-[#F05E23]'}`}
                                                 >
                                                     Start Today
-                                                    <ArrowUpRight strokeWidth={3} className="w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
+                                                    <ArrowUpRight strokeWidth={3} className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
                                                 </Link>
                                             </motion.div>
-
-                                            {/* Idle State Footer */}
-                                            {!isSomethingHovered && (
-                                                <div className="flex items-center justify-between opacity-30">
-                                                    <span className="text-[0.6rem] font-bold tracking-[0.2em] uppercase">See details</span>
-                                                    <span className="text-[0.6rem] font-bold tracking-[0.2em] uppercase">Trusted Help</span>
-                                                </div>
-                                            )}
+                                            
+                                            {/* Unified footer for non-desktop */}
+                                            <div className="flex items-center justify-between opacity-30 mt-2 sm:mt-0 lg:hidden">
+                                                <span className="text-[0.5rem] font-bold tracking-[0.1em] uppercase">{isOpen ? 'Active' : 'Details'}</span>
+                                                <Star className="w-3 h-3 text-[#F05E23]" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

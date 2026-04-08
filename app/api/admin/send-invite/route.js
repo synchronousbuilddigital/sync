@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import { sendOnboardingEmail } from "@/lib/mail";
 
 export async function POST(req) {
   try {
@@ -12,19 +13,13 @@ export async function POST(req) {
       return Response.json({ success: false, message: "Intern not found" }, { status: 404 });
     }
 
-    // In a real app, this would use nodemailer/resend to send the email
-    console.log(`[MAIL SIMULATION] Sending login credentials to: ${email}`);
-    console.log(`
-      Hello ${name},
-      Welcome to Synchronous Build Digital. 
-      Your intern portal has been established.
-
-      Login URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/login
-      Username: ${email}
-      Temporary Password: ${password || 'SyncIntern123'}
-
-      Please change your password upon first login.
-    `);
+    // Send actual email via Nodemailer
+    try {
+      await sendOnboardingEmail(email, name, password || 'SyncIntern123');
+    } catch (mailErr) {
+      console.error("Failed to transmit invite email", mailErr);
+      return Response.json({ success: false, message: "Credential transmission failed" }, { status: 500 });
+    }
 
     return Response.json({ 
       success: true, 

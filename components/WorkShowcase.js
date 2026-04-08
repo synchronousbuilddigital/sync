@@ -5,75 +5,52 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { ArrowUpRight, CheckCircle, Clock, Smile, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from './ThemeContext';
-
-const projects = [
-    {
-        id: "01",
-        title: "BOXFOX",
-        summary: "An easy-to-use custom gift box and 3D design shop.",
-        solution: "We designed a smart 3D tool so customers can make their own boxes and order them instantly.",
-        results: ["Custom 3D Shop", "Easy Ordering"],
-        image: "/website ss/boxfox.png",
-        plan: "Step: Design & Build"
-    },
-    {
-        id: "02",
-        title: "RYM Grenergy",
-        summary: "Smart solar and energy systems for cleaner homes.",
-        solution: "We built a simple system that uses smart tech to manage solar energy and storage automatically.",
-        results: ["Better Solar Energy", "Smarter Saving"],
-        image: "/website ss/RYM.png",
-        plan: "Step: Simple Setup"
-    },
-    {
-        id: "03",
-        title: "Vegavruddhi",
-        summary: "A helpful app for sales teams to track their work and grow.",
-        solution: "We created a mobile app that helps sales teams see where to go and how to close more deals.",
-        results: ["Fast Sales Growth", "Better Tracking"],
-        image: "/website ss/vega.png",
-        plan: "Step: Team Support"
-    },
-    {
-        id: "04",
-        title: "BWorth",
-        summary: "A friendly online store for buying and selling pre-owned clothes.",
-        solution: "We made a simple app where users can sell clothes and earn rewards for choosing eco-friendly options.",
-        results: ["Better Shopping", "Eco Rewards"],
-        image: "/website ss/bworth.png",
-        plan: "Step: Smart Marketplace"
-    },
-    {
-        id: "05",
-        title: "Fashquick",
-        summary: "Premium fashion rentals for any occasion starting today.",
-        solution: "We built an affordable rental shop where anyone can rent high-end outfits for a low daily price.",
-        results: ["Fashion Rental", "Affordable Price"],
-        image: "/website ss/fashquick.png",
-        plan: "Step: Daily Rentals"
-    },
-    {
-        id: "06",
-        title: "PRL Roadlines",
-        summary: "Enterprise-grade vehicle and household relocation platform.",
-        solution: "We engineered a high-velocity logistics layer with real-time quote matching and carrier network optimization.",
-        results: ["5000+ Fleet Nodes", "Pan-India Network"],
-        image: "/website ss/prl.png",
-        plan: "Step: Logistics Layer"
-    }
-];
+import { useAuth } from "./AuthContext";
 
 export default function WorkShowcase() {
+    const { projects } = useAuth();
     const { isDark } = useTheme();
     const [activeIndex, setActiveIndex] = useState(0);
+
+    const displayProjects = projects.length > 0 ? projects.map(p => ({
+        id: p.index || "00",
+        title: p.title,
+        summary: p.description,
+        plan: p.strategyDetail,
+        happiness: p.happinessDetail,
+        results: p.tags,
+        image: p.imageUrl || "/website ss/boxfox.png", // fallback
+        category: p.category
+    })) : [
+        {
+            id: "01",
+            title: "BOXFOX",
+            summary: "An easy-to-use custom gift box and 3D design shop.",
+            plan: "Step: Design & Build",
+            happiness: "100% Success",
+            results: ["Custom 3D Shop", "Easy Ordering"],
+            image: "/website ss/boxfox.png",
+            category: "Verified Partner"
+        },
+        {
+            id: "02",
+            title: "RYM Grenergy",
+            summary: "Smart solar and energy systems for cleaner homes.",
+            plan: "Step: Simple Setup",
+            happiness: "100% Success",
+            results: ["Better Solar Energy", "Smarter Saving"],
+            image: "/website ss/RYM.png",
+            category: "Verified Partner"
+        }
+    ];
 
     // Auto-scroll logic (continuous felt sliding)
     useEffect(() => {
         const interval = setInterval(() => {
-            setActiveIndex((prev) => (prev + 1) % projects.length);
-        }, 8000); // Increased from 5s to 8s
+            setActiveIndex((prev) => (prev + 1) % displayProjects.length);
+        }, 8000); 
         return () => clearInterval(interval);
-    }, []);
+    }, [displayProjects.length]);
 
     return (
         <section 
@@ -115,9 +92,9 @@ export default function WorkShowcase() {
 
             {/* Project Navigation - All Company Names */}
             <div className="flex flex-wrap justify-center gap-6 sm:gap-12 mb-16 relative z-20 px-6">
-                {projects.map((project, i) => (
+                {displayProjects.map((project, i) => (
                     <motion.button
-                        key={project.id}
+                        key={i}
                         onClick={() => setActiveIndex(i)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -143,8 +120,8 @@ export default function WorkShowcase() {
                     transition={{ duration: 1.8, ease: [0.32, 0.72, 0, 1] }}
                     className="flex w-full h-full"
                 >
-                    {projects.map((project, index) => (
-                        <div key={project.id} className="w-full flex-shrink-0 px-4 sm:px-10 h-full flex items-center justify-center">
+                    {displayProjects.map((project, index) => (
+                        <div key={index} className="w-full flex-shrink-0 px-4 sm:px-10 h-full flex items-center justify-center">
                             <motion.div 
                                 animate={{ 
                                     scale: activeIndex === index ? 1 : 0.85,
@@ -182,7 +159,7 @@ export default function WorkShowcase() {
                                                     <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
                                                     <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-green-500 animate-ping opacity-75" />
                                                 </div>
-                                                <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/30' : 'text-black/30'}`}>Verified Partner</span>
+                                                <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/30' : 'text-black/30'}`}>{project.category}</span>
                                             </div>
                                             <p className={`text-xl sm:text-2xl font-black tracking-tight leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
                                                 {project.summary}
@@ -196,7 +173,7 @@ export default function WorkShowcase() {
                                             </div>
                                             <div className="space-y-1">
                                                 <span className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/20' : 'text-black/20'}`}>Happiness</span>
-                                                <p className={`text-[11px] font-black uppercase ${isDark ? 'text-white/80' : 'text-black/80'}`}>100% Success</p>
+                                                <p className={`text-[11px] font-black uppercase ${isDark ? 'text-white/80' : 'text-black/80'}`}>{project.happiness}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -224,7 +201,7 @@ export default function WorkShowcase() {
 
                 {/* Progress Indicators */}
                 <div className="absolute -bottom-16 flex gap-4 left-1/2 -translate-x-1/2">
-                    {projects.map((_, i) => (
+                    {displayProjects.map((_, i) => (
                         <div 
                             key={i} 
                             onClick={() => setActiveIndex(i)}
@@ -240,7 +217,7 @@ export default function WorkShowcase() {
                         whileTap={{ scale: 0.85 }}
                         onClick={(e) => {
                             e.stopPropagation();
-                            setActiveIndex((prev) => (prev - 1 + projects.length) % projects.length);
+                            setActiveIndex((prev) => (prev - 1 + displayProjects.length) % displayProjects.length);
                         }}
                         className={`pointer-events-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center backdrop-blur-3xl border border-[#F05E23]/30 group transition-all duration-500 ${isDark ? 'bg-white/5 hover:bg-[#F05E23]/20' : 'bg-black/5 hover:bg-[#F05E23]/10'}`}
                     >
@@ -257,7 +234,7 @@ export default function WorkShowcase() {
                         whileTap={{ scale: 0.85 }}
                         onClick={(e) => {
                             e.stopPropagation();
-                            setActiveIndex((prev) => (prev + 1) % projects.length);
+                            setActiveIndex((prev) => (prev + 1) % displayProjects.length);
                         }}
                         className={`pointer-events-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center backdrop-blur-3xl border border-[#F05E23]/30 group transition-all duration-500 ${isDark ? 'bg-white/5 hover:bg-[#F05E23]/20' : 'bg-black/5 hover:bg-[#F05E23]/10'}`}
                     >

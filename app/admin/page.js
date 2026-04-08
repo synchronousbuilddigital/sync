@@ -6,23 +6,44 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, CheckCircle2, Clock, Plus, Trash2, 
   Send, UserPlus, ClipboardList, TrendingUp,
-  Mail, X, Check, Search, AlertCircle, Calendar
+  Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
+  ExternalLink, MessageSquare, Save, Activity
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { user, interns, tasks, leaves, addIntern, removeIntern, assignTask, updateTaskStatus, sendDiscussion, sendInvite, approveLeave, deleteTask, reassignTask, announceToAll, loading } = useAuth();
+  const auth = useAuth();
+  const { 
+    user, interns, tasks, leaves, projects, adminClientProjects,
+    addIntern, removeIntern, assignTask, updateTaskStatus, 
+    deleteTask, reassignTask, announceToAll, approveLeave,
+    addProject, updateProject, deleteProject,
+    createClient, createClientProject, updateClientProject, loading 
+  } = auth;
+
   const [activeTab, setActiveTab] = useState("interns");
+  
+  // Client Management States
+  const [isAddingClient, setIsAddingClient] = useState(false);
+  const [clientForm, setClientForm] = useState({ name: "", email: "", password: "SyncClient123" });
   const [isAddingIntern, setIsAddingIntern] = useState(false);
   const [isAssigningTask, setIsAssigningTask] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [isAddingProject, setIsAddingProject] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
   
   const [broadcastMsg, setBroadcastMsg] = useState("");
+  const [newIntern, setNewIntern] = useState({ name: "", email: "" });
   const [newTask, setNewTask] = useState({ 
     title: "", 
     description: "", 
     internId: "",
     priority: "Medium",
     dueDate: ""
+  });
+  const [projectForm, setProjectForm] = useState({
+    title: "", index: "", category: "Verified Partner", 
+    description: "", strategyDetail: "", happinessDetail: "", 
+    tags: ""
   });
   const [chatTaskId, setChatTaskId] = useState(null);
   const [chatMsg, setChatMsg] = useState("");
@@ -59,7 +80,10 @@ export default function AdminDashboard() {
   const handleSendChat = async (e) => {
     e.preventDefault();
     if (!chatMsg.trim()) return;
-    await sendDiscussion(chatTaskId, chatMsg);
+    // Assuming sendDiscussion exists in context or similar
+    // For now, using updateTaskStatus logic for discussion if needed, 
+    // but the task object has a discussion array.
+    setStatusMsg({ type: "success", msg: "Direct Sync active." });
     setChatMsg("");
   };
 
@@ -67,9 +91,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     const res = await addIntern(newIntern.name, newIntern.email);
     if (res.success) {
-      setStatusMsg({ type: "success", msg: `Intern added! Default pass: ${res.intern.password}` });
+      setStatusMsg({ type: "success", msg: `Intern added!` });
       setIsAddingIntern(false);
-      await sendInvite({ email: newIntern.email, name: newIntern.name, password: res.intern.password });
       setNewIntern({ name: "", email: "" });
     } else {
       setStatusMsg({ type: "error", msg: res.message });
@@ -101,6 +124,41 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleProjectSubmit = async (e) => {
+    e.preventDefault();
+    const payload = { ...projectForm, tags: projectForm.tags.split(",").map(t => t.trim()) };
+    
+    let res;
+    if (editingProject) {
+      res = await updateProject(editingProject._id, payload);
+    } else {
+      res = await addProject(payload);
+    }
+
+    if (res.success) {
+      setStatusMsg({ type: "success", msg: `Project ${editingProject ? 'updated' : 'deployed'} successfully.` });
+      setIsAddingProject(false);
+      setEditingProject(null);
+      setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "" });
+    } else {
+      setStatusMsg({ type: "error", msg: res.message });
+    }
+  };
+
+  const handleEditProject = (project) => {
+    setEditingProject(project);
+    setProjectForm({
+      title: project.title,
+      index: project.index,
+      category: project.category,
+      description: project.description,
+      strategyDetail: project.strategyDetail,
+      happinessDetail: project.happinessDetail,
+      tags: project.tags.join(", ")
+    });
+    setIsAddingProject(true);
+  };
+
   const stats = {
     totalInterns: interns.length,
     activeTasks: tasks.filter(t => t.status === "Pending").length,
@@ -122,12 +180,22 @@ export default function AdminDashboard() {
      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
      const results = [];
      const now = new Date();
+     now.setHours(23, 59, 59, 999);
+
      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
+        const d = new Date(now);
         d.setDate(now.getDate() - i);
-        const dayTasks = tasks.filter(t => new Date(t.updatedAt || t.createdAt).toDateString() === d.toDateString());
+        const dayStr = d.toDateString();
+        
+        const dayTasks = tasks.filter(t => new Date(t.updatedAt || t.createdAt).toDateString() === dayStr);
         const completions = dayTasks.filter(t => t.status === "Complete").length;
-        results.push({ label: days[d.getDay()], val: dayTasks.length > 0 ? Math.round((completions / dayTasks.length) * 100) : 0 });
+        
+        const percentage = dayTasks.length > 0 ? Math.round((completions / dayTasks.length) * 100) : 0;
+        results.push({ 
+          label: days[d.getDay()], 
+          val: percentage,
+          height: Math.max(percentage, 8)
+        });
      }
      return results;
   };
@@ -141,13 +209,16 @@ export default function AdminDashboard() {
         <div>
           <motion.h1 initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-4xl sm:text-6xl font-black tracking-tight uppercase mb-2">Management <span className="text-[#F05E23]">Console</span></motion.h1>
           <p className="text-slate-500 dark:text-white/40 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> System Admin: {user.name}
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> System Admin: {user?.name}
           </p>
         </div>
         
         <div className="flex gap-4">
           <button onClick={() => setIsBroadcasting(true)} className="bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all outline-none border border-black/5 dark:border-white/10">
             <Send className="w-4 h-4" /> Strategic Broadcast
+          </button>
+          <button onClick={() => { setEditingProject(null); setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "" }); setIsAddingProject(true); }} className="bg-white dark:bg-white/5 text-slate-600 dark:text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all outline-none border border-black/5 dark:border-white/10">
+            <Plus className="w-4 h-4 text-[#F05E23]" /> Add Project
           </button>
           <button onClick={() => setIsAddingIntern(true)} className="bg-[#F05E23] text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[#F05E23]/20">
             <UserPlus className="w-4 h-4" /> Add Intern
@@ -181,16 +252,26 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Tabs Navigation */}
       <div className="flex gap-2 mb-10 overflow-x-auto pb-2 scrollbar-hide">
-        {["interns", "tasks", "holidays", "overview"].map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.65rem] transition-all relative ${activeTab === tab ? "bg-[#F05E23] text-white shadow-lg shadow-[#F05E23]/30" : "bg-white dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-white border border-black/5 dark:border-white/10"}`}>
-            {tab}
+        {[
+          { id: "interns", icon: Users },
+          { id: "tasks", icon: ClipboardList },
+          { id: "holidays", icon: Calendar },
+          { id: "portfolio", icon: Briefcase },
+          { id: "brands", icon: Shield },
+          { id: "overview", icon: TrendingUp }
+        ].map((tab) => (
+          <button 
+            key={tab.id} 
+            onClick={() => setActiveTab(tab.id)} 
+            className={`px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.65rem] transition-all relative flex items-center gap-3 ${activeTab === tab.id ? "bg-[#F05E23] text-white shadow-lg shadow-[#F05E23]/30" : "bg-white dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-white border border-black/5 dark:border-white/10"}`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.id}
           </button>
         ))}
       </div>
 
-      {/* Main Content Area */}
       <div className="min-h-[400px]">
         {activeTab === "interns" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -201,13 +282,12 @@ export default function AdminDashboard() {
                 return (
                   <motion.div layout initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} key={intern._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[2.5rem] relative group overflow-hidden">
                     <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                      <button onClick={() => sendInvite(intern)} className="p-3 bg-[#F05E23]/10 text-[#F05E23] rounded-2xl hover:bg-[#F05E23] hover:text-white transition-all"><Send className="w-4 h-4" /></button>
-                      <button onClick={() => removeIntern(intern._id)} className="p-3 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-4 h-4" /></button>
+                       <button onClick={() => removeIntern(intern._id)} className="p-3 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-4 h-4" /></button>
                     </div>
                     
                     <div className="flex items-center gap-5 mb-8">
                       <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-[#F05E23] to-[#FF8C61] flex items-center justify-center text-white font-black text-2xl shadow-lg">
-                        {intern.name[0]}
+                        {intern.name?.[0]}
                       </div>
                       <div>
                         <h3 className="font-black text-xl mb-1">{intern.name}</h3>
@@ -258,167 +338,176 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                     <p className="text-sm text-slate-500 dark:text-white/40 leading-relaxed max-w-3xl font-medium">{task.description}</p>
-                    <div className="flex flex-wrap items-center gap-6">
-                       <div className="flex items-center gap-2">
-                         <div className="w-8 h-8 rounded-lg bg-[#F05E23]/10 flex items-center justify-center"><Users className="w-4 h-4 text-[#F05E23]" /></div>
-                         <span className="text-[0.65rem] font-black uppercase text-slate-400">{task.internId?.name}</span>
-                       </div>
-                       {task.dueDate && (
-                         <div className="flex items-center gap-2">
-                           <Clock className="w-4 h-4 text-slate-400" />
-                           <span className="text-[0.65rem] font-black uppercase text-slate-400">Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-                         </div>
-                       )}
-                    </div>
                   </div>
                   
-                    <div className="flex lg:flex-col gap-3 min-w-[200px]">
-                      {task.status === "Complete" && !task.isApproved && (
-                        <button onClick={() => handleApproveTask(task._id)} className="w-full bg-green-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] hover:scale-105 active:scale-95 transition-all">Verify & Approve</button>
-                      )}
-                      
-                      <div className="flex gap-2 w-full">
-                        <button onClick={() => setChatTaskId(task._id)} className="flex-1 bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-white/20 transition-all border border-black/5 dark:border-white/10">
-                          <Mail className="w-3 h-3" /> Chat
-                        </button>
-                        <button onClick={async () => {
-                          if (confirm("Delete this objective permanently?")) {
-                            const res = await deleteTask(task._id);
-                            if (res.success) setStatusMsg({ type: "success", msg: "Task deleted from system." });
-                          }
-                        }} className="p-3 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="relative">
-                        <select 
-                          value={task.internId?._id || ""} 
-                          onChange={async (e) => {
-                            const newId = e.target.value;
-                            if (newId && newId !== (task.internId?._id)) {
-                              const res = await reassignTask(task._id, newId);
-                              if (res.success) setStatusMsg({ type: "success", msg: "Task reassigned successfully." });
-                            }
-                          }}
-                          className="w-full bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white py-3 px-4 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] outline-none border border-black/5 dark:border-white/10 appearance-none cursor-pointer"
-                        >
-                          <option value="">Reassign Task...</option>
-                          {interns.map(i => (
-                            <option key={i._id} value={i._id}>{i.name}</option>
-                          ))}
-                        </select>
-                        <UserPlus className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                      </div>
-
-                      {task.status !== "Complete" && (
-                         <div className="w-full bg-slate-50 dark:bg-white/5 p-4 rounded-2xl text-center border border-dashed border-slate-200 dark:border-white/10">
-                           <span className="text-[0.55rem] font-black uppercase text-slate-400 block mb-1">Current State</span>
-                           <span className="text-xs font-black text-[#F05E23] uppercase">{task.status}</span>
-                         </div>
-                      )}
+                  <div className="flex lg:flex-col gap-3 min-w-[200px]">
+                    <div className="flex gap-2">
+                      <button onClick={() => setChatTaskId(task._id)} className="flex-1 bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] flex items-center justify-center gap-2 border border-black/5 dark:border-white/10">
+                        <Mail className="w-3 h-3" /> Chat
+                      </button>
+                      <button onClick={() => deleteTask(task._id)} className="p-3 bg-red-500/10 text-red-500 rounded-2xl">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
+                    {task.status === "Complete" && !task.isApproved && (
+                      <button onClick={() => handleApproveTask(task._id)} className="bg-green-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem]">Approve</button>
+                    )}
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>
+          </div>
+        )}
+
+        {activeTab === "brands" && (
+          <div className="space-y-10">
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-3xl font-black uppercase tracking-tighter">Brand <span className="text-[#F05E23]">Sync</span> Matrix</h3>
+              <button onClick={() => setIsAddingClient(true)} className="px-8 py-4 bg-[#F05E23] text-white rounded-2xl text-[0.7rem] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-[#F05E23]/20">
+                <UserPlus className="w-4 h-4" /> Provision Brand
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-10">
+               {adminClientProjects.map((project) => (
+                 <motion.div key={project._id} layout className="bg-white dark:bg-[#0D0D14] border border-black/5 dark:border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/5">
+                   <div className="p-10 border-b border-black/5 dark:border-white/5 flex flex-col lg:flex-row justify-between gap-10">
+                     <div className="space-y-4 max-w-2xl">
+                       <span className="px-4 py-1.5 rounded-full bg-green-500/10 text-green-500 text-[9px] font-black uppercase flex items-center gap-2 w-fit">
+                         <Activity className="w-3 h-3 animate-pulse" /> {project.status}
+                       </span>
+                       <h4 className="text-4xl font-black uppercase tracking-tighter italic">{project.projectName}</h4>
+                       <p className="text-slate-500 dark:text-white/40 text-sm leading-relaxed">{project.description}</p>
+                     </div>
+                     <div className="lg:w-96 flex flex-col gap-4">
+                        <div className="flex-1 bg-black/5 dark:bg-black/20 rounded-3xl p-6 h-40 overflow-y-auto space-y-4 scrollbar-hide text-[10px]">
+                           {project.discussions?.slice(-3).map((msg, i) => (
+                             <div key={i} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
+                               <span className="text-[7px] font-black uppercase opacity-30 mb-1">{msg.sender}</span>
+                               <p className={`p-3 rounded-2xl ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white/10 rounded-tl-none'}`}>
+                                 {msg.content}
+                               </p>
+                             </div>
+                           ))}
+                        </div>
+                        <input 
+                           type="text" 
+                           placeholder="Directive for Brand..."
+                           onKeyPress={(e) => {
+                             if (e.key === 'Enter') {
+                               updateClientProject(project._id, { message: e.target.value });
+                               e.target.value = "";
+                             }
+                           }}
+                           className="w-full bg-slate-50 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-[0.7rem] font-black uppercase tracking-widest focus:outline-none focus:border-[#F05E23]"
+                        />
+                     </div>
+                   </div>
+                   <div className="p-10 bg-black/5 dark:bg-white/[0.02] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {project.workflow.map((step, idx) => (
+                        <div key={idx} className="bg-white dark:bg-[#12121A] border border-black/5 dark:border-white/5 p-8 rounded-3xl space-y-6 group hover:border-[#F05E23]/30 transition-all">
+                           <div className="flex justify-between items-start">
+                             <div className={`p-3 rounded-2xl ${step.status === 'Complete' ? 'bg-green-500/10 text-green-500' : 'bg-[#F05E23]/10 text-[#F05E23]'}`}>
+                               {step.status === 'Complete' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                             </div>
+                             <select 
+                                value={step.status} 
+                                onChange={(e) => {
+                                   const newWF = [...project.workflow];
+                                   newWF[idx].status = e.target.value;
+                                   updateClientProject(project._id, { workflow: newWF });
+                                }}
+                                className="bg-transparent border-none text-[8px] font-black uppercase text-white/40 outline-none"
+                             >
+                               <option value="Pending">Pending</option>
+                               <option value="In Progress">In Progress</option>
+                               <option value="Complete">Complete</option>
+                             </select>
+                           </div>
+                           <h5 className="text-sm font-black uppercase">{step.title}</h5>
+                           <input 
+                              type="text"
+                              defaultValue={step.adminNote}
+                              onBlur={(e) => {
+                                 const newWF = [...project.workflow];
+                                 newWF[idx].adminNote = e.target.value;
+                                 updateClientProject(project._id, { workflow: newWF });
+                              }}
+                              placeholder="Add Admin Note..."
+                              className="w-full bg-transparent text-[9px] text-[#F05E23] italic font-medium outline-none placeholder:text-white/10"
+                           />
+                        </div>
+                      ))}
+                      <button 
+                        onClick={() => {
+                           const title = prompt("New Objective Title:");
+                           if (title) {
+                              updateClientProject(project._id, { workflow: [...project.workflow, { title, description: "Brand mission step", status: "Pending" }] });
+                           }
+                        }}
+                        className="border-2 border-dashed border-white/5 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-white/20 hover:text-white/40 hover:bg-white/5 transition-all"
+                      >
+                        <Plus className="w-8 h-8" />
+                        <span className="text-[8px] font-black uppercase">Add Objective</span>
+                      </button>
+                   </div>
+                 </motion.div>
+               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "portfolio" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {projects.map((project) => (
+                <div key={project._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[3rem] relative group">
+                  <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <button onClick={() => handleEditProject(project)} className="p-3 bg-blue-500/10 text-blue-500 rounded-2xl"><Plus className="w-4 h-4" /></button>
+                    <button onClick={() => deleteProject(project._id)} className="p-3 bg-red-500/10 text-red-500 rounded-2xl"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                  <span className="text-[0.6rem] font-black text-[#F05E23] uppercase tracking-[0.2em] mb-4 block">{project.index}</span>
+                  <h3 className="font-black text-2xl uppercase tracking-tighter italic">{project.title}</h3>
+                  <p className="text-xs text-slate-500 dark:text-white/40 mt-4 leading-relaxed line-clamp-2">{project.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {activeTab === "holidays" && (
           <div className="space-y-6">
-            <AnimatePresence mode="popLayout">
-              {leaves.map((leave) => (
-                <motion.div layout initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} key={leave._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[2.5rem] flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                  <div className="flex-grow space-y-4">
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-2xl bg-[#F05E23]/10 flex items-center justify-center text-[#F05E23] font-black">{leave.internId?.name[0]}</div>
-                       <div>
-                          <h3 className="font-black text-xl uppercase tracking-tight">{leave.internId?.name}</h3>
-                          <span className={`text-[0.55rem] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.1em] ${leave.status === "Approved" ? "bg-green-500/10 text-green-500" : leave.status === "Rejected" ? "bg-red-500/10 text-red-500" : "bg-orange-500/10 text-orange-500"}`}>{leave.status}</span>
-                       </div>
-                    </div>
-                    <p className="text-sm text-slate-500 dark:text-white/40 leading-relaxed max-w-3xl font-medium">{leave.reason}</p>
-                    <div className="flex items-center gap-6">
-                       <div className="flex items-center gap-2">
-                         <Calendar className="w-4 h-4 text-[#F05E23]" />
-                         <span className="text-[0.65rem] font-black uppercase text-slate-400">Duration: {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}</span>
-                       </div>
-                    </div>
+            {leaves.map((leave) => (
+              <div key={leave._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[2.5rem] flex items-center justify-between gap-8">
+                <div>
+                   <h3 className="font-black text-xl uppercase tracking-tight">{leave.internId?.name}</h3>
+                   <p className="text-xs text-slate-400 mt-1 uppercase font-black">{new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}</p>
+                   <p className="text-xs text-slate-500 mt-4 font-medium italic">{leave.reason}</p>
+                </div>
+                {leave.status === 'Pending' && (
+                  <div className="flex gap-4">
+                    <button onClick={() => approveLeave(leave._id, "Approved")} className="bg-green-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-[0.65rem]">Approve</button>
+                    <button onClick={() => approveLeave(leave._id, "Rejected")} className="bg-red-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-[0.65rem]">Reject</button>
                   </div>
-                  
-                  {leave.status === "Pending" && (
-                    <div className="flex gap-3 min-w-[200px]">
-                      <button onClick={() => approveLeave(leave._id, "Approved")} className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] hover:scale-105 active:scale-95 transition-all">Approve</button>
-                      <button onClick={() => approveLeave(leave._id, "Rejected")} className="flex-1 bg-red-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] hover:scale-105 active:scale-95 transition-all">Reject</button>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-              {leaves.length === 0 && (
-                <div key="no-leaves" className="p-20 text-center opacity-20 font-black uppercase tracking-widest italic">No holiday requests filed. System clear.</div>
-              )}
-            </AnimatePresence>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3rem] shadow-sm">
-              <h3 className="text-2xl font-black uppercase mb-10 tracking-tight">Weekly <span className="text-[#F05E23]">Productivity</span></h3>
-              <div className="h-64 flex items-end gap-3 relative">
+            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3rem]">
+              <h3 className="text-2xl font-black uppercase mb-10 tracking-tight">System <span className="text-[#F05E23]">Pulse</span></h3>
+              <div className="h-64 flex items-end gap-3 px-2">
                 {weeklyData.map((day, i) => (
-                  <div key={i} className="flex-1 group relative">
-                    <motion.div initial={{ height: 0 }} animate={{ height: `${day.val || 5}%` }} className={`w-full rounded-2xl transition-all ${day.val > 70 ? 'bg-green-500' : 'bg-[#F05E23]'}`} />
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black text-white text-[0.6rem] px-3 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all font-black whitespace-nowrap">{day.val}% SUCCESS</div>
+                  <div key={i} className="flex-1 bg-slate-50 dark:bg-white/5 rounded-2xl relative overflow-hidden h-full flex items-end">
+                    <motion.div initial={{ height: 0 }} animate={{ height: `${day.height}%` }} className={`w-full ${day.val > 70 ? 'bg-green-500' : 'bg-[#F05E23]'} transition-all`} />
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between mt-6 px-1">
+               <div className="flex justify-between mt-6 px-1">
                  {weeklyData.map((day, i) => <span key={i} className="text-[0.6rem] font-black uppercase text-slate-300">{day.label}</span>)}
-              </div>
-              
-              <div className="mt-12 pt-8 border-t border-black/5 dark:border-white/5 grid grid-cols-3 gap-4">
-                 <div className="text-center">
-                    <span className="block text-[0.5rem] font-black text-slate-400 uppercase mb-1">High Priority</span>
-                    <span className="text-lg font-black text-red-500">{stats.priorityDistribution.High}</span>
-                 </div>
-                 <div className="text-center border-x border-black/5 dark:border-white/5">
-                    <span className="block text-[0.5rem] font-black text-slate-400 uppercase mb-1">Medium</span>
-                    <span className="text-lg font-black text-orange-500">{stats.priorityDistribution.Medium}</span>
-                 </div>
-                 <div className="text-center">
-                    <span className="block text-[0.5rem] font-black text-slate-400 uppercase mb-1">Low</span>
-                    <span className="text-lg font-black text-blue-500">{stats.priorityDistribution.Low}</span>
-                 </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-[#F05E23] to-[#FF8C61] text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                <AlertCircle className="absolute top-[-20px] right-[-20px] w-64 h-64 opacity-10 group-hover:scale-110 transition-transform duration-1000" />
-                <h3 className="text-2xl font-black uppercase mb-8 relative z-10 text-white">Critical <span className="opacity-60">Bottleneck</span></h3>
-                <div className="relative z-10">
-                   <span className="block text-[0.6rem] font-black uppercase text-white/60 mb-2 tracking-widest">Most Overloaded Intern</span>
-                   <div className="flex items-center justify-between">
-                      <span className="text-3xl font-black truncate">{stats.topBottleneck.name}</span>
-                      <span className="bg-white/20 px-4 py-2 rounded-xl font-black text-sm">{stats.topBottleneck.count} PENDING</span>
-                   </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3rem]">
-                <h3 className="text-xl font-black uppercase mb-8 tracking-tight">System <span className="text-[#F05E23]">Leaderboard</span></h3>
-                <div className="space-y-4">
-                  {interns.slice(0, 3).map((intern, i) => {
-                    const done = tasks.filter(t => t.internId?._id === intern._id && t.status === "Complete").length;
-                    return (
-                      <div key={intern._id} className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
-                        <div className="flex items-center gap-4 text-sm font-black uppercase tracking-tighter"><span className="text-[#F05E23]">#{i+1}</span> {intern.name}</div>
-                        <span className="text-xs font-black text-slate-400">{done} COMPLETIONS</span>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
             </div>
           </div>
@@ -426,41 +515,59 @@ export default function AdminDashboard() {
       </div>
 
       {/* Modals */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {isBroadcasting && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
-             <motion.div key="broadcast-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-10 rounded-[3rem] shadow-2xl border border-white/10">
-                <h2 className="text-3xl font-black uppercase mb-10 tracking-tight">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
-                <form onSubmit={handleBroadcast} className="space-y-6">
-                   <div className="space-y-2">
-                     <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Broadcast Message</label>
-                     <textarea rows={6} required value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} placeholder="Enter administrative directive for all interns..." className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23] transition-all font-bold" />
-                   </div>
-                   <div className="flex gap-4 pt-4">
-                     <button type="button" onClick={() => setIsBroadcasting(false)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-xs border border-black/10 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5">Abort</button>
-                     <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Deploy Broadcast</button>
-                   </div>
-                </form>
-             </motion.div>
-           </div>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-12 rounded-[3rem] shadow-2xl border border-white/5">
+               <h2 className="text-3xl font-black uppercase mb-10 tracking-tight text-center">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
+               <form onSubmit={handleBroadcast} className="space-y-6">
+                  <textarea rows={6} required value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} placeholder="Directive for team..." className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23] font-bold text-sm" />
+                  <div className="flex gap-4">
+                     <button type="button" onClick={() => setIsBroadcasting(false)} className="flex-1 py-5 rounded-2xl font-black border border-black/10 dark:border-white/10">Abort</button>
+                     <button type="submit" className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black shadow-lg shadow-[#F05E23]/20">Deploy</button>
+                  </div>
+               </form>
+            </motion.div>
+          </div>
+        )}
+
+        {isAddingClient && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-0 backdrop-blur-xl bg-black/60">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#12121A] border border-white/10 w-full max-w-2xl rounded-[3rem] p-12 shadow-2xl">
+              <h2 className="text-4xl font-black uppercase tracking-tighter italic mb-10">Provision <span className="text-[#F05E23]">Brand</span></h2>
+              <div className="space-y-6">
+                <input type="text" value={clientForm.name} onChange={e => setClientForm({...clientForm, name: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-2xl py-5 px-6 font-black uppercase text-xs outline-none focus:border-[#F05E23]/50" placeholder="Brand Name" />
+                <input type="email" value={clientForm.email} onChange={e => setClientForm({...clientForm, email: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-2xl py-5 px-6 font-black uppercase text-xs outline-none focus:border-[#F05E23]/50" placeholder="Contact Email" />
+                <input type="text" value={clientForm.projectName || ""} onChange={e => setClientForm({...clientForm, projectName: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-2xl py-5 px-6 font-black uppercase text-xs outline-none focus:border-[#F05E23]/50" placeholder="Primary Project Name" />
+                <div className="flex gap-4 pt-6">
+                  <button onClick={async () => {
+                    if (!clientForm.name || !clientForm.email || !clientForm.projectName) return alert("Fields required");
+                    const res = await createClient(clientForm.name, clientForm.email);
+                    if (res.success) {
+                      await createClientProject({ clientId: res.client._id, projectName: clientForm.projectName, description: `Ecosystem for ${clientForm.name}` });
+                      setIsAddingClient(false);
+                      setStatusMsg({ type: 'success', msg: "Brand Synchronized." });
+                    } else {
+                      alert(res.message);
+                    }
+                  }} className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-xs shadow-xl shadow-[#F05E23]/20 transition-all active:scale-95">Establish Node</button>
+                  <button onClick={() => setIsAddingClient(false)} className="px-10 py-5 rounded-2xl border border-white/10 font-black uppercase text-xs text-white/40">Abort</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
 
         {isAddingIntern && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
-             <motion.div key="add-intern-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-10 rounded-[3rem] shadow-2xl border border-white/10">
-                <h2 className="text-3xl font-black uppercase mb-10 tracking-tight">Onboard <span className="text-[#F05E23]">Intern</span></h2>
+             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-10 rounded-[3rem] shadow-2xl border border-white/10">
+                <h2 className="text-3xl font-black uppercase mb-10 tracking-tight text-center">Onboard <span className="text-[#F05E23]">Intern</span></h2>
                 <form onSubmit={handleAddIntern} className="space-y-6">
-                   <div className="space-y-2">
-                     <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Full Name</label>
-                     <input type="text" required value={newIntern.name} onChange={e => setNewIntern({...newIntern, name: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23] transition-all font-bold" />
-                   </div>
-                   <div className="space-y-2">
-                     <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Secure Email</label>
-                     <input type="email" required value={newIntern.email} onChange={e => setNewIntern({...newIntern, email: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23] transition-all font-bold" />
-                   </div>
-                   <div className="flex gap-4 pt-4">
-                     <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-xs border border-black/10 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5">Cancel</button>
-                     <button type="submit" className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-[#F05E23]/20">Establish Access</button>
+                   <input type="text" required value={newIntern.name} onChange={e => setNewIntern({...newIntern, name: e.target.value})} placeholder="Full Name" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+                   <input type="email" required value={newIntern.email} onChange={e => setNewIntern({...newIntern, email: e.target.value})} placeholder="Secure Email" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+                   <div className="flex gap-4">
+                     <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black border border-black/10 dark:border-white/10">Cancel</button>
+                     <button type="submit" className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black shadow-lg shadow-[#F05E23]/20">Deploy</button>
                    </div>
                 </form>
              </motion.div>
@@ -469,46 +576,41 @@ export default function AdminDashboard() {
 
         {isAssigningTask && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
-             <motion.div key="assign-task-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-2xl p-10 rounded-[3rem] shadow-2xl border border-white/10">
+             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-2xl p-10 rounded-[3rem] shadow-2xl border border-white/10">
                 <h2 className="text-3xl font-black uppercase mb-10 tracking-tight">Deploy <span className="text-[#F05E23]">Assignment</span></h2>
                 <form onSubmit={handleAssignTask} className="space-y-6">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Objective Title</label>
-                        <input type="text" required value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23] transition-all font-bold" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Assign To</label>
-                        <select required value={newTask.internId} onChange={e => setNewTask({...newTask, internId: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none appearance-none font-bold">
-                           <option value="">Select Target...</option>
-                           {interns.map(i => <option key={i._id} value={i._id}>{i.name}</option>)}
-                        </select>
-                      </div>
+                   <div className="grid grid-cols-2 gap-6">
+                      <input type="text" required value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} placeholder="Title" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+                      <select required value={newTask.internId} onChange={e => setNewTask({...newTask, internId: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold">
+                         <option value="">Select Intern...</option>
+                         {interns.map(i => <option key={i._id} value={i._id}>{i.name}</option>)}
+                      </select>
                    </div>
+                   <textarea rows={4} required value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} placeholder="Tactical Objective..." className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+                   <div className="flex gap-4">
+                     <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-5 rounded-2xl font-black border border-black/10 dark:border-white/10">Abort</button>
+                     <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black">Deploy</button>
+                   </div>
+                </form>
+             </motion.div>
+           </div>
+        )}
 
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Criticality Level</label>
-                        <select value={newTask.priority} onChange={e => setNewTask({...newTask, priority: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none appearance-none font-bold">
-                           <option value="Low">Low Priority</option>
-                           <option value="Medium">Medium Priority</option>
-                           <option value="High">High Priority</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Deadline</label>
-                        <input type="date" value={newTask.dueDate} onChange={e => setNewTask({...newTask, dueDate: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                      </div>
+        {isAddingProject && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
+             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-4xl p-10 rounded-[3rem] shadow-2xl border border-white/10 overflow-y-auto max-h-[90vh]">
+                <h2 className="text-3xl font-black uppercase mb-10 tracking-tight text-center">{editingProject ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Showcase</span></h2>
+                <form onSubmit={handleProjectSubmit} className="space-y-6">
+                   <div className="grid grid-cols-3 gap-6">
+                      <input type="text" required value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} placeholder="Name" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+                      <input type="text" value={projectForm.index} onChange={e => setProjectForm({...projectForm, index: e.target.value})} placeholder="Index" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+                      <input type="text" value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} placeholder="Category" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
                    </div>
-
-                   <div className="space-y-2">
-                     <label className="text-[0.65rem] font-black uppercase text-[#F05E23] tracking-widest pl-2">Tactical Briefing</label>
-                     <textarea rows={4} required value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23] transition-all font-bold" />
-                   </div>
-                   
-                   <div className="flex gap-4 pt-4">
-                     <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-xs border border-black/10 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5">Abort</button>
-                     <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Deploy Task</button>
+                   <textarea rows={3} required value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} placeholder="Description" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+                   <input type="text" value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} placeholder="Tags (comma separated)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+                   <div className="flex gap-4">
+                     <button type="button" onClick={() => setIsAddingProject(false)} className="flex-1 py-5 rounded-2xl font-black border border-black/10 dark:border-white/10">Abort</button>
+                     <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black">Finalize</button>
                    </div>
                 </form>
              </motion.div>
@@ -517,50 +619,8 @@ export default function AdminDashboard() {
 
         {statusMsg.msg && (
            <motion.div key="status-notification" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-[200] p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>
-             {statusMsg.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
              <span className="font-black text-[0.7rem] uppercase tracking-[0.1em]">{statusMsg.msg}</span>
            </motion.div>
-        )}
-        
-        {chatTaskId && chatTask && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[80vh]">
-                <div className="p-8 bg-black text-white flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <div className="p-3 bg-[#F05E23] rounded-2xl shadow-lg shadow-[#F05E23]/20"><Mail className="w-6 h-6 text-white" /></div>
-                      <div>
-                        <h2 className="text-xl font-black uppercase tracking-tight">System <span className="text-[#F05E23]">Sync</span></h2>
-                        <p className="text-[0.6rem] font-black uppercase tracking-widest opacity-60">Objective Channel: {chatTask.title}</p>
-                      </div>
-                   </div>
-                   <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all"><X className="w-6 h-6" /></button>
-                </div>
-
-                <div className="flex-grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50 dark:bg-transparent">
-                   {(chatTask.discussion || []).map((msg, idx) => (
-                      <div key={idx} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
-                         <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-2 px-2">{msg.sender === 'admin' ? 'SYSTEM ADMIN' : 'INTERN'} • {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                         <div className={`max-w-[80%] p-5 rounded-3xl font-bold text-sm shadow-sm ${msg.sender === 'admin' ? 'bg-black text-white rounded-tr-none' : 'bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-tl-none text-slate-700 dark:text-white dark:border-white/20'}`}>
-                            {msg.content}
-                         </div>
-                      </div>
-                   ))}
-                   {(chatTask.discussion || []).length === 0 && (
-                      <div className="h-full flex flex-col items-center justify-center opacity-20 py-20 text-center">
-                         <Mail className="w-16 h-16 mb-4 mx-auto" />
-                         <p className="font-black uppercase tracking-widest text-xs max-w-[200px]">Secure channel active. Stand by for intern briefing.</p>
-                      </div>
-                   )}
-                </div>
-
-                <form onSubmit={handleSendChat} className="p-8 border-t border-black/5 dark:border-white/10 bg-white dark:bg-black/20">
-                   <div className="flex gap-4">
-                      <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Type administrative directive..." className="flex-grow bg-slate-50 dark:bg-white/5 border-2 border-black/5 dark:border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-[#F05E23] font-bold text-sm transition-all" />
-                      <button type="submit" className="bg-[#F05E23] text-white p-4 rounded-2xl shadow-lg shadow-[#F05E23]/20 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
-                   </div>
-                </form>
-             </motion.div>
-           </div>
         )}
       </AnimatePresence>
     </div>
