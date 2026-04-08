@@ -248,12 +248,36 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const deleteTask = async (taskId) => {
+    const res = await fetch(`/api/admin/tasks/${taskId}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchTasks("admin", token);
+    return data;
+  };
+
+  const reassignTask = async (taskId, internId) => {
+    const res = await fetch(`/api/admin/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ internId })
+    });
+    const data = await res.json();
+    if (data.success) fetchTasks("admin", token);
+    return data;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
       interns, tasks, leaves, addIntern, removeIntern, assignTask, 
       updateTaskStatus, sendDiscussion, sendInvite, 
-      applyForLeave, approveLeave 
+      applyForLeave, approveLeave, deleteTask, reassignTask
     }}>
       {children}
     </AuthContext.Provider>

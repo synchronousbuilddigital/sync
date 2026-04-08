@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { user, interns, tasks, leaves, addIntern, removeIntern, assignTask, updateTaskStatus, sendDiscussion, sendInvite, approveLeave, loading } = useAuth();
+  const { user, interns, tasks, leaves, addIntern, removeIntern, assignTask, updateTaskStatus, sendDiscussion, sendInvite, approveLeave, deleteTask, reassignTask, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("interns");
   const [isAddingIntern, setIsAddingIntern] = useState(false);
   const [isAssigningTask, setIsAssigningTask] = useState(false);
@@ -92,6 +92,16 @@ export default function AdminDashboard() {
     activeTasks: tasks.filter(t => t.status === "Pending").length,
     completedTasks: tasks.filter(t => t.status === "Complete").length,
     blockers: tasks.filter(t => t.status === "Need Credentials" || t.status === "Need Meeting").length,
+    pendingHolidays: leaves.filter(l => l.status === "Pending").length,
+    priorityDistribution: {
+      High: tasks.filter(t => t.priority === "High").length,
+      Medium: tasks.filter(t => (t.priority === "Medium" || !t.priority)).length,
+      Low: tasks.filter(t => t.priority === "Low").length,
+    },
+    topBottleneck: interns.map(i => {
+      const pending = tasks.filter(t => t.internId?._id === i._id && t.status !== "Complete").length;
+      return { name: i.name, count: pending };
+    }).sort((a, b) => b.count - a.count)[0] || { name: "N/A", count: 0 }
   };
 
   const getWeeklyData = () => {
@@ -132,22 +142,24 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Quick View */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
         {[
           { icon: Users, label: "Talent Pool", val: stats.totalInterns, color: "blue", desc: "active interns" },
           { icon: Clock, label: "Live Tasks", val: stats.activeTasks, color: "orange", desc: "in progress" },
           { icon: AlertCircle, label: "System Blockers", val: stats.blockers, color: "red", desc: "need attention" },
+          { icon: Calendar, label: "Pending Leave", val: stats.pendingHolidays, color: "purple", desc: "wait for review" },
           { icon: CheckCircle2, label: "Efficiency", val: stats.completedTasks, color: "green", desc: "finalized tasks" }
         ].map((stat, i) => (
-          <motion.div key={i} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.1 }} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all group">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-4 rounded-2xl bg-${stat.color}-500/10 group-hover:scale-110 transition-transform`}>
+          <motion.div key={i} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.1 }} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+            <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500/5 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform`} />
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <div className={`p-4 rounded-2xl bg-${stat.color}-500/10`}>
                 <stat.icon className={`w-6 h-6 text-${stat.color}-500`} />
               </div>
               <span className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">{stat.label}</span>
             </div>
-            <div className="text-4xl font-black mb-1">{stat.val}</div>
-            <p className="text-[0.6rem] font-bold text-slate-400/60 uppercase">{stat.desc}</p>
+            <div className="text-4xl font-black mb-1 relative z-10">{stat.val}</div>
+            <p className="text-[0.6rem] font-bold text-slate-400/60 uppercase relative z-10">{stat.desc}</p>
           </motion.div>
         ))}
       </div>
@@ -247,12 +259,44 @@ export default function AdminDashboard() {
                       {task.status === "Complete" && !task.isApproved && (
                         <button onClick={() => handleApproveTask(task._id)} className="w-full bg-green-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] hover:scale-105 active:scale-95 transition-all">Verify & Approve</button>
                       )}
-                      <button onClick={() => setChatTaskId(task._id)} className="w-full bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-white/20 transition-all border border-black/5 dark:border-white/10">
-                        <Mail className="w-3 h-3" /> Chat ({task.discussion?.length || 0})
-                      </button>
+                      
+                      <div className="flex gap-2 w-full">
+                        <button onClick={() => setChatTaskId(task._id)} className="flex-1 bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white py-3 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-white/20 transition-all border border-black/5 dark:border-white/10">
+                          <Mail className="w-3 h-3" /> Chat
+                        </button>
+                        <button onClick={async () => {
+                          if (confirm("Delete this objective permanently?")) {
+                            const res = await deleteTask(task._id);
+                            if (res.success) setStatusMsg({ type: "success", msg: "Task deleted from system." });
+                          }
+                        }} className="p-3 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="relative">
+                        <select 
+                          value={task.internId?._id || ""} 
+                          onChange={async (e) => {
+                            const newId = e.target.value;
+                            if (newId && newId !== (task.internId?._id)) {
+                              const res = await reassignTask(task._id, newId);
+                              if (res.success) setStatusMsg({ type: "success", msg: "Task reassigned successfully." });
+                            }
+                          }}
+                          className="w-full bg-slate-50 dark:bg-white/10 text-slate-600 dark:text-white py-3 px-4 rounded-2xl font-black uppercase tracking-widest text-[0.6rem] outline-none border border-black/5 dark:border-white/10 appearance-none cursor-pointer"
+                        >
+                          <option value="">Reassign Task...</option>
+                          {interns.map(i => (
+                            <option key={i._id} value={i._id}>{i.name}</option>
+                          ))}
+                        </select>
+                        <UserPlus className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                      </div>
+
                       {task.status !== "Complete" && (
                          <div className="w-full bg-slate-50 dark:bg-white/5 p-4 rounded-2xl text-center border border-dashed border-slate-200 dark:border-white/10">
-                           <span className="text-[0.55rem] font-black uppercase text-slate-400 block mb-1">Status</span>
+                           <span className="text-[0.55rem] font-black uppercase text-slate-400 block mb-1">Current State</span>
                            <span className="text-xs font-black text-[#F05E23] uppercase">{task.status}</span>
                          </div>
                       )}
@@ -315,22 +359,33 @@ export default function AdminDashboard() {
               <div className="flex justify-between mt-6 px-1">
                  {weeklyData.map((day, i) => <span key={i} className="text-[0.6rem] font-black uppercase text-slate-300">{day.label}</span>)}
               </div>
+              
+              <div className="mt-12 pt-8 border-t border-black/5 dark:border-white/5 grid grid-cols-3 gap-4">
+                 <div className="text-center">
+                    <span className="block text-[0.5rem] font-black text-slate-400 uppercase mb-1">High Priority</span>
+                    <span className="text-lg font-black text-red-500">{stats.priorityDistribution.High}</span>
+                 </div>
+                 <div className="text-center border-x border-black/5 dark:border-white/5">
+                    <span className="block text-[0.5rem] font-black text-slate-400 uppercase mb-1">Medium</span>
+                    <span className="text-lg font-black text-orange-500">{stats.priorityDistribution.Medium}</span>
+                 </div>
+                 <div className="text-center">
+                    <span className="block text-[0.5rem] font-black text-slate-400 uppercase mb-1">Low</span>
+                    <span className="text-lg font-black text-blue-500">{stats.priorityDistribution.Low}</span>
+                 </div>
+              </div>
             </div>
 
             <div className="space-y-6">
-              <div className="bg-gradient-to-br from-black to-slate-900 text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
-                <TrendingUp className="absolute top-[-20px] right-[-20px] w-64 h-64 opacity-5" />
-                <h3 className="text-2xl font-black uppercase mb-8 relative z-10">System <span className="text-[#F05E23]">Health</span></h3>
-                <div className="flex items-center gap-10 relative z-10">
-                  <div className="text-center">
-                    <span className="block text-[0.6rem] font-black uppercase text-white/40 mb-2">Uptime</span>
-                    <span className="text-4xl font-black">99.9%</span>
-                  </div>
-                  <div className="w-px h-16 bg-white/10" />
-                  <div className="text-center">
-                    <span className="block text-[0.6rem] font-black uppercase text-white/40 mb-2">Sync Rate</span>
-                    <span className="text-4xl font-black text-[#F05E23]">LIVE</span>
-                  </div>
+              <div className="bg-gradient-to-br from-[#F05E23] to-[#FF8C61] text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                <AlertCircle className="absolute top-[-20px] right-[-20px] w-64 h-64 opacity-10 group-hover:scale-110 transition-transform duration-1000" />
+                <h3 className="text-2xl font-black uppercase mb-8 relative z-10 text-white">Critical <span className="opacity-60">Bottleneck</span></h3>
+                <div className="relative z-10">
+                   <span className="block text-[0.6rem] font-black uppercase text-white/60 mb-2 tracking-widest">Most Overloaded Intern</span>
+                   <div className="flex items-center justify-between">
+                      <span className="text-3xl font-black truncate">{stats.topBottleneck.name}</span>
+                      <span className="bg-white/20 px-4 py-2 rounded-xl font-black text-sm">{stats.topBottleneck.count} PENDING</span>
+                   </div>
                 </div>
               </div>
 

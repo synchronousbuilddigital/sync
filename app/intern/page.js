@@ -228,6 +228,41 @@ export default function InternDashboard() {
                  )}
               </div>
            </div>
+
+           {/* Holiday Status/History Section */}
+           <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-8 shadow-sm">
+              <h3 className="text-xl font-black uppercase tracking-widest flex items-center gap-3 mb-8">
+                 <Calendar className="w-6 h-6 text-[#F05E23]" /> Holiday Ledger
+              </h3>
+              <div className="space-y-6">
+                 {leaves.length === 0 ? (
+                    <div className="text-center py-10 opacity-30">
+                       <p className="text-[0.65rem] font-black uppercase tracking-widest">No holiday records found.</p>
+                    </div>
+                 ) : (
+                    leaves.slice(0, 5).map((leave) => (
+                       <div key={leave._id} className="border-b border-black/5 dark:border-white/5 pb-4 last:border-0">
+                          <div className="flex justify-between items-center mb-1">
+                             <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400">
+                                {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                             </span>
+                             <span className={`text-[0.5rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                leave.status === 'Approved' ? 'bg-green-500/10 text-green-500' : 
+                                leave.status === 'Rejected' ? 'bg-red-500/10 text-red-500' : 
+                                'bg-orange-500/10 text-orange-500'
+                             }`}>
+                                {leave.status}
+                             </span>
+                          </div>
+                          <p className="text-xs font-bold uppercase tracking-tight line-clamp-1">{leave.reason}</p>
+                          {leave.adminNote && (
+                            <p className="text-[0.5rem] text-slate-400 mt-1 italic">Note: {leave.adminNote}</p>
+                          )}
+                       </div>
+                    ))
+                 )}
+              </div>
+           </div>
         </div>
       </div>
 
