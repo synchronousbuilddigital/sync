@@ -7,7 +7,7 @@ import {
   Users, CheckCircle2, Clock, Plus, Trash2, 
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
-  ExternalLink, MessageSquare, Save, Activity
+  ExternalLink, MessageSquare, Save, Activity, PlusCircle
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -79,12 +79,15 @@ export default function AdminDashboard() {
 
   const handleSendChat = async (e) => {
     e.preventDefault();
-    if (!chatMsg.trim()) return;
-    // Assuming sendDiscussion exists in context or similar
-    // For now, using updateTaskStatus logic for discussion if needed, 
-    // but the task object has a discussion array.
-    setStatusMsg({ type: "success", msg: "Direct Sync active." });
-    setChatMsg("");
+    if (!chatMsg.trim() || !chatTask) return;
+    
+    const res = await auth.sendDiscussion(chatTask._id, chatMsg);
+    if (res.success) {
+      setStatusMsg({ type: "success", msg: "Direct Sync active." });
+      setChatMsg("");
+    } else {
+      setStatusMsg({ type: "error", msg: "Transmission failed." });
+    }
   };
 
   const handleAddIntern = async (e) => {
@@ -886,6 +889,47 @@ export default function AdminDashboard() {
                    <div className="flex gap-4 pt-10">
                      <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-white/10 text-white/40 hover:bg-white/5 transition-all">Abort</button>
                      <button type="submit" className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_b0px_rgba(240,94,35,0.2)] hover:shadow-[0_0_30px_rgba(240,94,35,0.4)] transition-all active:scale-95">Finalize Deployment</button>
+                   </div>
+                </form>
+             </motion.div>
+           </div>
+        )}
+
+        {chatTask && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
+             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[80vh]">
+                <div className="p-8 bg-[#F05E23] text-white flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                      <div className="p-3 bg-white/20 rounded-2xl"><MessageSquare className="w-6 h-6" /></div>
+                      <div>
+                        <h2 className="text-xl font-black uppercase tracking-tight">Mission <span className="opacity-60">Log</span></h2>
+                        <p className="text-[0.6rem] font-black uppercase tracking-widest opacity-60">Active Channel: {chatTask.title}</p>
+                      </div>
+                   </div>
+                   <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all"><PlusCircle className="w-6 h-6 rotate-45" /></button>
+                </div>
+
+                <div className="flex-grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50 dark:bg-transparent">
+                   {(chatTask.discussion || []).map((msg, idx) => (
+                      <div key={idx} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
+                         <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-2 px-2">{msg.sender === 'admin' ? 'YOU' : 'INTERN'} • {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                         <div className={`max-w-[80%] p-5 rounded-3xl font-bold text-sm shadow-sm ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-tl-none text-slate-700 dark:text-white'}`}>
+                            {msg.content}
+                         </div>
+                      </div>
+                   ))}
+                   {(chatTask.discussion || []).length === 0 && (
+                      <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
+                         <MessageSquare className="w-16 h-16 mb-4" />
+                         <p className="font-black uppercase tracking-widest text-xs">Awaiting operational dialogue.</p>
+                      </div>
+                   )}
+                </div>
+
+                <form onSubmit={handleSendChat} className="p-8 border-t border-black/5 dark:border-white/10 bg-white dark:bg-black/20">
+                   <div className="flex gap-4">
+                      <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Enter briefing intel..." className="flex-grow bg-slate-50 dark:bg-white/5 border-2 border-black/5 dark:border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-[#F05E23] font-bold text-sm" />
+                      <button type="submit" className="bg-[#F05E23] text-white p-4 rounded-2xl shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
                    </div>
                 </form>
              </motion.div>
