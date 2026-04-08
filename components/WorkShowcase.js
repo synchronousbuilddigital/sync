@@ -20,7 +20,8 @@ export default function WorkShowcase() {
         happiness: p.happinessDetail,
         results: p.tags,
         image: p.imageUrl || "/website ss/boxfox.png", // fallback
-        category: p.category
+        category: p.category,
+        impact: p.impact
     })) : [
         {
             id: "01",
@@ -29,6 +30,7 @@ export default function WorkShowcase() {
             plan: "Step: Design & Build",
             happiness: "100% Success",
             results: ["Custom 3D Shop", "Easy Ordering"],
+            impact: "Boosted digital presence and secured $15k in small business innovation grants.",
             image: "/website ss/boxfox.png",
             category: "Verified Partner"
         },
@@ -39,6 +41,7 @@ export default function WorkShowcase() {
             plan: "Step: Simple Setup",
             happiness: "100% Success",
             results: ["Better Solar Energy", "Smarter Saving"],
+            impact: "Enhanced SEO rankings helping them secure green energy subsidies.",
             image: "/website ss/RYM.png",
             category: "Verified Partner"
         }
@@ -164,6 +167,12 @@ export default function WorkShowcase() {
                                             <p className={`text-xl sm:text-2xl font-black tracking-tight leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
                                                 {project.summary}
                                             </p>
+                                            {project.impact && (
+                                                <p className="text-[10px] font-bold text-[#F05E23] uppercase tracking-wider mt-2 flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05E23] animate-pulse" />
+                                                    Sync Impact: {project.impact}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div className="flex gap-8 border-l border-white/10 pl-8">

@@ -13,20 +13,25 @@ export async function PATCH(req, { params }) {
 
     let update = {};
     if (body.workflow) update.workflow = body.workflow;
-    if (body.projectName) update.projectName = body.projectName;
     if (body.status) update.status = body.status;
+    if (body.projectName) update.projectName = body.projectName;
+    if (body.description) update.description = body.description;
     
-    // Add discussion message if present
-    let project;
+    // Handle message/discussion update
     if (body.message) {
-      project = await ClientProject.findByIdAndUpdate(id, {
-        $push: { discussions: { sender: "admin", content: body.message } },
-      }, { new: true });
-    } else {
-      project = await ClientProject.findByIdAndUpdate(id, update, { new: true });
+      const project = await ClientProject.findById(id);
+      if (!project) return Response.json({ success: false, message: "Project not found" }, { status: 404 });
+      
+      project.discussions.push({
+        sender: "admin",
+        content: body.message,
+        timestamp: new Date()
+      });
+      await project.save();
+      return Response.json({ success: true, project });
     }
 
-    if (!project) return Response.json({ success: false, message: "Project not found" }, { status: 404 });
+    const project = await ClientProject.findByIdAndUpdate(id, update, { new: true });
     return Response.json({ success: true, project });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });
@@ -40,8 +45,9 @@ export async function DELETE(req, { params }) {
 
     await dbConnect();
     const { id } = await params;
+
     await ClientProject.findByIdAndDelete(id);
-    return Response.json({ success: true, message: "Project deleted" });
+    return Response.json({ success: true, message: "Project purged from matrix." });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });
   }

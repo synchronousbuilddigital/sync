@@ -4,12 +4,12 @@ import { motion } from "framer-motion";
 import { useTheme } from './ThemeContext';
 
 const partners = [
-    { name: "Brand 1", logo: "/logos/logo1.png" },
-    { name: "Brand 2", logo: "/logos/logo2.png" },
-    { name: "Brand 3", logo: "/logos/logo3.png" },
-    { name: "Brand 4", logo: "/logos/logo4.png" },
-    { name: "Brand 5", logo: "/logos/logo5.png" },
-    { name: "Brand 6", logo: "/logos/logo6.png" },
+    { name: "BOXFOX", logo: "/logos/logo1.png" },
+    { name: "RYM Grenergy", logo: "/logos/logo2.png" },
+    { name: "Vegavruddhi", logo: "/logos/logo3.png" },
+    { name: "BWorth", logo: "/logos/logo4.png" },
+    { name: "Fashquick", logo: "/logos/logo5.png" },
+    { name: "PRL Roadlines", logo: "/logos/logo6.png" },
 ];
 
 export default function VerifiedOutcomes() {

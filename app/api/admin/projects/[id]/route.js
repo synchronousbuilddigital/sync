@@ -9,9 +9,9 @@ export async function PATCH(req, { params }) {
 
     await dbConnect();
     const { id } = await params;
-    const data = await req.json();
-    const project = await Project.findByIdAndUpdate(id, data, { new: true });
-    if (!project) return Response.json({ success: false, message: "Project not found" }, { status: 404 });
+    const updateData = await req.json();
+
+    const project = await Project.findByIdAndUpdate(id, updateData, { new: true });
     return Response.json({ success: true, project });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });
@@ -25,8 +25,9 @@ export async function DELETE(req, { params }) {
 
     await dbConnect();
     const { id } = await params;
+
     await Project.findByIdAndDelete(id);
-    return Response.json({ success: true, message: "Project purged from records" });
+    return Response.json({ success: true, message: "Portfolio project deleted" });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });
   }

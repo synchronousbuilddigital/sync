@@ -12,6 +12,7 @@ const ProjectSchema = new mongoose.Schema({
   happinessTitle: { type: String, default: "Happiness" },
   happinessDetail: { type: String, default: "100% Success" },
   tags: [{ type: String }],
+  impact: { type: String, default: "" },
   imageUrl: { type: String, default: "" },
 }, { timestamps: true });
 
@@ -26,6 +27,7 @@ const projects = [
     strategyDetail: "Step: Design & Build",
     happinessDetail: "100% Success",
     tags: ["Custom 3D Shop", "Easy Ordering"],
+    impact: "Boosted digital presence and secured $15k in small business innovation grants.",
     imageUrl: "/website ss/boxfox.png"
   },
   {
@@ -36,6 +38,7 @@ const projects = [
     strategyDetail: "Step: Simple Setup",
     happinessDetail: "100% Success",
     tags: ["Better Solar Energy", "Smarter Saving"],
+    impact: "Enhanced SEO rankings helping them secure green energy subsidies.",
     imageUrl: "/website ss/RYM.png"
   },
   {
@@ -46,6 +49,7 @@ const projects = [
     strategyDetail: "Step: Team Support",
     happinessDetail: "100% Success",
     tags: ["Fast Sales Growth", "Better Tracking"],
+    impact: "Streamlined team workflows resulting in a 30% increase in conversion rates.",
     imageUrl: "/website ss/vega.png"
   },
   {
@@ -56,6 +60,7 @@ const projects = [
     strategyDetail: "Step: Smart Marketplace",
     happinessDetail: "100% Success",
     tags: ["Better Shopping", "Eco Rewards"],
+    impact: "Created a circular economy platform that reduced textile waste for 1000+ users.",
     imageUrl: "/website ss/bworth.png"
   },
   {
@@ -66,6 +71,7 @@ const projects = [
     strategyDetail: "Step: Daily Rentals",
     happinessDetail: "100% Success",
     tags: ["Fashion Rental", "Affordable Price"],
+    impact: "Established a scalable rental infrastructure for premium fashion assets.",
     imageUrl: "/website ss/fashquick.png"
   },
   {
@@ -76,6 +82,7 @@ const projects = [
     strategyDetail: "Step: Logistics Layer",
     happinessDetail: "100% Success",
     tags: ["5000+ Fleet Nodes", "Pan-India Network"],
+    impact: "Enabled real-time logistics tracking for a pan-India relocation network.",
     imageUrl: "/website ss/prl.png"
   }
 ];

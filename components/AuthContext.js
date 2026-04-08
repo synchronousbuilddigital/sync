@@ -128,6 +128,16 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const purgeClientProject = async (id) => {
+    const res = await fetch(`/api/admin/client-projects/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchAdminClientProjects(token);
+    return data;
+  };
+
   const sendClientMessage = async (message) => {
     const res = await fetch("/api/client/project", {
       method: "POST",
@@ -432,7 +442,7 @@ export function AuthProvider({ children }) {
       updateTaskStatus, deleteTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
       clientProject, adminClientProjects, createClient, createClientProject, 
-      updateClientProject, sendClientMessage
+      updateClientProject, purgeClientProject, sendClientMessage
     }}>
       {children}
     </AuthContext.Provider>

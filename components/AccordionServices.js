@@ -139,7 +139,7 @@ export default function AccordionServices() {
                     transition={{ duration: 0.8 }}
                     className="mb-12 sm:mb-20 shrink-0"
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F05E23]/10 border border-[#F05E23]/20 mb-4 w-fit">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#F05E23]/10 border border-[#F05E23]/20 mb-6 w-fit">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#F05E23] animate-pulse"></span>
                         <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-[#F05E23]">What we do</span>
                     </div>
@@ -157,7 +157,7 @@ export default function AccordionServices() {
 
                 {/* Cards Container */}
                 <div 
-                    className="relative grid grid-cols-2 lg:flex lg:flex-row gap-3 sm:gap-4 mb-4 lg:mb-10 lg:h-[850px] min-h-[600px]"
+                    className="relative grid grid-cols-2 lg:flex lg:flex-row gap-4 sm:gap-6 mb-6 lg:mb-12 lg:h-[850px] min-h-[600px]"
                     onMouseLeave={() => setOpenIndex(null)}
                 >
                     {services.map((service, index) => {
@@ -206,7 +206,7 @@ export default function AccordionServices() {
 
                                 {/* Content area */}
                                 <div className="flex-1 overflow-hidden relative h-full">
-                                    <div className={`p-8 lg:p-10 xl:p-12 flex flex-col justify-between h-full w-full relative z-10 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
+                                    <div className={`p-6 sm:p-8 lg:p-10 xl:p-12 flex flex-col justify-between h-full w-full relative z-10 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
                                         
                                         <div className="relative z-10 w-full lg:max-w-4xl">
                                             {/* Header Content */}

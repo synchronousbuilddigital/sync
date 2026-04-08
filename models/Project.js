@@ -10,6 +10,7 @@ const ProjectSchema = new mongoose.Schema({
   happinessTitle: { type: String, default: "Happiness" },
   happinessDetail: { type: String, default: "100% Success" },
   tags: [{ type: String }], // e.g. ["Custom 3D Shop", "Easy Ordering"]
+  impact: { type: String, default: "" }, // e.g. "Increased SEO visibility, captured market share"
   imageUrl: { type: String, default: "" },
 }, { timestamps: true });
 

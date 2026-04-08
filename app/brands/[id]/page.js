@@ -112,36 +112,41 @@ export default function PublicBrandPage() {
              </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-12">
             {project.workflow.map((step, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className={`p-1 border border-white/5 rounded-[2.5rem] transition-all duration-700 ${step.status === 'Complete' ? 'bg-[#F05E23]/5 border-[#F05E23]/20' : 'hover:border-white/10'}`}
+                transition={{ delay: idx * 0.1 }}
+                className={`group relative overflow-hidden backdrop-blur-md rounded-[3.5rem] border transition-all duration-700 ${step.status === 'Complete' ? 'bg-[#F05E23]/5 border-[#F05E23]/30' : 'bg-white/[0.02] border-white/5 hover:border-white/10'}`}
               >
-                 <div className="p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
+                 <div className="absolute top-0 left-0 w-1 h-full bg-[#F05E23] opacity-0 group-hover:opacity-100 transition-opacity" />
+                 <div className="p-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
                     <div className="flex items-center gap-8">
-                       <span className="text-xs font-black text-white/20 italic tracking-widest">0{idx + 1}</span>
-                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${step.status === 'Complete' ? 'bg-[#F05E23] border-[#F05E23] text-white' : (step.status === 'In Progress' ? 'bg-[#F05E23]/10 border-[#F05E23]/30 text-[#F05E23]' : 'bg-white/5 border-white/10 text-white/10')}`}>
-                          {step.status === 'Complete' ? <CheckCircle2 className="w-7 h-7" /> : (step.status === 'In Progress' ? <Activity className="w-7 h-7 animate-pulse" /> : <Clock className="w-7 h-7" />)}
+                       <span className="text-xl font-black text-white/5 italic tracking-tighter">0{idx + 1}</span>
+                       <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center border-2 transition-all shadow-2xl ${step.status === 'Complete' ? 'bg-[#F05E23] border-[#F05E23] text-white shadow-[#F05E23]/20' : (step.status === 'In Progress' ? 'bg-[#F05E23]/10 border-[#F05E23]/50 text-[#F05E23]' : 'bg-white/5 border-white/10 text-white/10')}`}>
+                          {step.status === 'Complete' ? <CheckCircle2 className="w-10 h-10" /> : (step.status === 'In Progress' ? <Activity className="w-10 h-10 animate-pulse" /> : <Clock className="w-10 h-10" />)}
                        </div>
-                       <div>
-                          <h4 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic">{step.title}</h4>
-                          <span className={`text-[8px] font-black uppercase tracking-[0.4em] ${step.status === 'Complete' ? 'text-[#F05E23]' : 'text-white/20'}`}>{step.status}</span>
+                       <div className="space-y-1">
+                          <h4 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter italic leading-none">{step.title}</h4>
+                          <div className="flex items-center gap-3">
+                             <div className={`w-2 h-2 rounded-full ${step.status === 'Complete' ? 'bg-green-500' : (step.status === 'In Progress' ? 'bg-[#F05E23] animate-pulse' : 'bg-white/20')}`} />
+                             <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${step.status === 'Complete' ? 'text-green-500' : (step.status === 'In Progress' ? 'text-[#F05E23]' : 'text-white/20')}`}>{step.status}</span>
+                          </div>
                        </div>
                     </div>
-                    <div className="max-w-md sm:text-right">
-                       <p className="text-sm font-medium text-white/40 leading-relaxed">{step.description}</p>
+                    <div className="max-w-xl lg:text-right">
+                       <p className="text-base sm:text-lg font-medium text-white/90 leading-relaxed mb-4 group-hover:text-white transition-colors">{step.description}</p>
+                       {step.adminNote && (
+                          <div className="inline-flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-2xl py-3 px-6 lg:ml-auto">
+                             <Activity className="w-3.5 h-3.5 text-[#F05E23]" />
+                             <p className="text-[10px] text-[#F05E23] font-black uppercase tracking-widest italic">{step.adminNote}</p>
+                          </div>
+                       )}
                     </div>
                  </div>
-                 {step.adminNote && (
-                   <div className="mx-8 mb-8 mt-2 p-6 rounded-3xl bg-black/40 border border-white/5 flex gap-4 items-start">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#F05E23] mt-1.5 shrink-0 shadow-[0_0_10px_#F05E23]" />
-                      <p className="text-xs text-[#F05E23] italic font-medium">Technical Directive: "{step.adminNote}"</p>
-                   </div>
-                 )}
               </motion.div>
             ))}
           </div>

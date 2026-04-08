@@ -12,12 +12,13 @@ import {
 
 export default function AdminDashboard() {
   const auth = useAuth();
+  console.log("Admin Matrix V2 Initialized - purgeClientProject:", !!auth.purgeClientProject);
   const { 
     user, interns, tasks, leaves, projects, adminClientProjects,
     addIntern, removeIntern, assignTask, updateTaskStatus, 
     deleteTask, reassignTask, announceToAll, approveLeave,
     addProject, updateProject, deleteProject,
-    createClient, createClientProject, updateClientProject, loading 
+    createClient, createClientProject, updateClientProject, purgeClientProject, loading 
   } = auth;
 
   const [activeTab, setActiveTab] = useState("interns");
@@ -43,7 +44,7 @@ export default function AdminDashboard() {
   const [projectForm, setProjectForm] = useState({
     title: "", index: "", category: "Verified Partner", 
     description: "", strategyDetail: "", happinessDetail: "", 
-    tags: ""
+    tags: "", impact: ""
   });
   const [chatTaskId, setChatTaskId] = useState(null);
   const [chatMsg, setChatMsg] = useState("");
@@ -139,7 +140,7 @@ export default function AdminDashboard() {
       setStatusMsg({ type: "success", msg: `Project ${editingProject ? 'updated' : 'deployed'} successfully.` });
       setIsAddingProject(false);
       setEditingProject(null);
-      setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "" });
+      setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "", impact: "" });
     } else {
       setStatusMsg({ type: "error", msg: res.message });
     }
@@ -154,7 +155,8 @@ export default function AdminDashboard() {
       description: project.description,
       strategyDetail: project.strategyDetail,
       happinessDetail: project.happinessDetail,
-      tags: project.tags.join(", ")
+      tags: project.tags.join(", "),
+      impact: project.impact || ""
     });
     setIsAddingProject(true);
   };
@@ -205,49 +207,58 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 min-h-screen">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-        <div>
-          <motion.h1 initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-4xl sm:text-6xl font-black tracking-tight uppercase mb-2">Management <span className="text-[#F05E23]">Console</span></motion.h1>
-          <p className="text-slate-500 dark:text-white/40 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> System Admin: {user?.name}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16 relative">
+        <div className="absolute -top-20 -left-20 w-80 h-80 bg-[#F05E23]/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="relative z-10">
+          <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex items-center gap-3 mb-4">
+             <div className="w-12 h-0.5 bg-[#F05E23]" />
+             <span className="text-[0.65rem] font-black uppercase tracking-[0.4em] text-[#F05E23]">Synchronous Command</span>
+          </motion.div>
+          <motion.h1 initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-5xl sm:text-7xl font-black tracking-tighter uppercase italic leading-none">Management <span className="text-[#F05E23] drop-shadow-[0_0_15px_rgba(240,94,35,0.2)]">Matrix</span></motion.h1>
+          <p className="mt-6 text-slate-500 dark:text-white/30 font-bold uppercase tracking-[0.2em] text-[0.6rem] flex items-center gap-3">
+             <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+             </span>
+             Nexus Administrator: <span className="text-black dark:text-white">{user?.name}</span>
           </p>
         </div>
         
-        <div className="flex gap-4">
-          <button onClick={() => setIsBroadcasting(true)} className="bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all outline-none border border-black/5 dark:border-white/10">
-            <Send className="w-4 h-4" /> Strategic Broadcast
+        <div className="flex flex-wrap gap-3 relative z-10">
+          <button onClick={() => setIsBroadcasting(true)} className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 transition-all border border-black/5 dark:border-white/5 active:scale-95">
+            <Send className="w-3.5 h-3.5 text-[#F05E23]" /> Signal Team
           </button>
-          <button onClick={() => { setEditingProject(null); setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "" }); setIsAddingProject(true); }} className="bg-white dark:bg-white/5 text-slate-600 dark:text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all outline-none border border-black/5 dark:border-white/10">
-            <Plus className="w-4 h-4 text-[#F05E23]" /> Add Project
+          <button onClick={() => { setEditingProject(null); setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "", impact: "" }); setIsAddingProject(true); }} className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 transition-all border border-black/5 dark:border-white/5 active:scale-95">
+            <Plus className="w-3.5 h-3.5 text-[#F05E23]" /> New Showcase
           </button>
-          <button onClick={() => setIsAddingIntern(true)} className="bg-[#F05E23] text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[#F05E23]/20">
-            <UserPlus className="w-4 h-4" /> Add Intern
+          <button onClick={() => setIsAddingIntern(true)} className="bg-[#F05E23] text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 hover:shadow-[0_0_30px_rgba(240,94,35,0.3)] transition-all active:scale-95">
+            <UserPlus className="w-3.5 h-3.5" /> Integrate Talent
           </button>
-          <button onClick={() => setIsAssigningTask(true)} className="bg-black dark:bg-white text-white dark:text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
-            <Plus className="w-4 h-4" /> New Assignment
+          <button onClick={() => setIsAssigningTask(true)} className="bg-slate-900 dark:bg-white text-white dark:text-black px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 hover:opacity-90 transition-all active:scale-95">
+            <Plus className="w-3.5 h-3.5" /> Mission Patch
           </button>
         </div>
       </div>
 
       {/* Stats Quick View */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
         {[
-          { icon: Users, label: "Talent Pool", val: stats.totalInterns, color: "blue", desc: "active interns" },
-          { icon: Clock, label: "Live Tasks", val: stats.activeTasks, color: "orange", desc: "in progress" },
-          { icon: AlertCircle, label: "System Blockers", val: stats.blockers, color: "red", desc: "need attention" },
-          { icon: Calendar, label: "Pending Leave", val: stats.pendingHolidays, color: "purple", desc: "wait for review" },
-          { icon: CheckCircle2, label: "Efficiency", val: stats.completedTasks, color: "green", desc: "finalized tasks" }
+          { icon: Users, label: "Asset Manifest", val: stats.totalInterns, color: "blue", desc: "Active Nodes" },
+          { icon: Clock, label: "Active Syncs", val: stats.activeTasks, color: "orange", desc: "Processing" },
+          { icon: AlertCircle, label: "Critical Halts", val: stats.blockers, color: "red", desc: "Attention Req" },
+          { icon: Calendar, label: "Rest Protocols", val: stats.pendingHolidays, color: "purple", desc: "Pending Review" },
+          { icon: CheckCircle2, label: "Sync Efficiency", val: stats.completedTasks, color: "green", desc: "Successful Commits" }
         ].map((stat, i) => (
-          <motion.div key={i} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.1 }} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
-            <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500/5 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform`} />
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className={`p-4 rounded-2xl bg-${stat.color}-500/10`}>
-                <stat.icon className={`w-6 h-6 text-${stat.color}-500`} />
+          <motion.div key={i} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.1 }} className="bg-white dark:bg-white/[0.03] border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem] shadow-sm hover:border-[#F05E23]/20 transition-all group relative overflow-hidden backdrop-blur-sm">
+            <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500/[0.025] rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700`} />
+            <div className="flex items-center justify-between mb-6 relative z-10">
+              <div className={`p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 group-hover:border-[#F05E23]/20 transition-all`}>
+                <stat.icon className={`w-5 h-5 text-${stat.color === 'orange' ? '[#F05E23]' : stat.color + '-500'}`} />
               </div>
-              <span className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">{stat.label}</span>
+              <span className="text-[0.55rem] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-white/20">{stat.label}</span>
             </div>
-            <div className="text-4xl font-black mb-1 relative z-10">{stat.val}</div>
-            <p className="text-[0.6rem] font-bold text-slate-400/60 uppercase relative z-10">{stat.desc}</p>
+            <div className="text-5xl font-black mb-2 relative z-10 tracking-tighter italic text-slate-900 dark:text-white">{stat.val}</div>
+            <p className="text-[0.55rem] font-bold text-slate-400 dark:text-white/10 uppercase tracking-[0.1em] relative z-10">{stat.desc}</p>
           </motion.div>
         ))}
       </div>
@@ -376,7 +387,24 @@ export default function AdminDashboard() {
                        <span className="px-4 py-1.5 rounded-full bg-green-500/10 text-green-500 text-[9px] font-black uppercase flex items-center gap-2 w-fit">
                          <Activity className="w-3 h-3 animate-pulse" /> {project.status}
                        </span>
-                       <h4 className="text-4xl font-black uppercase tracking-tighter italic">{project.projectName}</h4>
+                       <div className="flex justify-between items-start">
+                         <h4 className="text-4xl font-black uppercase tracking-tighter italic">{project.projectName}</h4>
+                         <button 
+                            onClick={() => {
+                              if (confirm("Permanently purge this project matrix?")) {
+                                if (purgeClientProject) {
+                                  purgeClientProject(project._id);
+                                } else {
+                                  console.error("Purge function not found in context");
+                                  alert("System sync error. Please refresh.");
+                                }
+                              }
+                            }}
+                            className="p-3 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shrink-0"
+                         >
+                            <Trash2 className="w-4 h-4" />
+                         </button>
+                       </div>
                        <p className="text-slate-500 dark:text-white/40 text-sm leading-relaxed">{project.description}</p>
                      </div>
                      <div className="lg:w-96 flex flex-col gap-4">
@@ -403,54 +431,117 @@ export default function AdminDashboard() {
                         />
                      </div>
                    </div>
-                   <div className="p-10 bg-black/5 dark:bg-white/[0.02] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {project.workflow.map((step, idx) => (
-                        <div key={idx} className="bg-white dark:bg-[#12121A] border border-black/5 dark:border-white/5 p-8 rounded-3xl space-y-6 group hover:border-[#F05E23]/30 transition-all">
-                           <div className="flex justify-between items-start">
-                             <div className={`p-3 rounded-2xl ${step.status === 'Complete' ? 'bg-green-500/10 text-green-500' : 'bg-[#F05E23]/10 text-[#F05E23]'}`}>
-                               {step.status === 'Complete' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
-                             </div>
-                             <select 
-                                value={step.status} 
-                                onChange={(e) => {
-                                   const newWF = [...project.workflow];
-                                   newWF[idx].status = e.target.value;
-                                   updateClientProject(project._id, { workflow: newWF });
-                                }}
-                                className="bg-transparent border-none text-[8px] font-black uppercase text-white/40 outline-none"
-                             >
-                               <option value="Pending">Pending</option>
-                               <option value="In Progress">In Progress</option>
-                               <option value="Complete">Complete</option>
-                             </select>
-                           </div>
-                           <h5 className="text-sm font-black uppercase">{step.title}</h5>
-                           <input 
-                              type="text"
-                              defaultValue={step.adminNote}
-                              onBlur={(e) => {
-                                 const newWF = [...project.workflow];
-                                 newWF[idx].adminNote = e.target.value;
-                                 updateClientProject(project._id, { workflow: newWF });
-                              }}
-                              placeholder="Add Admin Note..."
-                              className="w-full bg-transparent text-[9px] text-[#F05E23] italic font-medium outline-none placeholder:text-white/10"
-                           />
-                        </div>
-                      ))}
-                      <button 
-                        onClick={() => {
-                           const title = prompt("New Objective Title:");
-                           if (title) {
-                              updateClientProject(project._id, { workflow: [...project.workflow, { title, description: "Brand mission step", status: "Pending" }] });
-                           }
-                        }}
-                        className="border-2 border-dashed border-white/5 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-white/20 hover:text-white/40 hover:bg-white/5 transition-all"
-                      >
-                        <Plus className="w-8 h-8" />
-                        <span className="text-[8px] font-black uppercase">Add Objective</span>
-                      </button>
-                   </div>
+                    <div className="p-8 bg-slate-50 dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5">
+                      <div className="flex items-center justify-between mb-8">
+                        <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-[#F05E23] flex items-center gap-3">
+                          <ClipboardList className="w-4 h-4" /> Mission Roadmap Configuration
+                        </h5>
+                        <button 
+                          onClick={() => {
+                             const title = prompt("New Objective Title:");
+                             if (title) {
+                                updateClientProject(project._id, { workflow: [...project.workflow, { title, description: "Mission objective parameters", status: "Pending" }] });
+                             }
+                          }}
+                          className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl text-[0.6rem] font-black uppercase tracking-widest flex items-center gap-2 hover:opacity-80 transition-all shadow-lg"
+                        >
+                          <Plus className="w-3 h-3" /> Insert Objective
+                        </button>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-separate border-spacing-y-4">
+                          <thead>
+                            <tr className="text-[0.55rem] font-black uppercase tracking-[0.3em] text-slate-400">
+                              <th className="text-left px-6 py-3">Sequence</th>
+                              <th className="text-left px-6 py-3">Mission Parameter</th>
+                              <th className="text-center px-6 py-3">Status Matrix</th>
+                              <th className="text-left px-6 py-3">Directives</th>
+                              <th className="px-6 py-3"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {project.workflow.map((step, idx) => (
+                              <tr key={idx} className="group bg-white dark:bg-[#12121A] border border-black/5 dark:border-white/5 rounded-3xl transition-all hover:shadow-xl hover:shadow-black/5">
+                                <td className="px-6 py-8 rounded-l-[2rem]">
+                                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all ${step.status === 'Complete' ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-500/20' : (step.status === 'In Progress' ? 'bg-[#F05E23]/10 border-[#F05E23]/30 text-[#F05E23]' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400')}`}>
+                                    {step.status === 'Complete' ? <CheckCircle2 className="w-6 h-6" /> : (step.status === 'In Progress' ? <Activity className="w-6 h-6 animate-pulse" /> : <Clock className="w-6 h-6" />)}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-8 max-w-sm">
+                                  <input 
+                                     type="text"
+                                     defaultValue={step.title}
+                                     onBlur={(e) => {
+                                        const newWF = [...project.workflow];
+                                        newWF[idx].title = e.target.value;
+                                        updateClientProject(project._id, { workflow: newWF });
+                                     }}
+                                     className="w-full bg-transparent text-sm font-black uppercase text-slate-900 dark:text-white outline-none focus:text-[#F05E23] transition-colors mb-2"
+                                  />
+                                  <textarea
+                                     defaultValue={step.description}
+                                     onBlur={(e) => {
+                                        const newWF = [...project.workflow];
+                                        newWF[idx].description = e.target.value;
+                                        updateClientProject(project._id, { workflow: newWF });
+                                     }}
+                                     rows={1}
+                                     className="w-full bg-transparent text-[0.65rem] text-slate-500 dark:text-white/40 font-medium leading-relaxed outline-none focus:text-slate-700 dark:focus:text-white transition-colors resize-none scrollbar-hide"
+                                  />
+                                </td>
+                                <td className="px-6 py-8">
+                                   <div className="flex items-center justify-center gap-2 bg-black/[0.03] dark:bg-white/[0.03] p-2 rounded-2xl border border-black/5 dark:border-white/5">
+                                      {["Pending", "In Progress", "Complete"].map((s) => (
+                                        <button
+                                          key={s}
+                                          onClick={() => {
+                                             const newWF = [...project.workflow];
+                                             newWF[idx].status = s;
+                                             updateClientProject(project._id, { workflow: newWF });
+                                          }}
+                                          className={`px-4 py-2 rounded-xl text-[0.5rem] font-black uppercase tracking-widest transition-all ${step.status === s ? (s === 'Complete' ? 'bg-green-500 text-white' : (s === 'In Progress' ? 'bg-[#F05E23] text-white' : 'bg-slate-400 text-white')) : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+                                        >
+                                          {s}
+                                        </button>
+                                      ))}
+                                   </div>
+                                </td>
+                                <td className="px-6 py-8 min-w-[200px]">
+                                   <div className="relative group/input">
+                                      <input 
+                                         type="text"
+                                         defaultValue={step.adminNote}
+                                         onBlur={(e) => {
+                                            const newWF = [...project.workflow];
+                                            newWF[idx].adminNote = e.target.value;
+                                            updateClientProject(project._id, { workflow: newWF });
+                                         }}
+                                         placeholder="System Directive..."
+                                         className="w-full bg-black/5 dark:bg-white/[0.03] border border-black/5 dark:border-white/5 rounded-2xl py-4 px-6 text-[0.65rem] text-slate-800 dark:text-white italic font-medium outline-none focus:border-[#F05E23]/30"
+                                      />
+                                      <Activity className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#F05E23] opacity-30 group-focus-within/input:opacity-100 transition-opacity" />
+                                   </div>
+                                </td>
+                                <td className="px-6 py-8 rounded-r-[2rem]">
+                                   <button 
+                                      onClick={() => {
+                                         if (confirm("Purge this objective?")) {
+                                            const newWF = project.workflow.filter((_, i) => i !== idx);
+                                            updateClientProject(project._id, { workflow: newWF });
+                                         }
+                                      }}
+                                      className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
+                                   >
+                                      <X className="w-4 h-4" />
+                                   </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                  </motion.div>
                ))}
             </div>
@@ -517,14 +608,39 @@ export default function AdminDashboard() {
       {/* Modals */}
       <AnimatePresence>
         {isBroadcasting && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-12 rounded-[3rem] shadow-2xl border border-white/5">
-               <h2 className="text-3xl font-black uppercase mb-10 tracking-tight text-center">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
-               <form onSubmit={handleBroadcast} className="space-y-6">
-                  <textarea rows={6} required value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} placeholder="Directive for team..." className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23] font-bold text-sm" />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              className="bg-[#0D0D12] border border-white/10 w-full max-w-lg p-12 rounded-[3.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden"
+            >
+               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#F05E23] to-transparent opacity-50" />
+               <h2 className="text-4xl font-black uppercase mb-10 tracking-tighter text-center italic">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
+               <form onSubmit={handleBroadcast} className="space-y-8">
+                  <div className="relative group">
+                    <textarea 
+                      rows={6} 
+                      required 
+                      value={broadcastMsg} 
+                      onChange={e => setBroadcastMsg(e.target.value)} 
+                      placeholder="Directive for the synchronized collective..." 
+                      className="w-full bg-white/[0.03] border border-white/5 rounded-[2rem] p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-white/80 placeholder:text-white/10 resize-none shadow-inner" 
+                    />
+                  </div>
                   <div className="flex gap-4">
-                     <button type="button" onClick={() => setIsBroadcasting(false)} className="flex-1 py-5 rounded-2xl font-black border border-black/10 dark:border-white/10">Abort</button>
-                     <button type="submit" className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black shadow-lg shadow-[#F05E23]/20">Deploy</button>
+                     <button 
+                        type="button" 
+                        onClick={() => setIsBroadcasting(false)} 
+                        className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-white/10 hover:bg-white/5 transition-all text-white/40"
+                     >
+                        Abort Sync
+                     </button>
+                     <button 
+                        type="submit" 
+                        className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_b0px_rgba(240,94,35,0.2)] hover:shadow-[0_0_30px_rgba(240,94,35,0.4)] transition-all active:scale-95"
+                     >
+                        Deploy Signal
+                     </button>
                   </div>
                </form>
             </motion.div>
@@ -532,26 +648,54 @@ export default function AdminDashboard() {
         )}
 
         {isAddingClient && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-0 backdrop-blur-xl bg-black/60">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#12121A] border border-white/10 w-full max-w-2xl rounded-[3rem] p-12 shadow-2xl">
-              <h2 className="text-4xl font-black uppercase tracking-tighter italic mb-10">Provision <span className="text-[#F05E23]">Brand</span></h2>
-              <div className="space-y-6">
-                <input type="text" value={clientForm.name} onChange={e => setClientForm({...clientForm, name: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-2xl py-5 px-6 font-black uppercase text-xs outline-none focus:border-[#F05E23]/50" placeholder="Brand Name" />
-                <input type="email" value={clientForm.email} onChange={e => setClientForm({...clientForm, email: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-2xl py-5 px-6 font-black uppercase text-xs outline-none focus:border-[#F05E23]/50" placeholder="Contact Email" />
-                <input type="text" value={clientForm.projectName || ""} onChange={e => setClientForm({...clientForm, projectName: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-2xl py-5 px-6 font-black uppercase text-xs outline-none focus:border-[#F05E23]/50" placeholder="Primary Project Name" />
-                <div className="flex gap-4 pt-6">
-                  <button onClick={async () => {
-                    if (!clientForm.name || !clientForm.email || !clientForm.projectName) return alert("Fields required");
-                    const res = await createClient(clientForm.name, clientForm.email);
-                    if (res.success) {
-                      await createClientProject({ clientId: res.client._id, projectName: clientForm.projectName, description: `Ecosystem for ${clientForm.name}` });
-                      setIsAddingClient(false);
-                      setStatusMsg({ type: 'success', msg: "Brand Synchronized." });
-                    } else {
-                      alert(res.message);
-                    }
-                  }} className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-xs shadow-xl shadow-[#F05E23]/20 transition-all active:scale-95">Establish Node</button>
-                  <button onClick={() => setIsAddingClient(false)} className="px-10 py-5 rounded-2xl border border-white/10 font-black uppercase text-xs text-white/40">Abort</button>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              className="bg-[#0D0D12] border border-white/10 w-full max-w-xl rounded-[3.5rem] p-12 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+              <h2 className="text-4xl font-black uppercase tracking-tighter italic mb-12">Provision <span className="text-[#F05E23]">Brand</span></h2>
+              <div className="space-y-5">
+                {[
+                  { id: 'name', placeholder: 'Brand Name', type: 'text' },
+                  { id: 'email', placeholder: 'Contact Email', type: 'email' },
+                  { id: 'projectName', placeholder: 'Primary Project Name', type: 'text' }
+                ].map((input) => (
+                  <div key={input.id} className="relative group">
+                    <input 
+                      type={input.type} 
+                      value={clientForm[input.id] || ""} 
+                      onChange={e => setClientForm({...clientForm, [input.id]: e.target.value})} 
+                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-[0.1em] outline-none focus:border-[#F05E23]/30 transition-all text-white/90 placeholder:text-white/10" 
+                      placeholder={input.placeholder} 
+                    />
+                    <div className="absolute inset-y-0 left-0 w-1 bg-[#F05E23] scale-y-0 group-focus-within:scale-y-50 transition-transform rounded-r-full" />
+                  </div>
+                ))}
+                <div className="flex gap-4 pt-10">
+                  <button 
+                    onClick={async () => {
+                      if (!clientForm.name || !clientForm.email || !clientForm.projectName) return alert("All synchronization keys required");
+                      const res = await createClient(clientForm.name, clientForm.email, clientForm.password);
+                      if (res.success) {
+                        await createClientProject({ clientId: res.client._id, projectName: clientForm.projectName, description: `Ecosystem for ${clientForm.name}` });
+                        setIsAddingClient(false);
+                        setStatusMsg({ type: 'success', msg: "Brand Integrated into Matrix." });
+                      } else {
+                        alert(res.message);
+                      }
+                    }} 
+                    className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_30px_rgba(240,94,35,0.2)] hover:shadow-[0_0_40px_rgba(240,94,35,0.4)] transition-all active:scale-95"
+                  >
+                    Establish Node
+                  </button>
+                  <button 
+                    onClick={() => setIsAddingClient(false)} 
+                    className="px-10 py-5 rounded-2xl border border-white/10 font-black uppercase text-[0.65rem] tracking-[0.2em] text-white/40 hover:bg-white/5 transition-all"
+                  >
+                    Abort
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -559,15 +703,24 @@ export default function AdminDashboard() {
         )}
 
         {isAddingIntern && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
-             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-lg p-10 rounded-[3rem] shadow-2xl border border-white/10">
-                <h2 className="text-3xl font-black uppercase mb-10 tracking-tight text-center">Onboard <span className="text-[#F05E23]">Intern</span></h2>
-                <form onSubmit={handleAddIntern} className="space-y-6">
-                   <input type="text" required value={newIntern.name} onChange={e => setNewIntern({...newIntern, name: e.target.value})} placeholder="Full Name" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                   <input type="email" required value={newIntern.email} onChange={e => setNewIntern({...newIntern, email: e.target.value})} placeholder="Secure Email" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                   <div className="flex gap-4">
-                     <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black border border-black/10 dark:border-white/10">Cancel</button>
-                     <button type="submit" className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black shadow-lg shadow-[#F05E23]/20">Deploy</button>
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+             <motion.div 
+               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+               animate={{ scale: 1, opacity: 1, y: 0 }} 
+               className="bg-[#0D0D12] border border-white/10 w-full max-w-lg p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
+             >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-[60px]" />
+                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center">Onboard <span className="text-[#F05E23]">Intern</span></h2>
+                <form onSubmit={handleAddIntern} className="space-y-5">
+                   <div className="relative group">
+                      <input type="text" required value={newIntern.name} onChange={e => setNewIntern({...newIntern, name: e.target.value})} placeholder="Full Identity" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                   </div>
+                   <div className="relative group">
+                      <input type="email" required value={newIntern.email} onChange={e => setNewIntern({...newIntern, email: e.target.value})} placeholder="System Access Email" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                   </div>
+                   <div className="flex gap-4 pt-8">
+                     <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-white/10 text-white/40 hover:bg-white/5 transition-all">Cancel</button>
+                     <button type="submit" className="flex-1 bg-white text-black py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:bg-white/90 transition-all active:scale-95">Verify & Deploy</button>
                    </div>
                 </form>
              </motion.div>
@@ -575,21 +728,32 @@ export default function AdminDashboard() {
         )}
 
         {isAssigningTask && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
-             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-2xl p-10 rounded-[3rem] shadow-2xl border border-white/10">
-                <h2 className="text-3xl font-black uppercase mb-10 tracking-tight">Deploy <span className="text-[#F05E23]">Assignment</span></h2>
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+             <motion.div 
+               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+               animate={{ scale: 1, opacity: 1, y: 0 }} 
+               className="bg-[#0D0D12] border border-white/10 w-full max-w-2xl p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
+             >
+                <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px]" />
+                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic">Deploy <span className="text-[#F05E23]">Assignment</span></h2>
                 <form onSubmit={handleAssignTask} className="space-y-6">
-                   <div className="grid grid-cols-2 gap-6">
-                      <input type="text" required value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} placeholder="Title" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                      <select required value={newTask.internId} onChange={e => setNewTask({...newTask, internId: e.target.value})} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold">
-                         <option value="">Select Intern...</option>
-                         {interns.map(i => <option key={i._id} value={i._id}>{i.name}</option>)}
-                      </select>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="relative group">
+                        <input type="text" required value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} placeholder="Mission Directive" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                      </div>
+                      <div className="relative group">
+                        <select required value={newTask.internId} onChange={e => setNewTask({...newTask, internId: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 appearance-none">
+                           <option value="" className="bg-[#0D0D12]">Select Asset...</option>
+                           {interns.map(i => <option key={i._id} value={i._id} className="bg-[#0D0D12]">{i.name}</option>)}
+                        </select>
+                      </div>
                    </div>
-                   <textarea rows={4} required value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} placeholder="Tactical Objective..." className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                   <div className="flex gap-4">
-                     <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-5 rounded-2xl font-black border border-black/10 dark:border-white/10">Abort</button>
-                     <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black">Deploy</button>
+                   <div className="relative group">
+                      <textarea rows={5} required value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} placeholder="Tactical Objective Parameters..." className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-white/80 placeholder:text-white/10 resize-none shadow-inner" />
+                   </div>
+                   <div className="flex gap-4 pt-10">
+                     <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-white/10 text-white/40 hover:bg-white/5 transition-all">Abort</button>
+                     <button type="submit" className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_b0px_rgba(240,94,35,0.2)] hover:shadow-[0_0_30px_rgba(240,94,35,0.4)] transition-all active:scale-95">Finalize Deployment</button>
                    </div>
                 </form>
              </motion.div>
@@ -597,20 +761,40 @@ export default function AdminDashboard() {
         )}
 
         {isAddingProject && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
-             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#0A0A0A] w-full max-w-4xl p-10 rounded-[3rem] shadow-2xl border border-white/10 overflow-y-auto max-h-[90vh]">
-                <h2 className="text-3xl font-black uppercase mb-10 tracking-tight text-center">{editingProject ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Showcase</span></h2>
-                <form onSubmit={handleProjectSubmit} className="space-y-6">
-                   <div className="grid grid-cols-3 gap-6">
-                      <input type="text" required value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} placeholder="Name" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                      <input type="text" value={projectForm.index} onChange={e => setProjectForm({...projectForm, index: e.target.value})} placeholder="Index" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                      <input type="text" value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} placeholder="Category" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+             <motion.div 
+               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+               animate={{ scale: 1, opacity: 1, y: 0 }} 
+               className="bg-[#0D0D12] border border-white/10 w-full max-w-4xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
+             >
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#F05E23] to-transparent opacity-30" />
+                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center">{editingProject ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Showcase</span></h2>
+                <form onSubmit={handleProjectSubmit} className="space-y-8">
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="relative group">
+                         <input type="text" required value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} placeholder="Project Title" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                      </div>
+                      <div className="relative group">
+                         <input type="text" value={projectForm.index} onChange={e => setProjectForm({...projectForm, index: e.target.value})} placeholder="Sequence Index (e.g. 01)" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                      </div>
+                      <div className="relative group">
+                         <input type="text" value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} placeholder="Sync Category" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-[#F05E23] placeholder:text-[#F05E23]/20" />
+                      </div>
                    </div>
-                   <textarea rows={3} required value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} placeholder="Description" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                   <input type="text" value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} placeholder="Tags (comma separated)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-5 outline-none font-bold" />
-                   <div className="flex gap-4">
-                     <button type="button" onClick={() => setIsAddingProject(false)} className="flex-1 py-5 rounded-2xl font-black border border-black/10 dark:border-white/10">Abort</button>
-                     <button type="submit" className="flex-1 bg-black dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black">Finalize</button>
+                   <div className="relative group">
+                      <textarea rows={4} required value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} placeholder="Impact Narrative..." className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-white/80 placeholder:text-white/10 resize-none" />
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="relative group">
+                         <input type="text" value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} placeholder="Technological Stack (comma separated)" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.6rem] tracking-[0.1em] text-white/60 placeholder:text-white/10" />
+                      </div>
+                      <div className="relative group">
+                         <input type="text" value={projectForm.impact} onChange={e => setProjectForm({...projectForm, impact: e.target.value})} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-green-500/30 transition-all font-black uppercase text-[0.6rem] tracking-[0.1em] text-green-500 placeholder:text-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
+                      </div>
+                   </div>
+                   <div className="flex gap-4 pt-10">
+                     <button type="button" onClick={() => setIsAddingProject(false)} className="flex-1 py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-white/10 text-white/40 hover:bg-white/5 transition-all">Abort</button>
+                     <button type="submit" className="flex-1 bg-white text-black py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-white/90 shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-all">Finalize Showcase</button>
                    </div>
                 </form>
              </motion.div>

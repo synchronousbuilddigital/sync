@@ -350,7 +350,7 @@ export default function Hero() {
                 <div className="relative w-full flex flex-col items-center">
 
                     <div
-                        className="absolute -top-20 sm:-top-24 left-1/2 -translate-x-1/2 sm:left-4 lg:left-8 xl:left-12 z-0 sm:z-40 opacity-20 sm:opacity-100 scale-[0.35] sm:scale-[0.7] lg:scale-100 transition-all duration-700"
+                        className="absolute -top-32 sm:-top-24 left-1 sm:left-4 lg:left-8 xl:left-12 z-40 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
                         onMouseEnter={() => setStackHovered(true)}
                         onMouseLeave={() => setStackHovered(false)}
                     >
@@ -372,7 +372,7 @@ export default function Hero() {
                         </motion.div>
                     </div>
 
-                    <div className="absolute top-[-90px] sm:top-[-80px] md:top-[-20px] left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-4 lg:right-5 z-40">
+                    <div className="absolute -top-36 sm:-top-20 right-0 sm:right-4 lg:right-5 z-40">
                         <Magnetic>
                             <motion.button
                                 initial={{ opacity: 0, scale: 0 }}
@@ -393,21 +393,21 @@ export default function Hero() {
                         </Magnetic>
                     </div>
 
-                    <div className="relative z-30 flex flex-col items-center w-full mt-10 sm:mt-0">
+                    <div className="relative z-30 flex flex-col items-center w-full">
                         <div className="w-full flex flex-col items-center select-none">
                             <motion.div
                                 initial={{ opacity: 0, y: 50 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                                className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0 sm:gap-6 w-full"
+                                className="flex items-center justify-center gap-2 sm:gap-6 w-full"
                             >
-                                <h1 className={`text-[12vw] sm:text-[7vw] md:text-[6rem] lg:text-[7.5rem] xl:text-[8.5rem] font-bold leading-[1.2] sm:leading-[0.85] tracking-[-0.05em] transition-colors duration-500 ${!isDark ? 'text-[#111]' : 'text-white'}`}>
+                                <h1 className={`text-[10vw] sm:text-[7vw] md:text-[6rem] lg:text-[7.5rem] xl:text-[8.5rem] font-bold leading-[0.85] tracking-[-0.05em] transition-colors duration-500 ${!isDark ? 'text-[#111]' : 'text-white'}`}>
                                     Marketing
                                 </h1>
                                 <Magnetic>
                                     <motion.button
                                         onClick={(e) => { e.stopPropagation(); toggleTheme(); }}
-                                        className={`w-14 h-7 sm:w-24 sm:h-12 lg:w-36 lg:h-16 rounded-full p-2 flex items-center shadow-inner relative group transition-all duration-500 ${!isDark ? 'bg-white border-2 border-black/5' : 'bg-[#1A1A1A] border-2 border-white/10'}`}
+                                        className={`w-16 h-8 sm:w-24 sm:h-12 lg:w-36 lg:h-16 rounded-full p-2 flex items-center shadow-inner relative group transition-all duration-500 ${!isDark ? 'bg-white border-2 border-black/5' : 'bg-[#1A1A1A] border-2 border-white/10'}`}
                                     >
                                         <div className="absolute inset-x-0 w-full flex justify-between px-2 sm:px-4 pointer-events-none opacity-20">
                                             <Sun className={`w-3 h-3 sm:w-5 sm:h-5 ${!isDark ? 'text-black' : 'text-white'}`} strokeWidth={3} />
@@ -454,7 +454,7 @@ export default function Hero() {
                                 initial={{ opacity: 0, y: 50 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                                className={`text-[12vw] sm:text-[7vw] md:text-[5.5rem] lg:text-[6.5rem] xl:text-[7.5rem] font-bold leading-[1.2] sm:leading-[0.9] tracking-[-0.04em] transition-colors duration-500 ${!isDark ? 'text-[#111]' : 'text-white/90'}`}
+                                className={`text-[10vw] sm:text-[7vw] md:text-[5.5rem] lg:text-[6.5rem] xl:text-[7.5rem] font-bold leading-[0.9] tracking-[-0.04em] transition-colors duration-500 ${!isDark ? 'text-[#111]' : 'text-white/90'}`}
                             >
                                 that feels
                             </motion.h2>
@@ -471,13 +471,13 @@ export default function Hero() {
                                         y: 0
                                     }}
                                     transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                                    className="text-[13vw] sm:text-[9vw] md:text-[7rem] lg:text-[8.5rem] xl:text-[10rem] font-black text-[#F05E23] leading-[1.1] sm:leading-[0.85] tracking-[-0.05em] whitespace-nowrap drop-shadow-[0_20px_50px_rgba(240,94,35,0.15)]"
+                                    className="text-[11vw] sm:text-[9vw] md:text-[7rem] lg:text-[8.5rem] xl:text-[10rem] font-black text-[#F05E23] leading-[0.85] tracking-[-0.05em] whitespace-nowrap drop-shadow-[0_20px_50px_rgba(240,94,35,0.15)]"
                                 >
                                     effortless
                                 </motion.h1>
 
                                 <motion.div
-                                    className="absolute -bottom-12 -right-4 sm:-bottom-16 sm:-right-8 z-50 drop-shadow-2xl pointer-events-none"
+                                    className="absolute -bottom-8 -right-8 sm:-bottom-16 sm:-right-8 z-50 drop-shadow-2xl pointer-events-none"
                                     animate={{
                                         x: isEffortlessHovered ? [0, -40, 0] : [0, -20, 0],
                                         y: isEffortlessHovered ? [0, -20, 0] : [0, -10, 0],
@@ -485,7 +485,7 @@ export default function Hero() {
                                     }}
                                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                                 >
-                                    <MousePointer2 className={`w-8 h-8 sm:w-16 sm:h-16 lg:w-20 lg:h-20 fill-[#111] stroke-white stroke-[2px] ${!isDark ? 'opacity-100' : 'opacity-80'}`} />
+                                    <MousePointer2 className={`w-10 h-10 sm:w-16 sm:h-16 lg:w-20 lg:h-20 fill-[#111] stroke-white stroke-[2px] ${!isDark ? 'opacity-100' : 'opacity-80'}`} />
                                 </motion.div>
                             </div>
                         </div>
@@ -510,9 +510,9 @@ export default function Hero() {
                                     href="https://wa.me/919161391566?text=I'd like to start scaling my business with Synchronous Build Digital."
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`relative group overflow-hidden px-8 sm:px-16 py-5 sm:py-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] transition-all active:scale-95 text-center flex items-center justify-center border ${!isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5'}`}
+                                    className={`relative group overflow-hidden px-12 sm:px-16 py-6 sm:py-7 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] transition-all active:scale-95 text-center flex items-center justify-center border ${!isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5'}`}
                                 >
-                                    <div className={`font-black text-sm sm:text-lg tracking-[0.1em] uppercase relative z-10 flex items-center justify-center gap-4 transition-colors duration-500 ${!isDark ? 'text-white' : 'text-[#111]'}`}>
+                                    <div className={`font-black text-base sm:text-lg tracking-[0.1em] uppercase relative z-10 flex items-center justify-center gap-4 transition-colors duration-500 ${!isDark ? 'text-white' : 'text-[#111]'}`}>
                                         Start Your Acquisition Cycle
                                         <ArrowRight className="w-5 h-5 group-hover:translate-x-3 transition-transform duration-500" />
                                     </div>
@@ -523,7 +523,7 @@ export default function Hero() {
                         </motion.div>
                     </div>
 
-                    <div className="absolute top-[60%] sm:top-1/2 right-0 lg:right-[2%] xl:right-[5%] -translate-y-1/2 z-20 hidden sm:flex flex-col items-end opacity-0 sm:opacity-50 lg:opacity-100 scale-[0.4] sm:scale-[0.6] lg:scale-100 pointer-events-none lg:pointer-events-auto transition-all duration-500">
+                    <div className="absolute top-1/2 right-0 lg:right-[2%] xl:right-[5%] -translate-y-1/2 z-20 opacity-30 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100 pointer-events-none lg:pointer-events-auto">
                         <motion.div style={{ y: y3, x: useTransform(springX, x => x * 1.2) }} className="space-y-10 flex flex-col items-end">
                             <Magnetic>
                                 <FloatingCard isActive={activeIdx === 10} delay={0.8} className={`w-16 h-16 sm:w-24 sm:h-24 rounded-3xl shadow-2xl flex items-center justify-center rotate-12 border transition-all duration-500 ${!isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-black/5'}`}>

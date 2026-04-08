@@ -11,17 +11,23 @@ export async function POST(req) {
     await dbConnect();
     const { name, email, password } = await req.json();
     
-    // Create client user
-    const client = await User.create({
-      name,
-      email,
-      password, // In a real app, hash this!
-      role: "client",
-      mustChangePassword: true
-    });
-
-    // Send the premium onboarding email
-    await sendOnboardingEmail(email, name, password);
+    // Find or create client user
+    let client = await User.findOne({ email });
+    
+    if (client) {
+      // If client exists, just return it. Optionally update name if needed.
+      // return Response.json({ success: true, client, message: "Existing brand node synchronized." });
+    } else {
+      client = await User.create({
+        name,
+        email,
+        password, // In a real app, hash this!
+        role: "client",
+        mustChangePassword: true
+      });
+      // Send the premium onboarding email only for new users
+      await sendOnboardingEmail(email, name, password);
+    }
 
     return Response.json({ success: true, client });
   } catch (err) {
