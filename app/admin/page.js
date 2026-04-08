@@ -12,7 +12,6 @@ import {
 
 export default function AdminDashboard() {
   const auth = useAuth();
-  console.log("Admin Matrix V2 Initialized - purgeClientProject:", !!auth.purgeClientProject);
   const { 
     user, interns, tasks, leaves, projects, adminClientProjects,
     addIntern, removeIntern, assignTask, updateTaskStatus, 
@@ -569,17 +568,28 @@ export default function AdminDashboard() {
         {activeTab === "holidays" && (
           <div className="space-y-6">
             {leaves.map((leave) => (
-              <div key={leave._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[2.5rem] flex items-center justify-between gap-8">
-                <div>
-                   <h3 className="font-black text-xl uppercase tracking-tight">{leave.internId?.name}</h3>
-                   <p className="text-xs text-slate-400 mt-1 uppercase font-black">{new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}</p>
-                   <p className="text-xs text-slate-500 mt-4 font-medium italic">{leave.reason}</p>
+              <div key={leave._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[2.5rem] flex items-center justify-between gap-8 group hover:border-[#F05E23]/20 transition-all">
+                <div className="space-y-4">
+                   <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                         <Calendar className="w-5 h-5 text-purple-500" />
+                      </div>
+                      <div>
+                         <h3 className="font-black text-xl uppercase tracking-tighter italic text-slate-900 dark:text-white">{leave.internId?.name}</h3>
+                         <p className="text-[10px] text-[#F05E23] uppercase font-black tracking-widest">{new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}</p>
+                      </div>
+                   </div>
+                   <p className="text-xs text-slate-500 dark:text-white/40 font-medium italic leading-relaxed">"{leave.reason}"</p>
                 </div>
-                {leave.status === 'Pending' && (
+                {leave.status === 'Pending' ? (
                   <div className="flex gap-4">
-                    <button onClick={() => approveLeave(leave._id, "Approved")} className="bg-green-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-[0.65rem]">Approve</button>
-                    <button onClick={() => approveLeave(leave._id, "Rejected")} className="bg-red-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-[0.65rem]">Reject</button>
+                    <button onClick={() => approveLeave(leave._id, "Approved")} className="bg-green-500 text-white px-8 py-4 rounded-xl font-black uppercase text-[0.6rem] tracking-widest shadow-lg shadow-green-500/20 hover:scale-105 transition-all">Grant</button>
+                    <button onClick={() => approveLeave(leave._id, "Rejected")} className="bg-transparent border border-red-500/30 text-red-500 px-8 py-4 rounded-xl font-black uppercase text-[0.6rem] tracking-widest hover:bg-red-500 hover:text-white transition-all">Deny</button>
                   </div>
+                ) : (
+                   <span className={`px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-widest ${leave.status === 'Approved' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                      {leave.status}
+                   </span>
                 )}
               </div>
             ))}
@@ -587,19 +597,123 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3rem]">
-              <h3 className="text-2xl font-black uppercase mb-10 tracking-tight">System <span className="text-[#F05E23]">Pulse</span></h3>
-              <div className="h-64 flex items-end gap-3 px-2">
-                {weeklyData.map((day, i) => (
-                  <div key={i} className="flex-1 bg-slate-50 dark:bg-white/5 rounded-2xl relative overflow-hidden h-full flex items-end">
-                    <motion.div initial={{ height: 0 }} animate={{ height: `${day.height}%` }} className={`w-full ${day.val > 70 ? 'bg-green-500' : 'bg-[#F05E23]'} transition-all`} />
+          <div className="flex flex-col gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+              <div className="lg:col-span-2 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3rem]">
+                <div className="flex items-center justify-between mb-10">
+                   <h3 className="text-2xl font-black uppercase tracking-tight">System <span className="text-[#F05E23]">Pulse</span></h3>
+                   <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-[0.6rem] font-black uppercase text-slate-400">Live Load Tracking</span>
+                   </div>
+                </div>
+                <div className="h-64 flex items-end gap-3 px-2">
+                  {weeklyData.map((day, i) => (
+                    <div key={i} className="flex-1 bg-slate-50 dark:bg-white/5 rounded-2xl relative overflow-hidden h-full flex items-end">
+                      <motion.div initial={{ height: 0 }} animate={{ height: `${day.height}%` }} className={`w-full ${day.val > 70 ? 'bg-green-500' : 'bg-[#F05E23]'} transition-all`} />
+                      <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[0.5rem] font-black text-slate-400 opacity-0 hover:opacity-100 transition-opacity">
+                        {day.val}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between mt-6 px-1">
+                  {weeklyData.map((day, i) => <span key={i} className="text-[0.6rem] font-black uppercase text-slate-300">{day.label}</span>)}
+                </div>
+              </div>
+
+              <div className="bg-[#F05E23] rounded-[3rem] p-10 text-white relative overflow-hidden">
+                 <Shield className="absolute -bottom-10 -right-10 w-40 h-40 opacity-10" />
+                 <h3 className="text-xl font-black uppercase mb-2">Nexus Security</h3>
+                 <p className="text-[0.6rem] font-bold uppercase opacity-60 tracking-widest mb-10">Administrative Level Protocol</p>
+                 <div className="space-y-6">
+                    <div className="p-6 bg-white/10 rounded-2xl border border-white/10">
+                       <span className="block text-[0.5rem] font-black uppercase opacity-60 mb-1">Encrypted Nodes</span>
+                       <span className="text-2xl font-black italic">{(interns.length + adminClientProjects.length) * 4} Units</span>
+                    </div>
+                    <div className="p-6 bg-white/10 rounded-2xl border border-white/10">
+                       <span className="block text-[0.5rem] font-black uppercase opacity-60 mb-1">Response Latency</span>
+                       <span className="text-2xl font-black italic">0.4ms Synchronized</span>
+                    </div>
+                 </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-[#0D0D14] border border-black/5 dark:border-white/5 rounded-[3.5rem] p-10">
+               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                  <div>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter italic">Client <span className="text-[#F05E23]">Performance</span> Matrix</h3>
+                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Efficiency & Objective Sync Analysis</p>
                   </div>
-                ))}
-              </div>
-               <div className="flex justify-between mt-6 px-1">
-                 {weeklyData.map((day, i) => <span key={i} className="text-[0.6rem] font-black uppercase text-slate-300">{day.label}</span>)}
-              </div>
+                  <div className="flex gap-4">
+                     <div className="px-6 py-3 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                        <span className="text-[0.55rem] font-black uppercase text-slate-400">Total Tracking: {adminClientProjects.length}</span>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                  {adminClientProjects.map((project, idx) => {
+                    const totalSteps = project.workflow?.length || 0;
+                    const completedSteps = project.workflow?.filter(s => s.status === 'Complete').length || 0;
+                    const efficiency = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+                    const status = efficiency === 100 ? "OPTIMIZED" : (efficiency > 50 ? "STABLE" : "SYNCING");
+                    
+                    return (
+                      <motion.div 
+                        key={project._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="bg-slate-50 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-3xl p-8 hover:border-[#F05E23]/30 transition-all group"
+                      >
+                        <div className="flex items-start justify-between mb-8">
+                          <div>
+                            <span className="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 text-[8px] font-black text-slate-400 uppercase mb-2 block w-fit">PID: {project._id.slice(-6)}</span>
+                            <h4 className="text-xl font-black uppercase tracking-tight italic group-hover:text-[#F05E23] transition-colors">{project.projectName}</h4>
+                          </div>
+                          <div className={`px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest ${status === 'OPTIMIZED' ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                            {status}
+                          </div>
+                        </div>
+
+                        <div className="space-y-6">
+                           <div>
+                              <div className="flex justify-between items-center mb-3">
+                                 <span className="text-[0.6rem] font-black uppercase text-slate-400 tracking-tighter">Sync Health</span>
+                                 <span className="text-lg font-black italic">{efficiency}%</span>
+                              </div>
+                              <div className="h-2.5 w-full bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                                 <motion.div 
+                                    initial={{ width: 0 }} 
+                                    animate={{ width: `${efficiency}%` }} 
+                                    className={`h-full ${efficiency === 100 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-[#F05E23]'} transition-all`} 
+                                 />
+                              </div>
+                           </div>
+
+                           <div className="grid grid-cols-2 gap-4">
+                              <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                                 <span className="block text-[0.55rem] font-black text-slate-400 uppercase mb-1">Objectives</span>
+                                 <span className="text-xl font-black italic">{completedSteps}/{totalSteps}</span>
+                              </div>
+                              <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                                 <span className="block text-[0.55rem] font-black text-slate-400 uppercase mb-1">Sync Comms</span>
+                                 <span className="text-xl font-black italic">{project.discussions?.length || 0}</span>
+                              </div>
+                           </div>
+
+                           <div className="pt-4 border-t border-black/5 dark:border-white/5">
+                              <span className="text-[0.5rem] font-black uppercase text-slate-400 mb-2 block">Latest Directive Trace</span>
+                              <p className="text-[0.65rem] font-medium text-slate-500 dark:text-white/40 italic line-clamp-1">
+                                 {project.discussions?.length > 0 ? `"${project.discussions[project.discussions.length - 1].content}"` : "No active signal trace detected."}
+                              </p>
+                           </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+               </div>
             </div>
           </div>
         )}

@@ -1,6 +1,8 @@
 import dbConnect from "@/lib/mongodb";
 import Task from "@/models/Task";
+import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
+import { sendTaskAssignmentEmail } from "@/lib/mail";
 
 export async function PATCH(req, { params }) {
   try {
@@ -24,11 +26,29 @@ export async function PATCH(req, { params }) {
 
     if (!task) return Response.json({ success: false, message: "Task not found" }, { status: 404 });
 
+    // If reassigned, notify the new intern
+    if (internId) {
+       try {
+          const intern = await User.findById(internId);
+          if (intern) {
+             await sendTaskAssignmentEmail(intern.email, intern.name, { 
+                title: task.title, 
+                description: task.description, 
+                priority: task.priority, 
+                dueDate: task.dueDate 
+             });
+          }
+       } catch (mailErr) {
+          console.error("Failed to notify reassigned intern:", mailErr);
+       }
+    }
+
     return Response.json({ success: true, task });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });
   }
 }
+
 
 export async function DELETE(req, { params }) {
   try {

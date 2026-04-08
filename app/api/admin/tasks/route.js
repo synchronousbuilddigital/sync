@@ -1,7 +1,9 @@
 import dbConnect from "@/lib/mongodb";
 import Task from "@/models/Task";
 import Leave from "@/models/Leave";
+import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
+import { sendTaskAssignmentEmail } from "@/lib/mail";
 
 export async function GET(req) {
   try {
@@ -23,6 +25,9 @@ export async function POST(req) {
 
     await dbConnect();
     const { title, description, internId, priority, dueDate } = await req.json();
+
+    const intern = await User.findById(internId);
+    if (!intern) return Response.json({ success: false, message: "Intern not found" }, { status: 404 });
 
     if (dueDate) {
       const targetDate = new Date(dueDate);
@@ -50,8 +55,17 @@ export async function POST(req) {
       status: "Pending",
     });
 
+    // Send task assignment email
+    try {
+      await sendTaskAssignmentEmail(intern.email, intern.name, { title, description, priority: priority || "Medium", dueDate });
+    } catch (mailErr) {
+       console.error("Failed to send task assignment email:", mailErr);
+       // We don't return error here because the task was already created successfully
+    }
+
     return Response.json({ success: true, task });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });
   }
 }
+
