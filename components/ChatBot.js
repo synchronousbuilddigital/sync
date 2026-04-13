@@ -5,12 +5,13 @@ import { useState, useEffect, useRef } from "react";
 import { Send, X, Bot, Zap } from "lucide-react";
 import { useTheme } from './ThemeContext';
 import InteractiveEye from './InteractiveEye';
+import ReactMarkdown from 'react-markdown';
 
 export default function ChatBot() {
     const { isDark } = useTheme();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { role: "assistant", content: "Neural architecture synchronized. AETHER is online. How shall I envision your digital future today?" }
+        { role: "assistant", content: "Hello! I'm AETHER, your friendly digital assistant. How can I help you build something amazing today?" }
     ]);
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +43,7 @@ export default function ChatBot() {
             if (response.ok && data.message) {
                 setMessages(prev => [...prev, { role: "assistant", content: data.message }]);
             } else {
-                const errorMessage = data.message || "Neural link desynchronized. Please re-initiate command logic.";
+                const errorMessage = data.message || "Oops, I lost connection. Could you try sending that again?";
                 setMessages(prev => [...prev, {
                     role: "assistant",
                     content: errorMessage
@@ -52,7 +53,7 @@ export default function ChatBot() {
             console.error('Chat error:', error);
             setMessages(prev => [...prev, {
                 role: "assistant",
-                content: "Transmission failed. Network instability detected."
+                content: "Sorry, a network error occurred."
             }]);
         } finally {
             setIsLoading(false);
@@ -99,37 +100,37 @@ export default function ChatBot() {
                             animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 50, rotate: -2 }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className={`absolute bottom-20 md:bottom-24 right-0 w-[320px] md:w-[420px] h-[520px] md:h-[620px] backdrop-blur-3xl border rounded-[2.5rem] md:rounded-[3rem] overflow-hidden z-[9999] flex flex-col pointer-events-auto origin-bottom-right transition-all duration-500 ${
+                            className={`absolute bottom-20 md:bottom-24 right-0 w-[300px] md:w-[360px] h-[450px] md:h-[520px] backdrop-blur-3xl border rounded-[2rem] overflow-hidden z-[9999] flex flex-col pointer-events-auto origin-bottom-right transition-all duration-500 ${
                                 !isDark 
                                 ? 'bg-white/95 border-white/40 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)]' 
                                 : 'bg-[#0A0A0A]/95 border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)]'
                             }`}
                         >
                             {/* Premium Header */}
-                            <div className={`p-6 md:p-8 pb-4 md:pb-6 border-b flex items-center justify-between relative overflow-hidden transition-colors duration-500 ${!isDark ? 'border-black/5 bg-white/20' : 'border-white/5 bg-white/5'}`}>
-                                <div className="flex items-center gap-4 md:gap-5 relative z-10">
-                                    <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg relative group transition-colors ${!isDark ? 'bg-[#111]' : 'bg-white'}`}>
-                                        <Bot className={`w-5 h-5 md:w-7 md:h-7 ${!isDark ? 'text-[#F05E23]' : 'text-[#111]'}`} />
+                            <div className={`p-4 md:p-5 border-b flex items-center justify-between relative overflow-hidden transition-colors duration-500 ${!isDark ? 'border-black/5 bg-white/20' : 'border-white/5 bg-white/5'}`}>
+                                <div className="flex items-center gap-3 relative z-10">
+                                    <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center shadow-md relative group transition-colors ${!isDark ? 'bg-[#111]' : 'bg-white'}`}>
+                                        <Bot className={`w-5 h-5 md:w-6 md:h-6 ${!isDark ? 'text-[#F05E23]' : 'text-[#111]'}`} />
                                         <motion.div
                                             animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.8, 0.3] }}
                                             transition={{ duration: 3, repeat: Infinity }}
-                                            className={`absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full border-2 md:border-4 ${!isDark ? 'border-white' : 'border-[#0A0A0A]'}`}
+                                            className={`absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 ${!isDark ? 'border-white' : 'border-[#0A0A0A]'}`}
                                         />
                                     </div>
                                     <div className="flex flex-col">
-                                        <h3 className={`font-bold text-lg md:text-xl tracking-tighter transition-colors ${!isDark ? 'text-[#111]' : 'text-white'}`}>AETHER</h3>
-                                        <span className={`text-[0.55rem] md:text-[0.6rem] font-black tracking-[0.2em] md:tracking-[0.3em] uppercase transition-colors ${!isDark ? 'text-orange-500' : 'text-orange-400'}`}>NEURAL_CONSCIOUSNESS</span>
+                                        <h3 className={`font-bold text-base md:text-lg tracking-tight transition-colors ${!isDark ? 'text-[#111]' : 'text-white'}`}>AETHER</h3>
+                                        <span className={`text-[0.55rem] font-black tracking-[0.2em] uppercase transition-colors ${!isDark ? 'text-orange-500' : 'text-orange-400'}`}>AI ASSISTANT</span>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className={`w-8 h-8 md:w-10 md:h-10 border rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                                    className={`w-8 h-8 md:w-9 md:h-9 border rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                                         !isDark 
                                         ? 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50' 
                                         : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
                                     }`}
                                 >
-                                    <X className="w-4 h-4 md:w-5 md:h-5" />
+                                    <X className="w-4 h-4" />
                                 </button>
                             </div>
 
@@ -150,14 +151,22 @@ export default function ChatBot() {
                                             ? 'text-orange-600 bg-orange-100 dark:bg-orange-950/40 dark:text-orange-400' 
                                             : 'text-slate-500 bg-slate-100 dark:bg-white/10 dark:text-slate-400'
                                         }`}>
-                                            {msg.role === 'assistant' ? 'AETHER_NEURAL' : 'IDENTITY_VERIFIED'}
+                                            {msg.role === 'assistant' ? 'AETHER' : 'YOU'}
                                         </span>
-                                        <div className={`text-[0.85rem] md:text-[0.95rem] leading-relaxed p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] max-w-[95%] shadow-sm border transition-all duration-300 ${
+                                        <div className={`text-[0.75rem] md:text-[0.85rem] leading-snug p-4 md:p-5 rounded-2xl md:rounded-[2rem] max-w-[95%] shadow-sm border transition-all duration-300 ${
                                             msg.role === 'assistant' 
                                             ? (!isDark ? 'text-[#333] bg-white border-black/5 rounded-tl-none' : 'text-white/90 bg-white/5 border-white/5 rounded-tl-none')
                                             : (!isDark ? 'text-white bg-[#111] border-[#111] rounded-tr-none' : 'text-[#111] bg-white border-white rounded-tr-none')
                                         }`}>
-                                            {msg.content}
+                                            {msg.role === 'assistant' ? (
+                                                <div className="prose prose-sm dark:prose-invert max-w-none text-[0.75rem] md:text-[0.85rem] leading-snug space-y-1 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:my-1 [&>p]:mb-1 [&>strong]:font-black text-inherit">
+                                                    <ReactMarkdown>
+                                                        {msg.content}
+                                                    </ReactMarkdown>
+                                                </div>
+                                            ) : (
+                                                msg.content
+                                            )}
                                             {msg.role === 'assistant' && (
                                                 <motion.div 
                                                     initial={{ opacity: 0, y: 10 }}
@@ -176,7 +185,7 @@ export default function ChatBot() {
                                                         }`}
                                                     >
                                                         <Zap className="w-3 h-3 fill-current" />
-                                                        Launch Strategy Session
+                                                        Chat with an Expert
                                                     </a>
                                                 </motion.div>
                                             )}
@@ -197,8 +206,8 @@ export default function ChatBot() {
                             </div>
 
                             {/* Command Input Area */}
-                            <div className={`p-6 md:p-8 relative border-t transition-colors duration-500 ${!isDark ? 'bg-white/50 border-black/5' : 'bg-black/20 border-white/5'}`}>
-                                <div className="relative flex items-center gap-3">
+                            <div className={`p-4 md:p-5 relative border-t transition-colors duration-500 ${!isDark ? 'bg-white/50 border-black/5' : 'bg-black/20 border-white/5'}`}>
+                                <div className="relative flex items-center gap-2 md:gap-3">
                                     <input
                                         type="text"
                                         value={inputValue}
@@ -206,8 +215,8 @@ export default function ChatBot() {
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') handleSend();
                                         }}
-                                        placeholder="Transmit command..."
-                                        className={`flex-1 border rounded-full py-4 px-6 md:px-8 text-[0.95rem] font-bold transition-all shadow-inner focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500/40 ${
+                                        placeholder="Type your message..."
+                                        className={`flex-1 border rounded-full py-3 px-5 text-[0.85rem] font-bold transition-all shadow-inner focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500/40 ${
                                             !isDark 
                                             ? 'bg-white border-slate-200 text-[#111] placeholder:text-slate-300' 
                                             : 'bg-white/5 border-white/10 text-white placeholder:text-white/20'
@@ -216,11 +225,11 @@ export default function ChatBot() {
                                     <button
                                         onClick={handleSend}
                                         disabled={!inputValue.trim() || isLoading}
-                                        className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-xl cursor-pointer disabled:opacity-30 flex-shrink-0 ${
+                                        className={`w-11 h-11 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 shadow-lg cursor-pointer disabled:opacity-30 flex-shrink-0 ${
                                             !isDark ? 'bg-[#111] text-white hover:bg-orange-600' : 'bg-white text-[#111] hover:bg-orange-500'
                                         }`}
                                     >
-                                        <Send className="w-4 h-4 md:w-5 md:h-5" />
+                                        <Send className="w-4 h-4 md:w-[18px] md:h-[18px]" />
                                     </button>
                                 </div>
 
@@ -228,7 +237,7 @@ export default function ChatBot() {
                                     <div className={`flex items-center gap-4 text-[0.55rem] md:text-[0.6rem] font-black uppercase tracking-widest transition-colors ${!isDark ? 'text-slate-400' : 'text-white/40'}`}>
                                         <div className="flex items-center gap-1.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
-                                            <span>Neural_Link_Active</span>
+                                            <span>Online</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
