@@ -16,7 +16,7 @@ export default function VerifiedOutcomes() {
     const { isDark } = useTheme();
 
     return (
-        <section className={`w-full py-24 overflow-hidden border-t transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-[#F9F9F9] border-black/5'}`}>
+        <section className={`w-full py-20 sm:py-32 overflow-hidden border-t transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-[#F9F9F9] border-black/5'}`}>
             <div className="max-w-7xl mx-auto px-6 relative z-10">
                 <div className="flex flex-col items-center text-center mb-16">
                     <motion.div
@@ -33,8 +33,8 @@ export default function VerifiedOutcomes() {
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                        className={`text-[3.5rem] sm:text-[4.5rem] md:text-[5.5rem] font-bold tracking-tighter leading-[0.9] mb-8 transition-colors duration-700 ${isDark ? 'text-white' : 'text-[#111]'}`}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                        className={`text-[clamp(2.5rem,10vw,5.5rem)] font-bold tracking-tighter leading-[0.95] mb-8 transition-colors duration-700 ${isDark ? 'text-white' : 'text-[#111]'}`}
                     >
                         Success <br />
                         <span className="text-[#F05E23]">Synchronized.</span>
@@ -51,20 +51,19 @@ export default function VerifiedOutcomes() {
                     </motion.p>
                 </div>
 
-                {/* Infinite Logo Marquee or Grid */}
-                <div className="relative mt-20 group">
-                    <div className="flex flex-wrap items-center justify-center gap-12 sm:gap-20 md:gap-32 opacity-40 hover:opacity-100 transition-opacity duration-1000">
-                        {/* Placeholder for Logos - User can replace with real ones */}
+                {/* Logo Grid - Improved for all screens */}
+                <div className="relative mt-12 sm:mt-20 group">
+                    <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-8 sm:gap-x-20 sm:gap-y-12 md:gap-x-32 opacity-40 hover:opacity-100 transition-opacity duration-1000 px-4">
                         {partners.map((partner, i) => (
                             <motion.div
                                 key={i}
                                 initial={{ opacity: 0, filter: "grayscale(100%)" }}
                                 whileInView={{ opacity: 1 }}
                                 whileHover={{ filter: "grayscale(0%)", scale: 1.1 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="h-8 md:h-12 w-auto flex items-center justify-center grayscale hover:grayscale-0 transition-all duration-500"
+                                transition={{ delay: i * 0.05 }}
+                                className="h-6 sm:h-8 md:h-12 w-auto flex items-center justify-center grayscale hover:grayscale-0 transition-all duration-500"
                             >
-                                <span className={`text-xl md:text-2xl font-black tracking-tighter uppercase whitespace-nowrap transition-colors duration-500 ${isDark ? 'text-white/20 group-hover:text-white' : 'text-slate-300 group-hover:text-slate-900'}`}>
+                                <span className={`text-lg sm:text-xl md:text-2xl font-black tracking-tighter uppercase whitespace-nowrap transition-colors duration-500 ${isDark ? 'text-white/20 group-hover:text-white' : 'text-slate-300 group-hover:text-slate-900'}`}>
                                     {partner.name}
                                 </span>
                             </motion.div>

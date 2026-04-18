@@ -57,7 +57,7 @@ export default function WorkShowcase() {
 
     return (
         <section 
-            className={`relative w-full min-h-screen py-24 sm:py-32 flex flex-col items-center justify-center overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FFF9F5]'}`}
+            className={`relative w-full min-h-screen py-20 sm:py-32 flex flex-col items-center justify-center overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FFF9F5]'}`}
         >
             {/* Soft Light Orange Background Flair */}
             <div className="absolute inset-0 pointer-events-none">
@@ -75,7 +75,7 @@ export default function WorkShowcase() {
             </div>
 
             {/* Title */}
-            <div className="max-w-7xl mx-auto px-6 w-full mb-16 relative z-20 text-center">
+            <div className="max-w-7xl mx-auto px-6 w-full mb-10 sm:mb-16 relative z-20 text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -84,181 +84,169 @@ export default function WorkShowcase() {
                 >
                     <div className="flex items-center justify-center gap-4">
                         <div className="w-12 h-[2px] bg-[#F05E23]" />
-                        <span className={`text-[12px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/30' : 'text-black/30'}`}>Work Spotlight</span>
+                        <span className="text-[10px] sm:text-[12px] font-black uppercase tracking-[0.4em] text-[#F05E23]">Work Spotlight</span>
                         <div className="w-12 h-[2px] bg-[#F05E23]" />
                     </div>
-                    <h2 className={`text-5xl sm:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-none ${isDark ? 'text-white' : 'text-black'}`}>
+                    <h2 className={`text-4xl sm:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-none ${isDark ? 'text-white' : 'text-black'}`}>
                         Our best <span className="text-[#F05E23]">Work.</span>
                     </h2>
                 </motion.div>
             </div>
 
-            {/* Project Navigation - All Company Names */}
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-12 mb-16 relative z-20 px-6">
-                {displayProjects.map((project, i) => (
-                    <motion.button
-                        key={i}
-                        onClick={() => setActiveIndex(i)}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`relative group px-2 py-1 flex flex-col items-center gap-2`}
-                    >
-                        <span className={`text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] transition-all duration-500 ${activeIndex === i ? 'text-[#F05E23]' : (isDark ? 'text-white/20 group-hover:text-white/50' : 'text-black/20 group-hover:text-black/50')}`}>
-                            {project.title}
-                        </span>
-                        {activeIndex === i && (
-                            <motion.div 
-                                layoutId="activeUnderline"
-                                className="w-full h-[2px] bg-[#F05E23] rounded-full shadow-[0_0_10px_#F05E23]" 
-                            />
-                        )}
-                    </motion.button>
-                ))}
+            {/* Project Navigation - Horizontal scroll on mobile */}
+            <div className="w-full max-w-7xl px-6 relative z-20 mb-10 sm:mb-16">
+                <div className="flex items-center gap-6 sm:gap-12 overflow-x-auto pb-4 sm:justify-center no-scrollbar">
+                    {displayProjects.map((project, i) => (
+                        <motion.button
+                            key={i}
+                            onClick={() => setActiveIndex(i)}
+                            className={`relative shrink-0 px-2 py-1 flex flex-col items-center gap-2`}
+                        >
+                            <span className={`text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] transition-all duration-500 ${activeIndex === i ? 'text-[#F05E23]' : (isDark ? 'text-white/20 hover:text-white/50' : 'text-black/20 hover:text-black/50')}`}>
+                                {project.title}
+                            </span>
+                            {activeIndex === i && (
+                                <motion.div 
+                                    layoutId="activeUnderline"
+                                    className="w-full h-[2px] bg-[#F05E23] rounded-full shadow-[0_0_10px_#F05E23]" 
+                                />
+                            )}
+                        </motion.button>
+                    ))}
+                </div>
             </div>
 
-            {/* Horizontal Filmstrip Wrapper - "At a time card, no gap" */}
-            <div className="relative w-full max-w-6xl h-[550px] sm:h-[700px] z-10">
-                <motion.div 
-                    animate={{ x: `-${activeIndex * 100}%` }}
-                    transition={{ duration: 1.8, ease: [0.32, 0.72, 0, 1] }}
-                    className="flex w-full h-full"
-                >
-                    {displayProjects.map((project, index) => (
-                        <div key={index} className="w-full flex-shrink-0 px-4 sm:px-10 h-full flex items-center justify-center">
-                            <motion.div 
-                                animate={{ 
-                                    scale: activeIndex === index ? 1 : 0.85,
-                                    opacity: activeIndex === index ? 1 : 0.4,
-                                    filter: activeIndex === index ? "blur(0px)" : "blur(4px)"
-                                }}
-                                transition={{ duration: 1 }}
-                                className={`w-full max-w-5xl h-full rounded-[2.5rem] overflow-hidden border relative flex flex-col ${isDark ? 'bg-[#0D0D14]/80 backdrop-blur-3xl border-white/5' : 'bg-white border-black/5 shadow-2xl shadow-black/5'}`}
-                            >
-                                {/* Card Image - Now on Top */}
-                                <div className="w-full h-[65%] relative overflow-hidden border-b border-white/5">
-                                    <Image
-                                        src={project.image}
-                                        alt={project.title}
-                                        fill
-                                        className="object-cover object-top transition-transform duration-[3s]"
-                                        style={{ transform: activeIndex === index ? 'scale(1.05)' : 'scale(1)' }}
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                                    <div className="absolute bottom-8 left-8 sm:bottom-12 sm:left-12">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className="text-[12px] font-black text-[#F05E23] uppercase tracking-[0.3em]">{project.id}</span>
-                                            <div className="w-12 h-[1px] bg-[#F05E23]" />
+            {/* Carousel Content */}
+            <div className="relative w-full max-w-[95%] sm:max-w-6xl h-auto lg:h-[750px] z-10 flex flex-col">
+                <div className="relative w-full overflow-hidden flex-1">
+                    <motion.div 
+                        animate={{ x: `-${activeIndex * 100}%` }}
+                        transition={{ duration: 1, ease: [0.32, 0.72, 0, 1] }}
+                        className="flex w-full h-full"
+                    >
+                        {displayProjects.map((project, index) => (
+                            <div key={index} className="w-full flex-shrink-0 px-2 sm:px-6 lg:px-10 h-full flex items-center justify-center">
+                                <motion.div 
+                                    animate={{ 
+                                        scale: activeIndex === index ? 1 : 0.95,
+                                        opacity: activeIndex === index ? 1 : 0.3,
+                                    }}
+                                    transition={{ duration: 0.6 }}
+                                    className={`w-full max-w-5xl h-full rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden border relative flex flex-col ${isDark ? 'bg-[#0D0D14]/80 backdrop-blur-3xl border-white/5' : 'bg-white border-black/5 shadow-2xl shadow-black/5'}`}
+                                >
+                                    {/* Card Image - Using aspect ratio on mobile for stability */}
+                                    <div className="w-full aspect-[16/10] sm:h-[50%] lg:h-[60%] relative overflow-hidden border-b border-white/5 shrink-0">
+                                        <Image
+                                            src={project.image}
+                                            alt={project.title}
+                                            fill
+                                            className="object-cover object-top transition-transform duration-[3s]"
+                                            style={{ transform: activeIndex === index ? 'scale(1.05)' : 'scale(1)' }}
+                                            priority={index === activeIndex}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                                        <div className="absolute bottom-6 left-6 sm:bottom-12 sm:left-12">
+                                            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                                <span className="text-[10px] sm:text-[12px] font-black text-[#F05E23] uppercase tracking-[0.2em] sm:tracking-[0.3em]">{project.id}</span>
+                                                <div className="w-8 sm:w-12 h-[1px] bg-[#F05E23]" />
+                                            </div>
+                                            <h3 className="text-3xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">{project.title}</h3>
                                         </div>
-                                        <h3 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">{project.title}</h3>
                                     </div>
-                                </div>
-                                
-                                {/* Card Content - Now on Bottom */}
-                                <div className="w-full h-[35%] p-6 sm:p-10 flex flex-col justify-between">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                                        <div className="space-y-2 max-w-2xl">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className="relative">
-                                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
-                                                    <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-green-500 animate-ping opacity-75" />
+                                    
+                                    {/* Card Content */}
+                                    <div className="w-full flex-1 p-6 sm:p-10 flex flex-col justify-between gap-6 sm:gap-10">
+                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                                            <div className="space-y-3 lg:max-w-2xl">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative">
+                                                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
+                                                        <div className="absolute inset-0 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-500 animate-ping opacity-75" />
+                                                    </div>
+                                                    <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/40' : 'text-black/40'}`}>{project.category}</span>
                                                 </div>
-                                                <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/30' : 'text-black/30'}`}>{project.category}</span>
-                                            </div>
-                                            <p className={`text-xl sm:text-2xl font-black tracking-tight leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
-                                                {project.summary}
-                                            </p>
-                                            {project.impact && (
-                                                <p className="text-[10px] font-bold text-[#F05E23] uppercase tracking-wider mt-2 flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05E23] animate-pulse" />
-                                                    Sync Impact: {project.impact}
+                                                <p className={`text-xl sm:text-3xl font-black tracking-tight leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
+                                                    {project.summary}
                                                 </p>
-                                            )}
+                                                {project.impact && (
+                                                    <div className="inline-flex items-center gap-2 p-2 rounded-lg bg-[#F05E23]/5 border border-[#F05E23]/10">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-[#F05E23] flex-shrink-0" />
+                                                        <p className="text-[9px] sm:text-[10px] font-bold text-[#F05E23] uppercase tracking-wider">
+                                                            {project.impact}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex gap-6 sm:gap-10 border-t sm:border-t-0 sm:border-l border-white/10 pt-6 sm:pt-0 sm:pl-10">
+                                                <div className="space-y-1">
+                                                    <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/20' : 'text-black/20'}`}>Strategy</span>
+                                                    <p className={`text-[10px] sm:text-[11px] font-black uppercase ${isDark ? 'text-white/80' : 'text-black/80'}`}>{project.plan}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/20' : 'text-black/20'}`}>Happiness</span>
+                                                    <p className={`text-[10px] sm:text-[11px] font-black uppercase ${isDark ? 'text-white/80' : 'text-black/80'}`}>{project.happiness}</p>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <div className="flex gap-8 border-l border-white/10 pl-8">
-                                            <div className="space-y-1">
-                                                <span className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/20' : 'text-black/20'}`}>Strategy</span>
-                                                <p className={`text-[11px] font-black uppercase ${isDark ? 'text-white/80' : 'text-black/80'}`}>{project.plan}</p>
+                                        <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 mt-auto">
+                                            <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                                                {project.results.map((tag, i) => (
+                                                    <span key={i} className={`text-[8px] font-black uppercase py-1.5 px-3 rounded-lg border ${isDark ? 'border-white/10 text-white/50 bg-white/5' : 'border-[#F05E23]/20 text-[#F05E23] bg-[#F05E23]/5'}`}>
+                                                        {tag}
+                                                    </span>
+                                                ))}
                                             </div>
-                                            <div className="space-y-1">
-                                                <span className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-white/20' : 'text-black/20'}`}>Happiness</span>
-                                                <p className={`text-[11px] font-black uppercase ${isDark ? 'text-white/80' : 'text-black/80'}`}>{project.happiness}</p>
-                                            </div>
+                                            <motion.div 
+                                                whileHover={{ scale: 1.1, rotate: 45 }}
+                                                className="w-12 h-12 rounded-2xl bg-[#F05E23] flex items-center justify-center text-white shadow-xl shadow-[#F05E23]/20 flex-shrink-0"
+                                            >
+                                                <ArrowUpRight strokeWidth={4} className="w-5 h-5 sm:w-6 sm:h-6" />
+                                            </motion.div>
                                         </div>
                                     </div>
-
-                                    <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                                        <div className="flex flex-wrap gap-2">
-                                            {project.results.map((tag, i) => (
-                                                <span key={i} className={`text-[8px] font-black uppercase py-1.5 px-3 rounded-md border ${isDark ? 'border-white/10 text-white/40 bg-white/5' : 'border-[#F05E23]/20 text-[#F05E23] bg-[#F05E23]/5'}`}>
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                        <motion.div 
-                                            whileHover={{ scale: 1.1, rotate: 45 }}
-                                            className="w-12 h-12 rounded-2xl bg-[#F05E23] flex items-center justify-center text-white shadow-xl shadow-[#F05E23]/20 transition-transform"
-                                        >
-                                            <ArrowUpRight strokeWidth={4} className="w-6 h-6" />
-                                        </motion.div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    ))}
-                </motion.div>
+                                </motion.div>
+                            </div>
+                        ))}
+                    </motion.div>
+                </div>
 
                 {/* Progress Indicators */}
-                <div className="absolute -bottom-16 flex gap-4 left-1/2 -translate-x-1/2">
+                <div className="flex gap-3 justify-center mt-10 sm:mt-16">
                     {displayProjects.map((_, i) => (
                         <div 
                             key={i} 
                             onClick={() => setActiveIndex(i)}
-                            className={`h-2 rounded-full transition-all duration-700 cursor-pointer ${activeIndex === i ? 'w-16 bg-[#F05E23]' : 'w-4 bg-[#F05E23]/20'}`} 
+                            className={`h-1.5 rounded-full transition-all duration-700 cursor-pointer ${activeIndex === i ? 'w-12 bg-[#F05E23]' : 'w-3 bg-[#F05E23]/20'}`} 
                         />
                     ))}
                 </div>
 
-                {/* Left/Right Navigation Arrows - Positioned outside main card */}
-                <div className="absolute top-1/2 -translate-y-1/2 left-4 sm:-left-32 right-4 sm:-right-32 pointer-events-none z-30 flex justify-between px-0">
+                {/* Navigation Arrows - Hidden on small mobile, refined on larger screens */}
+                <div className="hidden sm:flex absolute top-1/2 -translate-y-1/2 sm:-left-20 lg:-left-32 sm:-right-20 lg:-right-32 pointer-events-none z-30 justify-between px-4">
                     <motion.button
-                        whileHover={{ scale: 1.15, x: -10 }}
-                        whileTap={{ scale: 0.85 }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveIndex((prev) => (prev - 1 + displayProjects.length) % displayProjects.length);
-                        }}
-                        className={`pointer-events-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center backdrop-blur-3xl border border-[#F05E23]/30 group transition-all duration-500 ${isDark ? 'bg-white/5 hover:bg-[#F05E23]/20' : 'bg-black/5 hover:bg-[#F05E23]/10'}`}
+                        whileHover={{ scale: 1.1, x: -5 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setActiveIndex((prev) => (prev - 1 + displayProjects.length) % displayProjects.length)}
+                        className={`pointer-events-auto w-12 h-12 lg:w-20 lg:h-20 rounded-full flex items-center justify-center backdrop-blur-3xl border border-[#F05E23]/20 group transition-all duration-500 ${isDark ? 'bg-white/5 hover:bg-[#F05E23]/10' : 'bg-black/5 hover:bg-[#F05E23]/5'}`}
                     >
-                        <motion.div
-                            animate={{ x: [0, -6, 0] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                            <ChevronLeft strokeWidth={1.5} className={`w-8 h-8 sm:w-12 sm:h-12 transition-all duration-300 ${isDark ? 'text-white/40 group-hover:text-[#F05E23]' : 'text-black/40 group-hover:text-[#F05E23]'}`} />
-                        </motion.div>
+                        <ChevronLeft strokeWidth={1.5} className={`w-6 h-6 lg:w-10 lg:h-10 transition-colors ${isDark ? 'text-white/30 group-hover:text-[#F05E23]' : 'text-black/30 group-hover:text-[#F05E23]'}`} />
                     </motion.button>
 
                     <motion.button
-                        whileHover={{ scale: 1.15, x: 10 }}
-                        whileTap={{ scale: 0.85 }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveIndex((prev) => (prev + 1) % displayProjects.length);
-                        }}
-                        className={`pointer-events-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center backdrop-blur-3xl border border-[#F05E23]/30 group transition-all duration-500 ${isDark ? 'bg-white/5 hover:bg-[#F05E23]/20' : 'bg-black/5 hover:bg-[#F05E23]/10'}`}
+                        whileHover={{ scale: 1.1, x: 5 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setActiveIndex((prev) => (prev + 1) % displayProjects.length)}
+                        className={`pointer-events-auto w-12 h-12 lg:w-20 lg:h-20 rounded-full flex items-center justify-center backdrop-blur-3xl border border-[#F05E23]/20 group transition-all duration-500 ${isDark ? 'bg-white/5 hover:bg-[#F05E23]/10' : 'bg-black/5 hover:bg-[#F05E23]/5'}`}
                     >
-                        <motion.div
-                            animate={{ x: [0, 6, 0] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                            <ChevronRight strokeWidth={1.5} className={`w-8 h-8 sm:w-12 sm:h-12 transition-all duration-300 ${isDark ? 'text-white/40 group-hover:text-[#F05E23]' : 'text-black/40 group-hover:text-[#F05E23]'}`} />
-                        </motion.div>
+                        <ChevronRight strokeWidth={1.5} className={`w-6 h-6 lg:w-10 lg:h-10 transition-colors ${isDark ? 'text-white/30 group-hover:text-[#F05E23]' : 'text-black/30 group-hover:text-[#F05E23]'}`} />
                     </motion.button>
                 </div>
             </div>
             
-            {/* Ambient Background Number */}
-            <div className="absolute -bottom-10 -right-10 pointer-events-none opacity-[0.02] select-none">
+            {/* Ambient Background Number - Hidden on small mobile */}
+            <div className="hidden sm:block absolute -bottom-10 -right-10 pointer-events-none opacity-[0.02] select-none">
                 <span className={`text-[20rem] font-black ${isDark ? 'text-white' : 'text-black'}`}>0{activeIndex + 1}</span>
             </div>
         </section>

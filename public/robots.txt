@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /intern
+Disallow: /api/
+
+Sitemap: https://synchronousbuilddigital.com/sitemap.xml

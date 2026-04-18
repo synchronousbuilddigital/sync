@@ -95,17 +95,25 @@ export default function AccordionServices() {
         mouseY.set(clientY - top);
     }
 
+    const spotlightBackground = useMotionTemplate`
+        radial-gradient(
+            450px circle at ${mouseX}px ${mouseY}px,
+            rgba(240, 94, 35, 0.06),
+            transparent 80%
+        )
+    `;
+
     return (
         <section
             ref={sectionRef}
             className={`relative w-full py-24 lg:py-32 transition-colors duration-500 overflow-hidden ${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF8] text-[#0F1729]'}`}
             onMouseMove={handleMouseMove}
         >
-            {/* Simple Grid Background */}
+            {/* Simple Grid Background - Reduced opacity on mobile */}
             <div className={`absolute inset-0 z-0 pointer-events-none overflow-hidden transition-colors duration-700`}>
                 <div className="absolute inset-0" style={{
                     backgroundImage: `linear-gradient(to right, rgba(240, 94, 35, ${isDark ? '0.08' : '0.05'}) 1px, transparent 1px), linear-gradient(to bottom, rgba(240, 94, 35, ${isDark ? '0.08' : '0.05'}) 1px, transparent 1px)`,
-                    backgroundSize: '100px 100px',
+                    backgroundSize: !isDesktop ? '50px 50px' : '100px 100px',
                     maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)'
                 }}></div>
             </div>
@@ -116,16 +124,12 @@ export default function AccordionServices() {
                 <div className="absolute bottom-[10%] right-[-5%] w-[40%] h-[40%] lg:w-[30%] lg:h-[40%] rounded-full bg-[#F05E23] opacity-[0.05] dark:opacity-[0.03] blur-[100px] lg:blur-[120px]"></div>
             </div>
 
+            {/* Desktop Spotlight - Controlled by opacity instead of conditional render to keep hook count stable */}
             <motion.div
+                animate={{ opacity: isDesktop ? 1 : 0 }}
                 className="pointer-events-none absolute -inset-px z-0"
                 style={{
-                    background: useMotionTemplate`
-                        radial-gradient(
-                            450px circle at ${mouseX}px ${mouseY}px,
-                            rgba(240, 94, 35, 0.06),
-                            transparent 80%
-                        )
-                    `
+                    background: spotlightBackground
                 }}
             />
 
@@ -178,8 +182,8 @@ export default function AccordionServices() {
                                 }}
                                 animate={{
                                     flex: !isDesktop ? "none" : (!isSomethingHovered ? "1 1 0%" : (isOpen ? "3 1 0%" : "1 1 0%")),
-                                    filter: isOpen ? "grayscale(0%)" : (isSomethingHovered ? "grayscale(100%)" : "grayscale(0%)"),
-                                    opacity: isOpen ? 1 : (isSomethingHovered ? 0.35 : 1)
+                                    filter: !isDesktop ? "none" : (isOpen ? "grayscale(0%)" : (isSomethingHovered ? "grayscale(100%)" : "grayscale(0%)")),
+                                    opacity: !isDesktop ? 1 : (isOpen ? 1 : (isSomethingHovered ? 0.35 : 1))
                                 }}
                                 transition={{ 
                                     duration: 0.6, 
@@ -295,7 +299,7 @@ export default function AccordionServices() {
                                                     <img 
                                                         src={service.image} 
                                                         alt={service.title} 
-                                                        className="w-full h-full object-cover object-top transition-transform duration-[1.5s] group-hover:scale-105" 
+                                                        className="w-full h-full object-cover object-top transition-transform duration-[1.5s] lg:group-hover:scale-105" 
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-8">
                                                         <div className="flex flex-col gap-1">

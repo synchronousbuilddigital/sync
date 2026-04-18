@@ -84,7 +84,8 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                     ? (index * 12 - 12)
                     : (index !== undefined ? [0, -12, -6, 3][index + 1] : 0),
                 zIndex: isActive ? 500 : (isHovered ? 400 : (20 - index)),
-                height: (isHovered || isActive) ? "152px" : "144px"
+                height: (isHovered || isActive) ? "auto" : "auto",
+                minHeight: (isHovered || isActive) ? "152px" : "144px"
             }}
             style={{
                 transformPerspective: 1200,
@@ -112,7 +113,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
             {/* Connecting line between cards when fanned */}
             {isStackHovered && index > 0 && (
                 <motion.svg
-                    className="absolute -top-8 -left-4 w-20 h-16 pointer-events-none z-0"
+                    className="absolute -top-10 -left-6 w-24 h-20 pointer-events-none z-0"
                     viewBox="0 0 80 64"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.3 }}
@@ -148,7 +149,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 transition={{ duration: 0.4 }}
             />
 
-            <div className="absolute inset-0 p-5 flex flex-col justify-between z-10 bg-white/[0.02]">
+            <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-between z-10 bg-white/[0.02]">
                 <div className="flex justify-between items-start">
                     <motion.div
                         animate={{
@@ -174,10 +175,10 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 </div>
                 <motion.div
                     animate={{
-                        letterSpacing: isHovered ? "0.1em" : "0em",
+                        letterSpacing: isHovered ? "0.05em" : "0em",
                     }}
                     transition={{ duration: 0.4 }}
-                    className={`${card.text} font-black text-2xl leading-none tracking-tight`}
+                    className={`${card.text} font-black text-xl sm:text-2xl leading-none tracking-tight`}
                 >
                     {card.title}
                 </motion.div>
@@ -195,7 +196,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                     y: (isHovered || isActive) ? 0 : 10
                 }}
                 transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                className="absolute inset-0 bg-black/90 p-6 flex flex-col z-30 rounded-2xl border border-white/5"
+                className="absolute inset-0 bg-black/90 p-4 sm:p-6 flex flex-col z-30 rounded-2xl border border-white/5"
             >
                 {/* Animated top border */}
                 <motion.div
@@ -208,7 +209,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 />
 
 
-                <div className="space-y-3 flex-1">
+                <div className="space-y-2 sm:space-y-3 flex-1 overflow-hidden">
                     {card.services.map((service, i) => (
                         <motion.div
                             key={i}
@@ -223,14 +224,14 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                                 ease: [0.34, 1.56, 0.64, 1] // cubic-bezier for bouncy feel
                             }}
                             whileHover={{ x: 6, color: "rgba(240, 94, 35, 1)" }}
-                            className="flex items-center gap-4 group/service cursor-pointer"
+                            className="flex items-center gap-3 sm:gap-4 group/service cursor-pointer"
                         >
                             <motion.div
-                                className="w-1.5 h-1.5 rounded-full bg-[#F05E23]/40 group-hover/service:bg-[#F05E23]"
+                                className="w-1.5 h-1.5 rounded-full bg-[#F05E23]/40 group-hover/service:bg-[#F05E23] flex-shrink-0"
                                 animate={{ scale: [1, 1.4, 1] }}
                                 transition={{ duration: 2, repeat: Infinity, delay: i * 0.1 }}
                             />
-                            <span className="text-white/90 font-bold text-[11px] uppercase tracking-widest font-mono transition-colors duration-300">
+                            <span className="text-white/90 font-bold text-[9px] sm:text-[11px] uppercase tracking-widest font-mono transition-colors duration-300 truncate">
                                 {service}
                             </span>
                         </motion.div>
@@ -261,6 +262,14 @@ export default function Hero() {
     const [activeIdx, setActiveIdx] = useState(-1);
     const [hoveredIdx, setHoveredIdx] = useState(-1);
     const [isEffortlessHovered, setIsEffortlessHovered] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        setIsMobile(window.innerWidth < 640);
+        const handleResize = () => setIsMobile(window.innerWidth < 640);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Optimized interaction check
     const isInteracting = stackHovered || hoveredIdx !== -1 || activeIdx !== -1;
@@ -273,7 +282,7 @@ export default function Hero() {
     const cardData = [
         {
             title: "Design",
-            icon: <Globe2 className="w-8 h-8 text-white" />,
+            icon: <Globe2 className="w-6 h-6 sm:w-8 sm:h-8 text-white" />,
             bg: "bg-[#3B82F6]",
             border: "border-blue-400",
             text: "text-white",
@@ -281,7 +290,7 @@ export default function Hero() {
         },
         {
             title: "Marketing",
-            icon: <Zap className="w-8 h-8 text-indigo-400" />,
+            icon: <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-400" />,
             bg: "bg-[#111]",
             border: "border-slate-800",
             text: "text-white",
@@ -289,7 +298,7 @@ export default function Hero() {
         },
         {
             title: "Strategy",
-            icon: <Target className="w-8 h-8 text-yellow-900" />,
+            icon: <Target className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-900" />,
             bg: "bg-[#FFD700]",
             border: "border-yellow-300",
             text: "text-yellow-900",
@@ -328,7 +337,7 @@ export default function Hero() {
         <section
             ref={containerRef}
             onClick={() => setActiveIdx(-1)}
-            className={`relative w-full min-h-[90vh] flex flex-col items-center justify-center pt-24 sm:pt-32 pb-10 sm:pb-16 overflow-hidden group/hero transition-colors duration-500 ${!isDark ? 'bg-[#F9F9F9]' : 'bg-[#0A0A0A]'}`}
+            className={`relative w-full min-h-screen sm:min-h-[90vh] flex flex-col items-center justify-start sm:justify-center pt-8 sm:pt-32 pb-12 sm:pb-16 overflow-hidden group/hero transition-colors duration-500 ${!isDark ? 'bg-[#F9F9F9]' : 'bg-[#0A0A0A]'}`}
         >
             <motion.div
                 className="pointer-events-none fixed inset-0 z-50 opacity-0 group-hover/hero:opacity-100 transition-opacity duration-1000"
@@ -349,12 +358,13 @@ export default function Hero() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 w-full flex flex-col items-center">
                 <div className="relative w-full flex flex-col items-center">
 
+                    {/* Left Card Stack - Hidden on mobile/tablet to declutter view */}
                     <div
-                        className="absolute -top-32 sm:-top-24 left-1 sm:left-4 lg:left-8 xl:left-12 z-40 opacity-40 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100"
+                        className="absolute -top-24 sm:-top-32 left-0 sm:left-4 lg:left-8 xl:left-12 z-40 opacity-40 lg:opacity-100 scale-[0.45] sm:scale-[0.6] lg:scale-100 transition-all pointer-events-none lg:pointer-events-auto hidden lg:block"
                         onMouseEnter={() => setStackHovered(true)}
                         onMouseLeave={() => setStackHovered(false)}
                     >
-                        <motion.div style={{ y: y1, x: useTransform(springX, x => x * -1.5) }} className="relative h-[200px] w-[350px]">
+                        <motion.div style={{ y: y1, x: useTransform(springX, x => x * -1.5) }} className="relative h-[180px] w-[300px] sm:h-[200px] sm:w-[350px]">
                             {cardData.map((card, index) => (
                                 <FloatingCard
                                     key={card.title}
@@ -366,13 +376,14 @@ export default function Hero() {
                                     hoveredIdx={hoveredIdx}
                                     setActiveIdx={setActiveIdx}
                                     setHoveredIdx={setHoveredIdx}
-                                    className={`w-52 h-36 rounded-2xl shadow-2xl absolute border ${card.bg} ${card.border}`}
+                                    className={`w-48 sm:w-52 h-32 sm:h-36 rounded-2xl shadow-2xl absolute border ${card.bg} ${card.border}`}
                                 />
                             ))}
                         </motion.div>
                     </div>
 
-                    <div className="absolute -top-36 sm:-top-20 right-0 sm:right-4 lg:right-5 z-40">
+                    {/* Acquisition Optimized Button - Hidden on mobile/tablet */}
+                    <div className="absolute -top-24 sm:-top-28 right-0 sm:right-4 z-40 scale-75 sm:scale-90 lg:scale-100 hidden lg:block">
                         <Magnetic>
                             <motion.button
                                 initial={{ opacity: 0, scale: 0 }}
@@ -380,34 +391,35 @@ export default function Hero() {
                                 transition={{ type: "spring", stiffness: 200, damping: 20, delay: 1 }}
                                 whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -15px rgba(240, 94, 35, 0.4)" }}
                                 whileTap={{ scale: 0.95 }}
-                                className={`flex items-center gap-2 sm:gap-3 px-6 sm:px-10 py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-500 border ${!isDark ? 'bg-[#F05E23] border-[#F05E23]/20' : 'bg-indigo-600 border-indigo-400/30'} text-white`}
+                                className={`flex items-center gap-2 sm:gap-3 px-5 sm:px-8 py-3.5 sm:py-4.5 rounded-full shadow-2xl transition-all duration-500 border ${!isDark ? 'bg-[#F05E23] border-[#F05E23]/20' : 'bg-indigo-600 border-indigo-400/30'} text-white`}
                             >
                                 <motion.div
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                                 >
-                                    <Sparkles className="w-5 h-5 text-white" />
+                                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                                 </motion.div>
-                                <span className="font-black text-[10px] sm:text-xs uppercase tracking-[0.3em] whitespace-nowrap">Acquisition Optimized</span>
+                                <span className="font-black text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] whitespace-nowrap">Acquisition Optimized</span>
                             </motion.button>
                         </Magnetic>
                     </div>
 
-                    <div className="relative z-30 flex flex-col items-center w-full">
+                    <div className="relative z-30 flex flex-col items-center w-full px-2 mt-8 sm:mt-0">
                         <div className="w-full flex flex-col items-center select-none">
                             <motion.div
                                 initial={{ opacity: 0, y: 50 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                                className="flex items-center justify-center gap-2 sm:gap-6 w-full"
+                                className="flex items-center justify-center gap-3 sm:gap-6 w-full"
                             >
-                                <h1 className={`text-[10vw] sm:text-[7vw] md:text-[6rem] lg:text-[7.5rem] xl:text-[8.5rem] font-bold leading-[0.85] tracking-[-0.05em] transition-colors duration-500 ${!isDark ? 'text-[#111]' : 'text-white'}`}>
+                                <h1 className={`text-[clamp(3.5rem,14vw,8.5rem)] font-bold leading-[0.85] tracking-[-0.05em] transition-colors duration-500 ${!isDark ? 'text-[#111]' : 'text-white'}`}>
                                     Marketing
                                 </h1>
                                 <Magnetic>
                                     <motion.button
                                         onClick={(e) => { e.stopPropagation(); toggleTheme(); }}
-                                        className={`w-16 h-8 sm:w-24 sm:h-12 lg:w-36 lg:h-16 rounded-full p-2 flex items-center shadow-inner relative group transition-all duration-500 ${!isDark ? 'bg-white border-2 border-black/5' : 'bg-[#1A1A1A] border-2 border-white/10'}`}
+                                        className={`w-14 h-7 sm:w-24 sm:h-12 lg:w-36 lg:h-16 rounded-full p-1 sm:p-2 flex items-center shadow-inner relative group transition-all duration-500 ${!isDark ? 'bg-white border-2 border-black/5' : 'bg-[#1A1A1A] border-2 border-white/10'}`}
+                                        aria-label="Toggle theme"
                                     >
                                         <div className="absolute inset-x-0 w-full flex justify-between px-2 sm:px-4 pointer-events-none opacity-20">
                                             <Sun className={`w-3 h-3 sm:w-5 sm:h-5 ${!isDark ? 'text-black' : 'text-white'}`} strokeWidth={3} />
@@ -416,11 +428,11 @@ export default function Hero() {
 
                                         <motion.div
                                             animate={{
-                                                x: !isDark ? '0%' : '170%',
+                                                x: !isDark ? '0%' : (isMobile ? '100%' : '170%'),
                                                 rotate: !isDark ? 0 : 360
                                             }}
                                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                            className="w-5 h-5 sm:w-9 sm:h-9 lg:w-12 lg:h-12 bg-[#F05E23] rounded-full shadow-lg flex items-center justify-center z-10"
+                                            className="w-4 h-4 sm:w-8 sm:h-8 lg:w-12 lg:h-12 bg-[#F05E23] rounded-full shadow-lg flex items-center justify-center z-10"
                                         >
                                             <AnimatePresence mode="wait">
                                                 {!isDark ? (
@@ -431,7 +443,7 @@ export default function Hero() {
                                                         exit={{ opacity: 0, scale: 0.5 }}
                                                         transition={{ duration: 0.2 }}
                                                     >
-                                                        <Sun className="w-3 h-3 sm:w-5 sm:h-5 text-white fill-white" />
+                                                        <Sun className="w-2 h-2 sm:w-5 sm:h-5 text-white fill-white" />
                                                     </motion.div>
                                                 ) : (
                                                     <motion.div
@@ -441,7 +453,7 @@ export default function Hero() {
                                                         exit={{ opacity: 0, scale: 0.5 }}
                                                         transition={{ duration: 0.2 }}
                                                     >
-                                                        <Moon className="w-3 h-3 sm:w-5 sm:h-5 text-white fill-white" />
+                                                        <Moon className="w-2 h-2 sm:w-5 sm:h-5 text-white fill-white" />
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
@@ -454,13 +466,13 @@ export default function Hero() {
                                 initial={{ opacity: 0, y: 50 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                                className={`text-[10vw] sm:text-[7vw] md:text-[5.5rem] lg:text-[6.5rem] xl:text-[7.5rem] font-bold leading-[0.9] tracking-[-0.04em] transition-colors duration-500 ${!isDark ? 'text-[#111]' : 'text-white/90'}`}
+                                className={`text-[clamp(3rem,12vw,7.5rem)] font-bold leading-[0.9] tracking-[-0.04em] transition-colors duration-500 ${!isDark ? 'text-[#111]' : 'text-white/90'}`}
                             >
                                 that feels
                             </motion.h2>
 
-                            <div className="flex items-center justify-center relative mt-[-2px] sm:mt-0">
-                                <motion.h1
+                            <div className="flex items-center justify-center relative -mt-1 sm:mt-0">
+                                <motion.span
                                     onMouseEnter={() => setIsEffortlessHovered(true)}
                                     onMouseLeave={() => setIsEffortlessHovered(false)}
                                     initial={{ opacity: 0, y: 50 }}
@@ -471,13 +483,13 @@ export default function Hero() {
                                         y: 0
                                     }}
                                     transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                                    className="text-[11vw] sm:text-[9vw] md:text-[7rem] lg:text-[8.5rem] xl:text-[10rem] font-black text-[#F05E23] leading-[0.85] tracking-[-0.05em] whitespace-nowrap drop-shadow-[0_20px_50px_rgba(240,94,35,0.15)]"
+                                    className="text-[clamp(4.2rem,16vw,10rem)] font-black text-[#F05E23] leading-[0.85] tracking-[-0.05em] whitespace-nowrap drop-shadow-[0_20px_50px_rgba(240,94,35,0.15)] block"
                                 >
                                     effortless
-                                </motion.h1>
+                                </motion.span>
 
                                 <motion.div
-                                    className="absolute -bottom-8 -right-8 sm:-bottom-16 sm:-right-8 z-50 drop-shadow-2xl pointer-events-none"
+                                    className="absolute -bottom-4 -right-4 sm:-bottom-12 sm:-right-8 z-50 drop-shadow-2xl pointer-events-none scale-50 sm:scale-75 lg:scale-100"
                                     animate={{
                                         x: isEffortlessHovered ? [0, -40, 0] : [0, -20, 0],
                                         y: isEffortlessHovered ? [0, -20, 0] : [0, -10, 0],
@@ -494,7 +506,7 @@ export default function Hero() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.6, duration: 0.8 }}
-                            className={`mt-8 sm:mt-12 text-sm sm:text-lg md:text-xl font-medium max-w-[90%] sm:max-w-xl mx-auto leading-relaxed md:leading-normal text-center transition-colors duration-500 ${!isDark ? 'text-slate-500' : 'text-white/50'}`}
+                            className={`mt-8 sm:mt-10 md:mt-12 text-base sm:text-base md:text-lg lg:text-xl font-medium max-w-[95%] sm:max-w-xl mx-auto leading-relaxed text-center transition-colors duration-500 ${!isDark ? 'text-slate-500' : 'text-white/50'}`}
                         >
                             Designed for modern marketing experiences that feel seamless from the first click up to final conversion.
                         </motion.p>
@@ -503,35 +515,36 @@ export default function Hero() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.8, duration: 0.8 }}
-                            className="mt-12 sm:mt-20 w-full flex justify-center px-6 relative z-50"
+                            className="mt-10 sm:mt-16 lg:mt-20 w-full flex justify-center px-4 sm:px-6 relative z-50"
                         >
                             <Magnetic>
                                 <a
                                     href="https://wa.me/919161391566?text=I'd like to start scaling my business with Synchronous Build Digital."
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`relative group overflow-hidden px-12 sm:px-16 py-6 sm:py-7 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] transition-all active:scale-95 text-center flex items-center justify-center border ${!isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5'}`}
+                                    className={`relative group overflow-hidden px-10 sm:px-12 lg:px-16 py-5.5 sm:py-6 lg:py-7 rounded-2xl sm:rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] transition-all active:scale-95 text-center flex items-center justify-center border ${!isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5'} w-full sm:w-auto max-w-xs sm:max-w-none`}
                                 >
-                                    <div className={`font-black text-base sm:text-lg tracking-[0.1em] uppercase relative z-10 flex items-center justify-center gap-4 transition-colors duration-500 ${!isDark ? 'text-white' : 'text-[#111]'}`}>
-                                        Start Your Acquisition Cycle
-                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-3 transition-transform duration-500" />
+                                    <div className={`font-black text-xs sm:text-base lg:text-lg tracking-[0.05em] sm:tracking-[0.1em] uppercase relative z-10 flex items-center justify-center gap-3 sm:gap-4 transition-colors duration-500 ${!isDark ? 'text-white' : 'text-[#111]'}`}>
+                                        Start Acquisition Cycle
+                                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-2 transition-transform duration-500" />
                                     </div>
                                     <div className="absolute inset-0 bg-[#F05E23] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16, 1, 0.3, 1]"></div>
-                                    <div className={`absolute top-0 right-0 w-16 h-16 z-20 group-hover:scale-125 transition-transform duration-700 mask-triangle ${!isDark ? 'bg-white/10' : 'bg-black/5'}`}></div>
+                                    <div className={`absolute top-0 right-0 w-12 h-12 lg:w-16 lg:h-16 z-20 group-hover:scale-125 transition-transform duration-700 mask-triangle ${!isDark ? 'bg-white/10' : 'bg-black/5'}`}></div>
                                 </a>
                             </Magnetic>
                         </motion.div>
                     </div>
 
-                    <div className="absolute top-1/2 right-0 lg:right-[2%] xl:right-[5%] -translate-y-1/2 z-20 opacity-30 lg:opacity-100 scale-[0.5] sm:scale-[0.7] lg:scale-100 pointer-events-none lg:pointer-events-auto">
-                        <motion.div style={{ y: y3, x: useTransform(springX, x => x * 1.2) }} className="space-y-10 flex flex-col items-end">
+                    {/* Right Side Icons - Hidden on mobile/tablet to focus on text */}
+                    <div className="absolute top-1/2 right-0 lg:right-[2%] xl:right-[5%] -translate-y-1/2 z-20 opacity-20 lg:opacity-100 scale-[0.4] sm:scale-[0.6] lg:scale-100 pointer-events-none lg:pointer-events-auto hidden lg:block">
+                        <motion.div style={{ y: y3, x: useTransform(springX, x => x * 1.2) }} className="space-y-6 sm:space-y-10 flex flex-col items-end">
                             <Magnetic>
                                 <FloatingCard isActive={activeIdx === 10} delay={0.8} className={`w-16 h-16 sm:w-24 sm:h-24 rounded-3xl shadow-2xl flex items-center justify-center rotate-12 border transition-all duration-500 ${!isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-black/5'}`}>
                                     <Zap className={`w-8 h-8 sm:w-12 sm:h-12 fill-yellow-400 ${!isDark ? 'text-yellow-400' : 'text-slate-800'}`} />
                                 </FloatingCard>
                             </Magnetic>
                             <Magnetic>
-                                <FloatingCard isActive={activeIdx === 11} delay={1.0} className={`w-20 h-20 sm:w-28 sm:h-28 rounded-3xl shadow-2xl flex items-center justify-center rotate-[-8deg] border relative mr-12 sm:mr-16 transition-all duration-500 ${!isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}>
+                                <FloatingCard isActive={activeIdx === 11} delay={1.0} className={`w-20 h-20 sm:w-28 sm:h-28 rounded-3xl shadow-2xl flex items-center justify-center rotate-[-8deg] border relative mr-8 sm:mr-16 transition-all duration-500 ${!isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}>
                                     <Target className={`w-8 h-8 sm:w-12 sm:h-12 ${!isDark ? 'text-slate-800' : 'text-white'}`} />
                                     <div className={`absolute inset-0 border rounded-3xl animate-ping opacity-10 ${!isDark ? 'border-black' : 'border-white'}`}></div>
                                 </FloatingCard>
@@ -547,6 +560,7 @@ export default function Hero() {
                 </div>
             </div>
 
+            {/* Background elements - optimized for mobile to prevent overflow */}
             <motion.div
                 animate={{
                     scale: [1, 1.2, 1],
@@ -556,7 +570,7 @@ export default function Hero() {
                     backgroundColor: !isDark ? 'rgba(79, 70, 229, 0.1)' : 'rgba(240, 94, 35, 0.1)'
                 }}
                 transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] -z-10"
+                className="absolute bottom-[-15%] right-[-10%] w-[300px] sm:w-[500px] lg:w-[600px] h-[300px] sm:h-[500px] lg:h-[600px] rounded-full blur-[80px] sm:blur-[120px] -z-10"
             />
             <motion.div
                 animate={{
@@ -567,7 +581,7 @@ export default function Hero() {
                     backgroundColor: !isDark ? 'rgba(240, 94, 35, 0.1)' : 'rgba(79, 70, 229, 0.1)'
                 }}
                 transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-[-10%] left-[-15%] w-[500px] h-[500px] rounded-full blur-[120px] -z-10"
+                className="absolute top-[-10%] left-[-15%] w-[250px] sm:w-[400px] lg:w-[500px] h-[250px] sm:h-[400px] lg:h-[500px] rounded-full blur-[80px] sm:blur-[120px] -z-10"
             />
 
             <div className={`absolute inset-0 pointer-events-none z-0 opacity-10 mix-blend-overlay transition-opacity duration-700`}
