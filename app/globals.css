@@ -470,7 +470,7 @@ body {
 }
 
 .mask-triangle {
-  clip-path: polygon(60% 0, 100% 0, 100% 40%);
+  clip-path: circle(70% at 100% 0%);
 }
 
 .bg-radial-gradient {

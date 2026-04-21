@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useChat } from "../../components/ChatContext";
 
 const steps = [
     {
@@ -61,6 +62,8 @@ const steps = [
 ];
 
 export default function ProcessPage() {
+    const { sendMessage } = useChat();
+
     return (
         <main className="bg-[#FDFDFD] min-h-screen selection:bg-[#F05E23]/20 overflow-x-hidden">
             {/* Minimalist Grid Pattern */}
@@ -68,7 +71,7 @@ export default function ProcessPage() {
                  style={{ backgroundImage: 'radial-gradient(#000 1.2px, transparent 1.2px)', backgroundSize: '48px 48px' }}></div>
 
             {/* Hero Section */}
-            <section className="relative w-full pt-44 pb-16 md:pt-60 md:pb-24 px-6 overflow-hidden">
+            <section className="relative w-full pt-12 pb-16 md:pt-16 md:pb-24 px-6 overflow-hidden">
                 <div className="max-w-7xl mx-auto flex flex-col items-start relative z-10">
                     <motion.div 
                         initial={{ opacity: 0, x: -20 }}
@@ -140,7 +143,9 @@ export default function ProcessPage() {
                                 <span className="w-10 h-[1px] bg-[#F05E23]/30"></span>
                                 {step.subtitle}
                             </div>
-                            <h2 className="text-[3rem] md:text-[4.5rem] font-bold text-[#111] tracking-tighter leading-[0.95] mb-8">
+                            <h2 
+                                onClick={() => sendMessage(`Explain what the "${step.title}" process phase is and how it brings value and usefulness to my business.`)}
+                                className="text-[3rem] md:text-[4.5rem] font-bold text-[#111] tracking-tighter leading-[0.95] mb-8 cursor-pointer hover:text-[#F05E23] transition-colors duration-300 hover:-translate-y-1">
                                 {step.title}.
                             </h2>
                             <p className="text-[1.1rem] md:text-[1.2rem] text-slate-500 font-light leading-relaxed mb-10 max-w-2xl">
@@ -149,7 +154,10 @@ export default function ProcessPage() {
 
                             <div className="flex flex-wrap gap-3 mb-10">
                                 {step.tags.map((tag, tid) => (
-                                    <div key={tid} className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-white border border-slate-100 text-[0.75rem] font-bold text-slate-500 hover:border-[#F05E23]/20 hover:text-[#F05E23] transition-all duration-300">
+                                    <div 
+                                        key={tid} 
+                                        onClick={() => sendMessage(`Explain what "${tag}" is and how this specific strategy brings value and usefulness to my business.`)}
+                                        className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-white border border-slate-100 text-[0.75rem] font-bold text-slate-500 hover:border-[#F05E23]/20 hover:text-[#F05E23] transition-all duration-300 cursor-pointer hover:scale-105 shadow-sm">
                                         <CheckCircle2 className="w-3 h-3 opacity-30" />
                                         {tag}
                                     </div>

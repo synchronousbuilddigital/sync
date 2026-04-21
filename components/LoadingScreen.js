@@ -12,6 +12,12 @@ export default function LoadingScreen() {
     const fullText = "Initializing Services";
 
     useEffect(() => {
+        // Prevent the browser from automatically restoring the scroll position
+        if ('scrollRestoration' in window.history) {
+            window.history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+
         document.body.style.overflow = 'hidden';
 
         // Smooth progress animation
@@ -44,6 +50,7 @@ export default function LoadingScreen() {
 
         const removeTimer = setTimeout(() => {
             document.body.style.overflow = 'unset';
+            window.scrollTo(0, 0);
             setIsVisible(false);
         }, 2900);
 

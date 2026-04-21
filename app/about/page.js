@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Target, Zap, Shield, Rocket, Users2, Sparkles, Network, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useChat } from "../../components/ChatContext";
 
 const highlights = [
     {
@@ -61,6 +62,7 @@ const itemVariants = {
 };
 
 export default function AboutPage() {
+    const { sendMessage } = useChat();
     return (
         <div className="flex flex-col items-center w-full min-h-screen relative overflow-hidden pb-10 selection:bg-orange-500/20" style={{ backgroundColor: '#FAFAF8' }}>
             {/* Ambient background glows */}
@@ -72,7 +74,7 @@ export default function AboutPage() {
             ></div>
 
             {/* Hero Section */}
-            <section className="w-full max-w-[1400px] mx-auto px-6 pt-32 pb-20 relative z-10">
+            <section className="w-full max-w-[1400px] mx-auto px-6 pt-12 pb-20 relative z-10">
                 <div className="flex flex-col md:flex-row items-end justify-between gap-12">
                     <div className="max-w-5xl flex flex-col items-start">
                         <motion.div
@@ -154,7 +156,9 @@ export default function AboutPage() {
                                 </div>
 
                                 <div className="relative z-10 flex-1 flex flex-col">
-                                    <h4 className="text-[1.5rem] lg:text-[1.8rem] font-bold text-[#111] tracking-tight mb-4 group-hover:text-[#F05E23] transition-colors duration-500">
+                                    <h4 
+                                        onClick={() => sendMessage(`Explain the "${h.title}" core pillar and why it's important for my business.`)}
+                                        className="text-[1.5rem] lg:text-[1.8rem] font-bold text-[#111] tracking-tight mb-4 group-hover:text-[#F05E23] transition-colors duration-500 cursor-pointer">
                                         {h.title}.
                                     </h4>
                                     <p className="text-[1.1rem] text-slate-500 font-normal leading-relaxed group-hover:text-slate-700 transition-colors duration-700">

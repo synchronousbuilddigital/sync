@@ -128,7 +128,7 @@ export default function Footer() {
                                 { icon: Instagram, href: "https://www.instagram.com/synchronous.build.digital/" },
                                 { icon: Mail, href: "mailto:synchronous.build.digital@gmail.com" }
                             ].map((social, i) => (
-                                <a key={i} href={social.href} className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all duration-500 shadow-sm group ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white hover:text-[#111]' : 'bg-white border-slate-200 text-slate-600 hover:text-white hover:bg-black hover:border-black'}`}>
+                                <a key={i} href={social.href} target="_blank" rel="noopener noreferrer" className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all duration-500 shadow-sm group ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white hover:text-[#111]' : 'bg-white border-slate-200 text-slate-600 hover:text-white hover:bg-black hover:border-black'}`}>
                                     <social.icon className="w-4.5 h-4.5 group-hover:scale-110 transition-transform" strokeWidth={2.5} />
                                 </a>
                             ))}

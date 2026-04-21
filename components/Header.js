@@ -211,4 +211,3 @@ function NavLink({ href, children, active, isDark, isScrolled }) {
     </Link>
   );
 }
-

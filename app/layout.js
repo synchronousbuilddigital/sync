@@ -19,9 +19,9 @@ export const metadata = {
   },
   description: "Architecting sustainable, high-performance digital ecosystems for high-growth brands. Specialized in AI automation, brand systems, and data-backed performance marketing.",
   keywords: [
-    "digital marketing", "AI automation", "brand architecture", "growth engineering", 
+    "digital marketing", "AI automation", "brand architecture", "growth engineering",
     "Synchronous Build Digital", "performance marketing", "surgical UX", "conversion optimization",
-    "headless website development", "AI-powered branding", "neural marketing scaling", 
+    "headless website development", "AI-powered branding", "neural marketing scaling",
     "data-driven growth strategy", "premium digital design", "high-velocity ecommerce",
     "boutique digital agency", "enterprise growth systems", "algorithmic marketing",
     "B2B growth architecture", "DTC scaling frameworks", "custom AI assistants for business"
@@ -70,12 +70,17 @@ export const metadata = {
       'max-snippet': -1,
     },
   },
+  icons: {
+    icon: '/logo.png',
+  },
 };
 
 import { ThemeProvider } from "../components/ThemeContext";
 import { AuthProvider } from "../components/AuthContext";
+import { ChatProvider } from "../components/ChatContext";
 
 export default function RootLayout({ children }) {
+
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
@@ -84,14 +89,16 @@ export default function RootLayout({ children }) {
       >
         <ThemeProvider>
           <AuthProvider>
-            <LoadingScreen />
-            <Header />
-            <div className="relative z-10 flex-grow pt-28 transition-colors duration-500">
-              {children}
-            </div>
-            <CTA />
-            <Footer />
-            <ChatBot />
+            <ChatProvider>
+              <LoadingScreen />
+              <Header />
+              <div className="relative z-10 flex-grow pt-28 transition-colors duration-500">
+                {children}
+              </div>
+              <CTA />
+              <Footer />
+              <ChatBot />
+            </ChatProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

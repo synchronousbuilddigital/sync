@@ -38,7 +38,7 @@ export default function ContactPage() {
                 style={{ background: 'radial-gradient(circle, #F05E23, transparent 70%)', filter: 'blur(120px)' }}
             ></div>
 
-            <section className="w-full max-w-[1400px] mx-auto px-6 pt-32 pb-20 relative z-10">
+            <section className="w-full max-w-[1400px] mx-auto px-6 pt-12 pb-20 relative z-10">
                 <div className="flex flex-col lg:flex-row gap-20">
                     
                     {/* Left content: Typography & Info */}

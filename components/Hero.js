@@ -6,10 +6,12 @@ import { useRef, useEffect, useState } from "react";
 import { Sparkles, Zap, Target, Search, MousePointer2, BarChart3, Globe2, Rocket, ArrowRight, Sun, Moon } from 'lucide-react';
 import Magnetic from './Magnetic';
 import { useTheme } from './ThemeContext';
+import { useChat } from './ChatContext';
 
 // Advanced Floating Card Component with Sophisticated Animations
-const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, index, activeIdx, hoveredIdx, setActiveIdx, setHoveredIdx }) => {
+const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, index, activeIdx, hoveredIdx, setActiveIdx, setHoveredIdx, onClick }) => {
     const { isDark } = useTheme();
+    const { sendMessage } = useChat();
     const isActive = activeIdx === index;
     const isHovered = hoveredIdx === index;
     const cardRef = useRef(null);
@@ -55,6 +57,7 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ duration: 0.4, delay, ease: [0.23, 1, 0.32, 1] }}
                 className={className}
+                onClick={onClick}
             >
                 {children}
             </motion.div>
@@ -66,7 +69,8 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
             ref={cardRef}
             onClick={(e) => {
                 e.stopPropagation();
-                setActiveIdx(isActive ? -1 : index);
+                if (onClick) onClick(e);
+                else setActiveIdx(isActive ? -1 : index);
             }}
             onMouseEnter={() => setHoveredIdx(index)}
             onMouseLeave={() => {
@@ -213,6 +217,10 @@ const FloatingCard = ({ children, className, card, delay = 0, isStackHovered, in
                     {card.services.map((service, i) => (
                         <motion.div
                             key={i}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                sendMessage(`Tell me more about your "${service}" service under ${card.title}.`);
+                            }}
                             animate={{
                                 opacity: (isHovered || isActive) ? 1 : 0,
                                 x: (isHovered || isActive) ? 0 : -15,
@@ -263,6 +271,7 @@ export default function Hero() {
     const [hoveredIdx, setHoveredIdx] = useState(-1);
     const [isEffortlessHovered, setIsEffortlessHovered] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const { sendMessage } = useChat();
 
     useEffect(() => {
         setIsMobile(window.innerWidth < 640);
@@ -360,7 +369,7 @@ export default function Hero() {
 
                     {/* Left Card Stack - Hidden on mobile/tablet to declutter view */}
                     <div
-                        className="absolute -top-24 sm:-top-32 left-0 sm:left-4 lg:left-8 xl:left-12 z-40 opacity-40 lg:opacity-100 scale-[0.45] sm:scale-[0.6] lg:scale-100 transition-all pointer-events-none lg:pointer-events-auto hidden lg:block"
+                        className="absolute -top-16 sm:-top-20 left-0 sm:left-2 lg:left-4 xl:left-8 z-40 opacity-40 lg:opacity-100 scale-[0.45] sm:scale-[0.6] lg:scale-100 transition-all pointer-events-none lg:pointer-events-auto hidden lg:block"
                         onMouseEnter={() => setStackHovered(true)}
                         onMouseLeave={() => setStackHovered(false)}
                     >
@@ -383,9 +392,13 @@ export default function Hero() {
                     </div>
 
                     {/* Acquisition Optimized Button - Hidden on mobile/tablet */}
-                    <div className="absolute -top-24 sm:-top-28 right-0 sm:right-4 z-40 scale-75 sm:scale-90 lg:scale-100 hidden lg:block">
+                    <div className="absolute -top-16 sm:-top-20 right-0 sm:right-2 z-40 scale-75 sm:scale-90 lg:scale-100 hidden lg:block">
                         <Magnetic>
                             <motion.button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    sendMessage("Can you explain how your Acquisition Optimized framework works and how it helps businesses scale?");
+                                }}
                                 initial={{ opacity: 0, scale: 0 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ type: "spring", stiffness: 200, damping: 20, delay: 1 }}
@@ -536,21 +549,33 @@ export default function Hero() {
                     </div>
 
                     {/* Right Side Icons - Hidden on mobile/tablet to focus on text */}
-                    <div className="absolute top-1/2 right-0 lg:right-[2%] xl:right-[5%] -translate-y-1/2 z-20 opacity-20 lg:opacity-100 scale-[0.4] sm:scale-[0.6] lg:scale-100 pointer-events-none lg:pointer-events-auto hidden lg:block">
+                    <div className="absolute top-[54%] right-0 lg:right-[1%] xl:right-[3%] -translate-y-1/2 z-20 opacity-20 lg:opacity-100 scale-[0.4] sm:scale-[0.6] lg:scale-100 pointer-events-none lg:pointer-events-auto hidden lg:block">
                         <motion.div style={{ y: y3, x: useTransform(springX, x => x * 1.2) }} className="space-y-6 sm:space-y-10 flex flex-col items-end">
                             <Magnetic>
-                                <FloatingCard isActive={activeIdx === 10} delay={0.8} className={`w-16 h-16 sm:w-24 sm:h-24 rounded-3xl shadow-2xl flex items-center justify-center rotate-12 border transition-all duration-500 ${!isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-black/5'}`}>
+                                <FloatingCard
+                                    onClick={() => sendMessage("I'm interested in high-velocity growth. How can you help me scale faster?")}
+                                    isActive={activeIdx === 10}
+                                    delay={0.8}
+                                    className={`w-16 h-16 sm:w-24 sm:h-24 rounded-3xl shadow-2xl flex items-center justify-center rotate-12 border transition-all duration-500 ${!isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-black/5'}`}>
                                     <Zap className={`w-8 h-8 sm:w-12 sm:h-12 fill-yellow-400 ${!isDark ? 'text-yellow-400' : 'text-slate-800'}`} />
                                 </FloatingCard>
                             </Magnetic>
                             <Magnetic>
-                                <FloatingCard isActive={activeIdx === 11} delay={1.0} className={`w-20 h-20 sm:w-28 sm:h-28 rounded-3xl shadow-2xl flex items-center justify-center rotate-[-8deg] border relative mr-8 sm:mr-16 transition-all duration-500 ${!isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}>
+                                <FloatingCard
+                                    onClick={() => sendMessage("Tell me about your precision targeting and strategy optimization.")}
+                                    isActive={activeIdx === 11}
+                                    delay={1.0}
+                                    className={`w-20 h-20 sm:w-28 sm:h-28 rounded-3xl shadow-2xl flex items-center justify-center rotate-[-8deg] border relative mr-8 sm:mr-16 transition-all duration-500 ${!isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}>
                                     <Target className={`w-8 h-8 sm:w-12 sm:h-12 ${!isDark ? 'text-slate-800' : 'text-white'}`} />
                                     <div className={`absolute inset-0 border rounded-3xl animate-ping opacity-10 ${!isDark ? 'border-black' : 'border-white'}`}></div>
                                 </FloatingCard>
                             </Magnetic>
                             <Magnetic>
-                                <FloatingCard isActive={activeIdx === 12} delay={1.2} className={`w-24 h-16 sm:w-32 sm:h-24 bg-[#3B82F6] rounded-3xl shadow-2xl flex items-center justify-center rotate-6 border-b-8 border-blue-700 hover:translate-y-1 transition-transform`}>
+                                <FloatingCard
+                                    onClick={() => sendMessage("How do you handle market arbitrage and uncovering new growth opportunities?")}
+                                    isActive={activeIdx === 12}
+                                    delay={1.2}
+                                    className={`w-24 h-16 sm:w-32 sm:h-24 bg-[#3B82F6] rounded-3xl shadow-2xl flex items-center justify-center rotate-6 border-b-8 border-blue-700 hover:translate-y-1 transition-transform`}>
                                     <Search className="w-8 h-8 sm:w-12 sm:h-12 text-white" />
                                 </FloatingCard>
                             </Magnetic>

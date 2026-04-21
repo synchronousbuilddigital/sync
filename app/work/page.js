@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "../../components/ThemeContext";
+import { useChat } from "../../components/ChatContext";
 
 const selectedWorks = [
     {
@@ -95,6 +96,7 @@ const industries = [
 
 export default function WorkPage() {
     const { isDark } = useTheme();
+    const { sendMessage } = useChat();
 
     return (
         <main className={`min-h-screen selection:bg-[#F05E23]/20 overflow-x-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FDFDFD]'}`}>
@@ -103,7 +105,7 @@ export default function WorkPage() {
                 style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
 
             {/* Header / Hero */}
-            <header className="relative w-full pt-44 pb-12 md:pt-60 md:pb-16 px-6 overflow-hidden">
+            <header className="relative w-full pt-12 pb-12 md:pt-16 md:pb-16 px-6 overflow-hidden">
                 <div className="max-w-7xl mx-auto flex flex-col items-start relative z-10">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
@@ -181,7 +183,9 @@ export default function WorkPage() {
                                 <span className="w-10 h-[1px] bg-[#F05E23]/30"></span>
                                 {work.category}
                             </div>
-                            <h2 className={`text-[3rem] md:text-[5rem] font-extrabold tracking-tighter leading-[0.9] mb-8 group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
+                            <h2 
+                                onClick={() => sendMessage(`Explain what the "${work.title}" project was about and how its outcomes are useful for my business.`)}
+                                className={`text-[3rem] md:text-[5rem] font-extrabold tracking-tighter leading-[0.9] mb-8 group-hover:text-[#F05E23] transition-colors duration-500 cursor-pointer hover:-translate-y-1 ${isDark ? 'text-white' : 'text-[#111]'}`}>
                                 {work.title}.
                             </h2>
 
@@ -251,7 +255,9 @@ export default function WorkPage() {
                                 <div className="w-14 h-14 rounded-2xl bg-[#F05E23]/10 flex items-center justify-center text-[#F05E23] mb-8 group-hover:scale-110 transition-transform">
                                     <ind.icon className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-[#F05E23] transition-colors">{ind.title}</h3>
+                                <h3 
+                                    onClick={() => sendMessage(`Explain your expertise in the "${ind.title}" industry and how you can architect growth for me.`)}
+                                    className="text-2xl font-bold text-white mb-4 group-hover:text-[#F05E23] transition-colors cursor-pointer">{ind.title}</h3>
                                 <p className="text-slate-400 text-sm leading-relaxed mb-8">{ind.desc}</p>
                                 <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                                     <span className="text-[0.6rem] font-black text-slate-600 uppercase tracking-widest">Protocol Active</span>

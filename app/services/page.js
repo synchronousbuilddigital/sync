@@ -19,6 +19,8 @@ import Link from "next/link";
 import { useRef } from "react";
 import { useTheme } from "../../components/ThemeContext";
 
+import { useChat } from "../../components/ChatContext";
+
 const serviceCategories = [
     {
         id: "01",
@@ -64,7 +66,13 @@ const serviceCategories = [
 
 export default function ServicesPage() {
     const { isDark } = useTheme();
+    const { sendMessage } = useChat();
     const containerRef = useRef(null);
+
+    const handleServiceClick = (serviceName) => {
+        sendMessage(`Explain "${serviceName}" in detail and how it creates value for my business.`);
+    };
+
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end end"]
@@ -77,7 +85,7 @@ export default function ServicesPage() {
                 style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
 
             {/* Header / Hero */}
-            <header className="relative w-full pt-44 pb-20 md:pt-60 md:pb-32 px-6 overflow-hidden">
+            <header className="relative w-full pt-8 pb-16 md:pt-12 md:pb-24 px-6 overflow-hidden">
                 <div className="max-w-7xl mx-auto flex flex-col items-start relative z-10">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
@@ -120,7 +128,7 @@ export default function ServicesPage() {
             {/* Phases Section */}
             <section className="w-full px-6 pb-24 space-y-12 md:space-y-24 relative z-10">
                 {serviceCategories.map((phase, i) => (
-                    <motion.div 
+                    <motion.div
                         key={phase.id}
                         initial={{ opacity: 0, y: 60 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -154,7 +162,9 @@ export default function ServicesPage() {
 
                         {/* Content Side */}
                         <div className={`lg:w-[55%] flex flex-col justify-center py-10 ${i % 2 === 0 ? 'lg:order-2' : 'lg:order-1'}`}>
-                            <h2 className={`text-[3.5rem] md:text-[5.5rem] font-bold tracking-tighter leading-[0.9] mb-10 group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
+                            <h2 
+                                onClick={() => sendMessage(`Explain what "${phase.title}" is and how it brings value and usefulness to my business.`)}
+                                className={`text-[3.5rem] md:text-[5.5rem] font-bold tracking-tighter leading-[0.9] mb-10 group-hover:text-[#F05E23] transition-colors duration-500 cursor-pointer hover:scale-[1.02] transform origin-left ${isDark ? 'text-white' : 'text-[#111]'}`}>
                                 {phase.title}.
                             </h2>
                             <p className={`text-[1.2rem] md:text-[1.4rem] font-light leading-relaxed mb-12 max-w-2xl transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
@@ -165,11 +175,13 @@ export default function ServicesPage() {
                                 {phase.services.map((service, sid) => (
                                     <motion.div
                                         key={sid}
-                                        whileHover={{ x: 5 }}
-                                        className={`flex items-center gap-4 p-5 rounded-3xl border hover:border-[#F05E23]/20 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.05)] transition-all duration-500 cursor-default ${isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-100'}`}
+                                        whileHover={{ x: 5, scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleServiceClick(service)}
+                                        className={`flex items-center gap-4 p-5 rounded-3xl border hover:border-[#F05E23]/20 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,0.05)] transition-all duration-500 cursor-pointer group/item ${isDark ? 'bg-white/5 border-white/5' : 'bg-white border-slate-100'}`}
                                     >
                                         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[#F05E23] shrink-0 transition-colors duration-500 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
-                                            <CheckCircle2 className="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity" />
+                                            <Zap className="w-5 h-5 opacity-40 group-hover/item:opacity-100 group-hover/item:scale-110 transition-all" />
                                         </div>
                                         <span className={`text-[0.95rem] font-bold leading-tight transition-colors duration-500 ${isDark ? 'text-white/80' : 'text-[#111]'}`}>{service}</span>
                                     </motion.div>
@@ -196,8 +208,8 @@ export default function ServicesPage() {
             {/* Final CTA Section */}
             <section className={`w-full py-32 md:py-44 px-6 relative overflow-hidden transition-colors duration-700 ${isDark ? 'bg-black' : 'bg-[#111]'}`}>
                 <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none"
-                     style={{ backgroundImage: `radial-gradient(#FFF 1px, transparent 1px)`, backgroundSize: '64px 64px' }} />
-                
+                    style={{ backgroundImage: `radial-gradient(#FFF 1px, transparent 1px)`, backgroundSize: '64px 64px' }} />
+
                 <div className="max-w-5xl mx-auto text-center relative z-10 flex flex-col items-center">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -211,7 +223,7 @@ export default function ServicesPage() {
                         Ready to Begin Your <br /> <span className="text-[#F05E23]">Synchronous</span> Engineering.
                     </h2>
 
-                    <Link 
+                    <Link
                         href="/contact"
                         className="group relative px-14 py-8 rounded-[2.5rem] bg-white text-[#111] font-black uppercase text-[0.8rem] tracking-[0.4em] overflow-hidden hover:scale-105 active:scale-95 transition-all duration-500"
                     >

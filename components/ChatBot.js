@@ -4,18 +4,35 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { Send, X, Bot, Zap } from "lucide-react";
 import { useTheme } from './ThemeContext';
+import { useChat } from './ChatContext';
 import InteractiveEye from './InteractiveEye';
 import ReactMarkdown from 'react-markdown';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function ChatBot() {
     const { isDark } = useTheme();
-    const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([
-        { role: "assistant", content: "Hello! I'm AETHER, your friendly digital assistant. How can I help you build something amazing today?" }
-    ]);
+    const pathname = usePathname();
+    const { isChatOpen, toggleChat, openChat, closeChat, messages, setMessages } = useChat();
+    const isOpen = isChatOpen;
+    const setIsOpen = (val) => {
+        if (typeof val === 'boolean') {
+            val ? openChat() : closeChat();
+        } else {
+            toggleChat();
+        }
+    };
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef(null);
+
+    // Auto-respond to new user messages
+    useEffect(() => {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage && lastMessage.role === "user" && !isLoading) {
+            triggerAIResponse();
+        }
+    }, [messages]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -23,19 +40,13 @@ export default function ChatBot() {
         }
     }, [messages, isLoading, isOpen]);
 
-    const handleSend = async () => {
-        if (!inputValue.trim() || isLoading) return;
-
-        const userMessage = { role: "user", content: inputValue };
-        setMessages(prev => [...prev, userMessage]);
-        setInputValue("");
+    const triggerAIResponse = async () => {
         setIsLoading(true);
-
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: [...messages, userMessage] }),
+                body: JSON.stringify({ messages: messages, currentUrl: pathname }),
             });
 
             const data = await response.json();
@@ -58,6 +69,14 @@ export default function ChatBot() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleSend = (chipText = null) => {
+        const text = typeof chipText === "string" ? chipText : inputValue;
+        if (!text.trim() || isLoading) return;
+        const userMessage = { role: "user", content: text };
+        setMessages(prev => [...prev, userMessage]);
+        setInputValue("");
     };
 
     return (
@@ -160,34 +179,42 @@ export default function ChatBot() {
                                         }`}>
                                             {msg.role === 'assistant' ? (
                                                 <div className="prose prose-sm dark:prose-invert max-w-none text-[0.75rem] md:text-[0.85rem] leading-snug space-y-1 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:my-1 [&>p]:mb-1 [&>strong]:font-black text-inherit">
-                                                    <ReactMarkdown>
+                                                    <ReactMarkdown
+                                                        components={{
+                                                            a: ({node, ...props}) => {
+                                                                const isInternal = props.href?.startsWith('/');
+                                                                if (isInternal) {
+                                                                    return (
+                                                                        <Link 
+                                                                            href={props.href} 
+                                                                            onClick={() => setIsOpen(false)}
+                                                                            className={`flex items-center justify-center gap-2 mt-4 px-6 py-3 rounded-2xl text-[0.65rem] font-black uppercase tracking-widest transition-all duration-500 hover:scale-[1.02] active:scale-95 shadow-xl ${!isDark ? 'bg-[#111] text-white hover:bg-[#F05E23]' : 'bg-white text-[#111] hover:bg-[#F05E23] hover:text-white'} no-underline border-none`}
+                                                                        >
+                                                                            {props.children}
+                                                                        </Link>
+                                                                    );
+                                                                }
+                                                                if (props.href?.startsWith('https://wa.me/')) {
+                                                                    return (
+                                                                        <a 
+                                                                            href={props.href} 
+                                                                            target="_blank" rel="noopener noreferrer"
+                                                                            className="flex items-center justify-center gap-2 mt-4 px-6 py-3 rounded-2xl text-[0.65rem] font-black uppercase tracking-widest transition-all duration-500 hover:scale-[1.02] active:scale-95 shadow-xl bg-[#25D366] text-white hover:bg-[#128C7E] no-underline border-none"
+                                                                        >
+                                                                            <Zap className="w-3 h-3 fill-current" />
+                                                                            {props.children}
+                                                                        </a>
+                                                                    );
+                                                                }
+                                                                return <a {...props} target="_blank" rel="noopener noreferrer" className="text-[#F05E23] hover:underline" />;
+                                                            }
+                                                        }}
+                                                    >
                                                         {msg.content}
                                                     </ReactMarkdown>
                                                 </div>
                                             ) : (
                                                 msg.content
-                                            )}
-                                            {msg.role === 'assistant' && (
-                                                <motion.div 
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    whileInView={{ opacity: 1, y: 0 }}
-                                                    viewport={{ once: false }}
-                                                    className="mt-5 pt-3 border-t border-black/5 dark:border-white/5 flex flex-col gap-2"
-                                                >
-                                                    <a 
-                                                        href="https://wa.me/919161391566"
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl md:rounded-2xl text-[0.65rem] font-black uppercase tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95 group/wa ${
-                                                            !isDark 
-                                                            ? 'bg-[#111] text-white hover:bg-green-600' 
-                                                            : 'bg-white text-[#111] hover:bg-green-500 hover:text-white'
-                                                        }`}
-                                                    >
-                                                        <Zap className="w-3 h-3 fill-current" />
-                                                        Chat with an Expert
-                                                    </a>
-                                                </motion.div>
                                             )}
                                         </div>
                                     </motion.div>
@@ -207,6 +234,19 @@ export default function ChatBot() {
 
                             {/* Command Input Area */}
                             <div className={`p-4 md:p-5 relative border-t transition-colors duration-500 ${!isDark ? 'bg-white/50 border-black/5' : 'bg-black/20 border-white/5'}`}>
+                                {messages.length <= 1 && (
+                                    <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide relative z-10 w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                        {["View Case Studies", "How do you work?", "Start a Project"].map((chip, idx) => (
+                                            <button 
+                                                key={idx}
+                                                onClick={() => handleSend(chip)}
+                                                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-[0.65rem] font-bold border transition-colors flex-shrink-0 ${!isDark ? 'bg-white border-black/10 text-slate-600 hover:border-[#F05E23] hover:text-[#F05E23]' : 'bg-black/40 border-white/10 text-white/60 hover:border-[#F05E23] hover:text-orange-400'}`}
+                                            >
+                                                {chip}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                                 <div className="relative flex items-center gap-2 md:gap-3">
                                     <input
                                         type="text"

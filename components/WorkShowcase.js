@@ -11,18 +11,11 @@ export default function WorkShowcase() {
     const { projects } = useAuth();
     const { isDark } = useTheme();
     const [activeIndex, setActiveIndex] = useState(0);
+    const [filter, setFilter] = useState("All");
 
-    const displayProjects = projects.length > 0 ? projects.map(p => ({
-        id: p.index || "00",
-        title: p.title,
-        summary: p.description,
-        plan: p.strategyDetail,
-        happiness: p.happinessDetail,
-        results: p.tags,
-        image: p.imageUrl || "/website ss/boxfox.png", // fallback
-        category: p.category,
-        impact: p.impact
-    })) : [
+    const categoryList = ["All", "E-commerce", "SaaS", "CleanTech", "Logistics", "FinTech"];
+
+    const allProjectsData = [
         {
             id: "01",
             title: "BOXFOX",
@@ -32,7 +25,9 @@ export default function WorkShowcase() {
             results: ["Custom 3D Shop", "Easy Ordering"],
             impact: "Boosted digital presence and secured $15k in small business innovation grants.",
             image: "/website ss/boxfox.png",
-            category: "Verified Partner"
+            category: "Verified Partner",
+            type: "E-commerce",
+            url: "https://boxfox.in/"
         },
         {
             id: "02",
@@ -43,9 +38,65 @@ export default function WorkShowcase() {
             results: ["Better Solar Energy", "Smarter Saving"],
             impact: "Enhanced SEO rankings helping them secure green energy subsidies.",
             image: "/website ss/RYM.png",
-            category: "Verified Partner"
+            category: "Verified Partner",
+            type: "CleanTech",
+            url: "https://rymgrenergy.com/"
+        },
+        {
+            id: "03",
+            title: "Vegavruddhi",
+            summary: "A helpful app for sales teams to track their work and grow.",
+            plan: "Step: Team Support",
+            happiness: "100% Success",
+            results: ["Fast Sales Growth", "Better Tracking"],
+            impact: "Streamlined team workflows resulting in a 30% increase in conversion rates.",
+            image: "/website ss/vega.png",
+            category: "Verified Partner",
+            type: "SaaS",
+            url: "https://www.vegavruddhi.com/"
+        },
+        {
+            id: "04",
+            title: "BWorth",
+            summary: "A friendly online store for buying and selling pre-owned clothes.",
+            plan: "Step: Smart Marketplace",
+            happiness: "100% Success",
+            results: ["Better Shopping", "Eco Rewards"],
+            impact: "Created a circular economy platform that reduced textile waste for 1000+ users.",
+            image: "/website ss/bworth.png",
+            category: "Verified Partner",
+            type: "FinTech",
+            url: "https://bworth.co.in/"
+        },
+        {
+            id: "05",
+            title: "Fashquick",
+            summary: "Premium fashion rentals for any occasion starting today.",
+            plan: "Step: Daily Rentals",
+            happiness: "100% Success",
+            results: ["Fashion Rental", "Affordable Price"],
+            impact: "Established a scalable rental infrastructure for premium fashion assets.",
+            image: "/website ss/fashquick.png",
+            category: "Verified Partner",
+            type: "E-commerce",
+            url: "https://www.fashquick.in/"
+        },
+        {
+            id: "06",
+            title: "PRL Roadlines",
+            summary: "Enterprise-grade vehicle and household relocation platform.",
+            plan: "Step: Logistics Layer",
+            happiness: "100% Success",
+            results: ["5000+ Fleet Nodes", "Pan-India Network"],
+            impact: "Enabled real-time logistics tracking for a pan-India relocation network.",
+            image: "/website ss/prl.png",
+            category: "Verified Partner",
+            type: "Logistics",
+            url: "https://www.phogatroadlines.com/"
         }
     ];
+
+    const displayProjects = allProjectsData.filter(p => filter === "All" || p.type === filter);
 
     // Auto-scroll logic (continuous felt sliding)
     useEffect(() => {
@@ -91,6 +142,30 @@ export default function WorkShowcase() {
                         Our best <span className="text-[#F05E23]">Work.</span>
                     </h2>
                 </motion.div>
+
+                {/* Category Filter */}
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-8 sm:mt-12"
+                >
+                    {categoryList.map((cat) => (
+                        <button
+                            key={cat}
+                            onClick={() => {
+                                setFilter(cat);
+                                setActiveIndex(0);
+                            }}
+                            className={`px-6 py-2.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-500 border ${filter === cat 
+                                ? 'bg-[#F05E23] border-[#F05E23] text-white shadow-[0_10px_20px_-5px_rgba(240,94,35,0.4)]' 
+                                : (isDark ? 'bg-white/5 border-white/10 text-white/40 hover:text-white/80 hover:bg-white/10' : 'bg-black/5 border-black/5 text-black/40 hover:text-black/80 hover:bg-black/10')
+                            }`}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </motion.div>
             </div>
 
             {/* Project Navigation - Horizontal scroll on mobile */}
@@ -117,7 +192,7 @@ export default function WorkShowcase() {
             </div>
 
             {/* Carousel Content */}
-            <div className="relative w-full max-w-[95%] sm:max-w-6xl h-auto lg:h-[750px] z-10 flex flex-col">
+            <div className="relative w-full max-w-[95%] sm:max-w-6xl h-auto lg:h-[820px] z-10 flex flex-col">
                 <div className="relative w-full overflow-hidden flex-1">
                     <motion.div 
                         animate={{ x: `-${activeIndex * 100}%` }}
@@ -132,7 +207,8 @@ export default function WorkShowcase() {
                                         opacity: activeIndex === index ? 1 : 0.3,
                                     }}
                                     transition={{ duration: 0.6 }}
-                                    className={`w-full max-w-5xl h-full rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden border relative flex flex-col ${isDark ? 'bg-[#0D0D14]/80 backdrop-blur-3xl border-white/5' : 'bg-white border-black/5 shadow-2xl shadow-black/5'}`}
+                                    onClick={() => window.open(project.url, '_blank')}
+                                    className={`w-full max-w-5xl h-full rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden border relative flex flex-col cursor-pointer group/project ${isDark ? 'bg-[#0D0D14]/80 backdrop-blur-3xl border-white/5' : 'bg-white border-black/5 shadow-2xl shadow-black/5'}`}
                                 >
                                     {/* Card Image - Using aspect ratio on mobile for stability */}
                                     <div className="w-full aspect-[16/10] sm:h-[50%] lg:h-[60%] relative overflow-hidden border-b border-white/5 shrink-0">
@@ -155,7 +231,7 @@ export default function WorkShowcase() {
                                     </div>
                                     
                                     {/* Card Content */}
-                                    <div className="w-full flex-1 p-6 sm:p-10 flex flex-col justify-between gap-6 sm:gap-10">
+                                    <div className="w-full flex-1 p-6 sm:p-10 sm:pb-12 flex flex-col justify-between gap-6 sm:gap-10">
                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                                             <div className="space-y-3 lg:max-w-2xl">
                                                 <div className="flex items-center gap-3">
@@ -163,7 +239,9 @@ export default function WorkShowcase() {
                                                         <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
                                                         <div className="absolute inset-0 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-500 animate-ping opacity-75" />
                                                     </div>
-                                                    <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/40' : 'text-black/40'}`}>{project.category}</span>
+                                                    <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                                                        {project.type} | {project.category}
+                                                    </span>
                                                 </div>
                                                 <p className={`text-xl sm:text-3xl font-black tracking-tight leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
                                                     {project.summary}
@@ -213,7 +291,7 @@ export default function WorkShowcase() {
                 </div>
 
                 {/* Progress Indicators */}
-                <div className="flex gap-3 justify-center mt-10 sm:mt-16">
+                <div className="flex gap-3 justify-center mt-12 sm:mt-20">
                     {displayProjects.map((_, i) => (
                         <div 
                             key={i} 
