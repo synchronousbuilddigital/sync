@@ -24,7 +24,16 @@ export default function AdminDashboard() {
   
   // Client Management States
   const [isAddingClient, setIsAddingClient] = useState(false);
-  const [clientForm, setClientForm] = useState({ name: "", email: "", password: "SyncClient123" });
+  const [clientForm, setClientForm] = useState({ 
+    name: "", email: "", password: "SyncClient123", projectName: "",
+    credentials: {
+      env: "",
+      gmail: { email: "", password: "" },
+      vercel: { email: "", password: "" },
+      github: "",
+      additional: ""
+    }
+  });
   const [isAddingIntern, setIsAddingIntern] = useState(false);
   const [isAssigningTask, setIsAssigningTask] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -48,6 +57,17 @@ export default function AdminDashboard() {
   const [chatTaskId, setChatTaskId] = useState(null);
   const [chatMsg, setChatMsg] = useState("");
   const [statusMsg, setStatusMsg] = useState({ type: "", msg: "" });
+  
+  // Credential Management States
+  const [isEditingCredentials, setIsEditingCredentials] = useState(false);
+  const [selectedCredentialProject, setSelectedCredentialProject] = useState(null);
+  const [credentialForm, setCredentialForm] = useState({
+    env: "",
+    gmail: { email: "", password: "" },
+    vercel: { email: "", password: "" },
+    github: "",
+    additional: ""
+  });
 
   const chatTask = tasks.find(t => t._id === chatTaskId);
 
@@ -233,8 +253,20 @@ export default function AdminDashboard() {
           <button onClick={() => { setEditingProject(null); setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "", impact: "" }); setIsAddingProject(true); }} className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 transition-all border border-black/5 dark:border-white/5 active:scale-95">
             <Plus className="w-3.5 h-3.5 text-[#F05E23]" /> New Showcase
           </button>
-          <button onClick={() => setIsAddingIntern(true)} className="bg-[#F05E23] text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 hover:shadow-[0_0_30px_rgba(240,94,35,0.3)] transition-all active:scale-95">
-            <UserPlus className="w-3.5 h-3.5" /> Integrate Talent
+          <button onClick={() => {
+            setClientForm({ 
+              name: "", email: "", password: "SyncClient123", projectName: "",
+              credentials: {
+                env: "",
+                gmail: { email: "", password: "" },
+                vercel: { email: "", password: "" },
+                github: "",
+                additional: ""
+              }
+            });
+            setIsAddingClient(true);
+          }} className="px-8 py-5 bg-[#F05E23] text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 hover:shadow-[0_0_30px_rgba(240,94,35,0.3)] transition-all active:scale-95">
+            <UserPlus className="w-3.5 h-3.5" /> Provision Brand
           </button>
           <button onClick={() => setIsAssigningTask(true)} className="bg-slate-900 dark:bg-white text-white dark:text-black px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 hover:opacity-90 transition-all active:scale-95">
             <Plus className="w-3.5 h-3.5" /> Mission Patch
@@ -397,6 +429,23 @@ export default function AdminDashboard() {
                        <div className="flex justify-between items-start">
                          <h4 className="text-4xl font-black uppercase tracking-tighter italic">{project.projectName}</h4>
                          <div className="flex gap-2">
+                           <button 
+                              onClick={() => {
+                                setSelectedCredentialProject(project);
+                                setCredentialForm(project.credentials || {
+                                  env: "",
+                                  gmail: { email: "", password: "" },
+                                  vercel: { email: "", password: "" },
+                                  github: "",
+                                  additional: ""
+                                });
+                                setIsEditingCredentials(true);
+                              }}
+                              className="p-3 bg-green-500/10 text-green-500 rounded-2xl hover:bg-green-500 hover:text-white transition-all shrink-0"
+                              title="Project Credentials"
+                           >
+                              <Shield className="w-4 h-4" />
+                           </button>
                            <button 
                               onClick={() => {
                                 const url = `${window.location.origin}/brands/${project.publicId}`;
@@ -743,14 +792,14 @@ export default function AdminDashboard() {
       {/* Modals */}
       <AnimatePresence>
         {isBroadcasting && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
               animate={{ scale: 1, opacity: 1, y: 0 }} 
-              className="bg-[#0D0D12] border border-white/10 w-full max-w-lg p-12 rounded-[3.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden"
+              className="bg-white border border-slate-200 w-full max-w-lg p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
             >
                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#F05E23] to-transparent opacity-50" />
-               <h2 className="text-4xl font-black uppercase mb-10 tracking-tighter text-center italic">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
+               <h2 className="text-4xl font-black uppercase mb-10 tracking-tighter text-center italic text-slate-900">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
                <form onSubmit={handleBroadcast} className="space-y-8">
                   <div className="relative group">
                     <textarea 
@@ -759,14 +808,14 @@ export default function AdminDashboard() {
                       value={broadcastMsg} 
                       onChange={e => setBroadcastMsg(e.target.value)} 
                       placeholder="Directive for the synchronized collective..." 
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-[2rem] p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-white/80 placeholder:text-white/10 resize-none shadow-inner" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-[2rem] p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none shadow-inner" 
                     />
                   </div>
                   <div className="flex gap-4">
                      <button 
                         type="button" 
                         onClick={() => setIsBroadcasting(false)} 
-                        className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-white/10 hover:bg-white/5 transition-all text-white/40"
+                        className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 hover:bg-slate-50 transition-all text-slate-400"
                      >
                         Abort Sync
                      </button>
@@ -783,14 +832,14 @@ export default function AdminDashboard() {
         )}
 
         {isAddingClient && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
               animate={{ scale: 1, opacity: 1, y: 0 }} 
-              className="bg-[#0D0D12] border border-white/10 w-full max-w-xl rounded-[3.5rem] p-12 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden"
+              className="bg-white border border-slate-200 w-full max-w-xl rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px] -mr-32 -mt-32" />
-              <h2 className="text-4xl font-black uppercase tracking-tighter italic mb-12">Provision <span className="text-[#F05E23]">Brand</span></h2>
+              <h2 className="text-4xl font-black uppercase tracking-tighter italic mb-12 text-slate-900">Provision <span className="text-[#F05E23]">Brand</span></h2>
               <div className="space-y-5">
                 {[
                   { id: 'name', placeholder: 'Brand Name', type: 'text' },
@@ -802,7 +851,7 @@ export default function AdminDashboard() {
                       type={input.type} 
                       value={clientForm[input.id] || ""} 
                       onChange={e => setClientForm({...clientForm, [input.id]: e.target.value})} 
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-[0.1em] outline-none focus:border-[#F05E23]/30 transition-all text-white/90 placeholder:text-white/10" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-[0.1em] outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-300" 
                       placeholder={input.placeholder} 
                     />
                     <div className="absolute inset-y-0 left-0 w-1 bg-[#F05E23] scale-y-0 group-focus-within:scale-y-50 transition-transform rounded-r-full" />
@@ -812,10 +861,15 @@ export default function AdminDashboard() {
                   <button 
                     onClick={async () => {
                       if (!clientForm.name || !clientForm.email || !clientForm.projectName) return alert("All synchronization keys required");
-                      const res = await createClient(clientForm.name, clientForm.email, clientForm.password);
-                      if (res.success) {
-                        await createClientProject({ clientId: res.client._id, projectName: clientForm.projectName, description: `Ecosystem for ${clientForm.name}` });
-                        setIsAddingClient(false);
+                       const res = await createClient(clientForm.name, clientForm.email, clientForm.password);
+                       if (res.success) {
+                         await createClientProject({ 
+                           clientId: res.client._id, 
+                           projectName: clientForm.projectName, 
+                           description: `Ecosystem for ${clientForm.name}`,
+                           credentials: clientForm.credentials 
+                         });
+                         setIsAddingClient(false);
                         setStatusMsg({ type: 'success', msg: "Brand Integrated into Matrix." });
                       } else {
                         alert(res.message);
@@ -827,7 +881,7 @@ export default function AdminDashboard() {
                   </button>
                   <button 
                     onClick={() => setIsAddingClient(false)} 
-                    className="px-10 py-5 rounded-2xl border border-white/10 font-black uppercase text-[0.65rem] tracking-[0.2em] text-white/40 hover:bg-white/5 transition-all"
+                    className="px-10 py-5 rounded-2xl border border-slate-200 font-black uppercase text-[0.65rem] tracking-[0.2em] text-slate-400 hover:bg-slate-50 transition-all"
                   >
                     Abort
                   </button>
@@ -838,24 +892,24 @@ export default function AdminDashboard() {
         )}
 
         {isAddingIntern && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
              <motion.div 
                initial={{ scale: 0.95, opacity: 0, y: 20 }} 
                animate={{ scale: 1, opacity: 1, y: 0 }} 
-               className="bg-[#0D0D12] border border-white/10 w-full max-w-lg p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
+               className="bg-white border border-slate-200 w-full max-w-lg p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
              >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-[60px]" />
-                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center">Onboard <span className="text-[#F05E23]">Intern</span></h2>
+                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900">Onboard <span className="text-[#F05E23]">Intern</span></h2>
                 <form onSubmit={handleAddIntern} className="space-y-5">
                    <div className="relative group">
-                      <input type="text" required value={newIntern.name} onChange={e => setNewIntern({...newIntern, name: e.target.value})} placeholder="Full Identity" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                      <input type="text" required value={newIntern.name} onChange={e => setNewIntern({...newIntern, name: e.target.value})} placeholder="Full Identity" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-slate-800 placeholder:text-slate-300" />
                    </div>
                    <div className="relative group">
-                      <input type="email" required value={newIntern.email} onChange={e => setNewIntern({...newIntern, email: e.target.value})} placeholder="System Access Email" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                      <input type="email" required value={newIntern.email} onChange={e => setNewIntern({...newIntern, email: e.target.value})} placeholder="System Access Email" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-slate-800 placeholder:text-slate-300" />
                    </div>
                    <div className="flex gap-4 pt-8">
-                     <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-white/10 text-white/40 hover:bg-white/5 transition-all">Cancel</button>
-                     <button type="submit" className="flex-1 bg-white text-black py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:bg-white/90 transition-all active:scale-95">Verify & Deploy</button>
+                     <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all">Cancel</button>
+                     <button type="submit" className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:bg-slate-800 transition-all active:scale-95">Verify & Deploy</button>
                    </div>
                 </form>
              </motion.div>
@@ -863,31 +917,31 @@ export default function AdminDashboard() {
         )}
 
         {isAssigningTask && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
              <motion.div 
                initial={{ scale: 0.95, opacity: 0, y: 20 }} 
                animate={{ scale: 1, opacity: 1, y: 0 }} 
-               className="bg-[#0D0D12] border border-white/10 w-full max-w-2xl p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
+               className="bg-white border border-slate-200 w-full max-w-2xl p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
              >
                 <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px]" />
-                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic">Deploy <span className="text-[#F05E23]">Assignment</span></h2>
+                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-slate-900">Deploy <span className="text-[#F05E23]">Assignment</span></h2>
                 <form onSubmit={handleAssignTask} className="space-y-6">
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="relative group">
-                        <input type="text" required value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} placeholder="Mission Directive" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                        <input type="text" required value={newTask.title} onChange={e => setNewTask({...newTask, title: e.target.value})} placeholder="Mission Directive" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-slate-800 placeholder:text-slate-300" />
                       </div>
                       <div className="relative group">
-                        <select required value={newTask.internId} onChange={e => setNewTask({...newTask, internId: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 appearance-none">
-                           <option value="" className="bg-[#0D0D12]">Select Asset...</option>
-                           {interns.map(i => <option key={i._id} value={i._id} className="bg-[#0D0D12]">{i.name}</option>)}
+                        <select required value={newTask.internId} onChange={e => setNewTask({...newTask, internId: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-slate-800 appearance-none">
+                           <option value="" className="bg-white">Select Asset...</option>
+                           {interns.map(i => <option key={i._id} value={i._id} className="bg-white">{i.name}</option>)}
                         </select>
                       </div>
                    </div>
                    <div className="relative group">
-                      <textarea rows={5} required value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} placeholder="Tactical Objective Parameters..." className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-white/80 placeholder:text-white/10 resize-none shadow-inner" />
+                      <textarea rows={5} required value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} placeholder="Tactical Objective Parameters..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none shadow-inner" />
                    </div>
                    <div className="flex gap-4 pt-10">
-                     <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-white/10 text-white/40 hover:bg-white/5 transition-all">Abort</button>
+                     <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all">Abort</button>
                      <button type="submit" className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_b0px_rgba(240,94,35,0.2)] hover:shadow-[0_0_30px_rgba(240,94,35,0.4)] transition-all active:scale-95">Finalize Deployment</button>
                    </div>
                 </form>
@@ -897,7 +951,7 @@ export default function AdminDashboard() {
 
         {chatTask && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0A] rounded-[3rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[80vh]">
+             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[80vh]">
                 <div className="p-8 bg-[#F05E23] text-white flex items-center justify-between">
                    <div className="flex items-center gap-4">
                       <div className="p-3 bg-white/20 rounded-2xl"><MessageSquare className="w-6 h-6" /></div>
@@ -909,11 +963,11 @@ export default function AdminDashboard() {
                    <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all"><PlusCircle className="w-6 h-6 rotate-45" /></button>
                 </div>
 
-                <div className="flex-grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50 dark:bg-transparent">
+                <div className="flex-grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50">
                    {(chatTask.discussion || []).map((msg, idx) => (
                       <div key={idx} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
                          <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-2 px-2">{msg.sender === 'admin' ? 'YOU' : 'INTERN'} • {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                         <div className={`max-w-[80%] p-5 rounded-3xl font-bold text-sm shadow-sm ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-tl-none text-slate-700 dark:text-white'}`}>
+                         <div className={`max-w-[80%] p-5 rounded-3xl font-bold text-sm shadow-sm ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white border border-slate-200 rounded-tl-none text-slate-700'}`}>
                             {msg.content}
                          </div>
                       </div>
@@ -926,9 +980,9 @@ export default function AdminDashboard() {
                    )}
                 </div>
 
-                <form onSubmit={handleSendChat} className="p-8 border-t border-black/5 dark:border-white/10 bg-white dark:bg-black/20">
+                <form onSubmit={handleSendChat} className="p-8 border-t border-slate-200 bg-white">
                    <div className="flex gap-4">
-                      <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Enter briefing intel..." className="flex-grow bg-slate-50 dark:bg-white/5 border-2 border-black/5 dark:border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-[#F05E23] font-bold text-sm" />
+                      <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Enter briefing intel..." className="flex-grow bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-[#F05E23] font-bold text-sm" />
                       <button type="submit" className="bg-[#F05E23] text-white p-4 rounded-2xl shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
                    </div>
                 </form>
@@ -937,45 +991,167 @@ export default function AdminDashboard() {
         )}
 
         {isAddingProject && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-black/80">
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
              <motion.div 
                initial={{ scale: 0.95, opacity: 0, y: 20 }} 
                animate={{ scale: 1, opacity: 1, y: 0 }} 
-               className="bg-[#0D0D12] border border-white/10 w-full max-w-4xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
+               className="bg-white border border-slate-200 w-full max-w-4xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
              >
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#F05E23] to-transparent opacity-30" />
-                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center">{editingProject ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Showcase</span></h2>
+                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900">{editingProject ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Showcase</span></h2>
                 <form onSubmit={handleProjectSubmit} className="space-y-8">
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="relative group">
-                         <input type="text" required value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} placeholder="Project Title" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                         <input type="text" required value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} placeholder="Project Title" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-slate-800 placeholder:text-slate-300" />
                       </div>
                       <div className="relative group">
-                         <input type="text" value={projectForm.index} onChange={e => setProjectForm({...projectForm, index: e.target.value})} placeholder="Sequence Index (e.g. 01)" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-white/90 placeholder:text-white/10" />
+                         <input type="text" value={projectForm.index} onChange={e => setProjectForm({...projectForm, index: e.target.value})} placeholder="Sequence Index (e.g. 01)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-slate-800 placeholder:text-slate-300" />
                       </div>
                       <div className="relative group">
-                         <input type="text" value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} placeholder="Sync Category" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-[#F05E23] placeholder:text-[#F05E23]/20" />
+                         <input type="text" value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} placeholder="Sync Category" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-[0.1em] text-[#F05E23] placeholder:text-[#F05E23]/20" />
                       </div>
                    </div>
                    <div className="relative group">
-                      <textarea rows={4} required value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} placeholder="Impact Narrative..." className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-white/80 placeholder:text-white/10 resize-none" />
+                      <textarea rows={4} required value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} placeholder="Impact Narrative..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none" />
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="relative group">
-                         <input type="text" value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} placeholder="Technological Stack (comma separated)" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.6rem] tracking-[0.1em] text-white/60 placeholder:text-white/10" />
+                         <input type="text" value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} placeholder="Technological Stack (comma separated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.6rem] tracking-[0.1em] text-slate-500 placeholder:text-slate-300" />
                       </div>
                       <div className="relative group">
-                         <input type="text" value={projectForm.impact} onChange={e => setProjectForm({...projectForm, impact: e.target.value})} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-6 outline-none focus:border-green-500/30 transition-all font-black uppercase text-[0.6rem] tracking-[0.1em] text-green-500 placeholder:text-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
+                         <input type="text" value={projectForm.impact} onChange={e => setProjectForm({...projectForm, impact: e.target.value})} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-green-500/30 transition-all font-black uppercase text-[0.6rem] tracking-[0.1em] text-green-600 placeholder:text-green-600/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
                       </div>
                    </div>
                    <div className="flex gap-4 pt-10">
-                     <button type="button" onClick={() => setIsAddingProject(false)} className="flex-1 py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-white/10 text-white/40 hover:bg-white/5 transition-all">Abort</button>
-                     <button type="submit" className="flex-1 bg-white text-black py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-white/90 shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-all">Finalize Showcase</button>
+                     <button type="button" onClick={() => setIsAddingProject(false)} className="flex-1 py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all">Abort</button>
+                     <button type="submit" className="flex-1 bg-slate-900 text-white py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black shadow-xl transition-all">Finalize Showcase</button>
                    </div>
                 </form>
              </motion.div>
            </div>
         )}
+
+         {isEditingCredentials && selectedCredentialProject && (
+           <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+             <motion.div 
+               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+               animate={{ scale: 1, opacity: 1, y: 0 }} 
+               className="bg-white border border-slate-200 w-full max-w-4xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
+             >
+                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+                <div className="flex items-center gap-4 mb-10">
+                   <div className="p-4 bg-green-500/10 rounded-3xl"><Shield className="w-8 h-8 text-green-500" /></div>
+                   <div>
+                      <h2 className="text-4xl font-black uppercase tracking-tighter italic text-slate-900">Credential <span className="text-[#F05E23]">Matrix</span></h2>
+                      <p className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">Managing Access for {selectedCredentialProject.projectName}</p>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   {/* Environment Config */}
+                   <div className="md:col-span-2 space-y-4">
+                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-[#F05E23]">Synchronous Environment (.env)</label>
+                      <textarea 
+                        rows={6} 
+                        value={credentialForm.env} 
+                        onChange={e => setCredentialForm({...credentialForm, env: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-3xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-mono text-xs text-slate-800 placeholder:text-slate-300" 
+                        placeholder="MONGODB_URI=...&#10;JWT_SECRET=..."
+                      />
+                   </div>
+
+                   {/* Gmail */}
+                   <div className="space-y-4">
+                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Google Ecosystem (Gmail)</label>
+                      <div className="space-y-3">
+                         <input 
+                           type="text" 
+                           value={credentialForm.gmail.email} 
+                           onChange={e => setCredentialForm({...credentialForm, gmail: {...credentialForm.gmail, email: e.target.value}})}
+                           placeholder="Email ID" 
+                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                         />
+                         <input 
+                           type="password" 
+                           value={credentialForm.gmail.password} 
+                           onChange={e => setCredentialForm({...credentialForm, gmail: {...credentialForm.gmail, password: e.target.value}})}
+                           placeholder="App Password" 
+                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                         />
+                      </div>
+                   </div>
+
+                   {/* Vercel */}
+                   <div className="space-y-4">
+                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Production Node (Vercel)</label>
+                      <div className="space-y-3">
+                         <input 
+                           type="text" 
+                           value={credentialForm.vercel.email} 
+                           onChange={e => setCredentialForm({...credentialForm, vercel: {...credentialForm.vercel, email: e.target.value}})}
+                           placeholder="Account Email" 
+                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                         />
+                         <input 
+                           type="password" 
+                           value={credentialForm.vercel.password} 
+                           onChange={e => setCredentialForm({...credentialForm, vercel: {...credentialForm.vercel, password: e.target.value}})}
+                           placeholder="Access Token / Pass" 
+                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                         />
+                      </div>
+                   </div>
+
+                   {/* GitHub */}
+                   <div className="space-y-4">
+                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Source Control (GitHub ID)</label>
+                      <input 
+                        type="text" 
+                        value={credentialForm.github} 
+                        onChange={e => setCredentialForm({...credentialForm, github: e.target.value})}
+                        placeholder="Deployment Username / Repo Path" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                      />
+                   </div>
+
+                   {/* Additional */}
+                   <div className="space-y-4">
+                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Other Strategic Passwords</label>
+                      <textarea 
+                        rows={1} 
+                        value={credentialForm.additional} 
+                        onChange={e => setCredentialForm({...credentialForm, additional: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold resize-none" 
+                        placeholder="Hosting, Domain, API Keys..."
+                      />
+                   </div>
+                </div>
+
+                <div className="flex gap-4 pt-12">
+                   <button 
+                      onClick={() => setIsEditingCredentials(false)} 
+                      className="flex-1 py-5 rounded-3xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all"
+                   >
+                      Discard Changes
+                   </button>
+                   <button 
+                      onClick={async () => {
+                         const res = await updateClientProject(selectedCredentialProject._id, { credentials: credentialForm });
+                         if (res.success) {
+                            setStatusMsg({ type: "success", msg: "Credential Matrix Synchronized." });
+                            setIsEditingCredentials(false);
+                         } else {
+                            alert("Sync Failure: " + res.message);
+                         }
+                      }}
+                      className="flex-1 bg-green-500 text-white py-5 rounded-3xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_40px_rgba(34,197,94,0.2)] hover:shadow-[0_0_50px_rgba(34,197,94,0.4)] transition-all active:scale-95"
+                   >
+                      Finalize & Encrypt
+                   </button>
+                </div>
+             </motion.div>
+           </div>
+         )}
 
         {statusMsg.msg && (
            <motion.div key="status-notification" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-[200] p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>

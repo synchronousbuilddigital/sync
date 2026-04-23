@@ -16,6 +16,7 @@ export async function PATCH(req, { params }) {
     if (body.status) update.status = body.status;
     if (body.projectName) update.projectName = body.projectName;
     if (body.description) update.description = body.description;
+    if (body.credentials) update.credentials = body.credentials;
     
     // Handle message/discussion update
     if (body.message) {

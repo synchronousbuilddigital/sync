@@ -16,6 +16,21 @@ const ClientProjectSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
   }],
 
+  // Credentials and Technical Access
+  credentials: {
+    env: { type: String, default: "" },
+    gmail: { 
+      email: { type: String, default: "" },
+      password: { type: String, default: "" }
+    },
+    vercel: {
+      email: { type: String, default: "" },
+      password: { type: String, default: "" }
+    },
+    github: { type: String, default: "" },
+    additional: { type: String, default: "" }
+  },
+
   // Direct messaging between Admin and Client
   discussions: [{
     sender: { type: String, enum: ["admin", "client"] },
