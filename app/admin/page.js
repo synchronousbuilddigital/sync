@@ -268,7 +268,10 @@ export default function AdminDashboard() {
           }} className="px-8 py-5 bg-[#F05E23] text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 hover:shadow-[0_0_30px_rgba(240,94,35,0.3)] transition-all active:scale-95">
             <UserPlus className="w-3.5 h-3.5" /> Provision Brand
           </button>
-          <button onClick={() => setIsAssigningTask(true)} className="bg-slate-900 dark:bg-white text-white dark:text-black px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 hover:opacity-90 transition-all active:scale-95">
+          <button onClick={() => setIsAddingIntern(true)} className="bg-black dark:bg-white text-white dark:text-black px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 transition-all hover:opacity-90 active:scale-95">
+            <UserPlus className="w-3.5 h-3.5" /> Integrate Talent
+          </button>
+          <button onClick={() => setIsAssigningTask(true)} className="bg-slate-900/5 dark:bg-white/5 text-slate-800 dark:text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95">
             <Plus className="w-3.5 h-3.5" /> Mission Patch
           </button>
         </div>
