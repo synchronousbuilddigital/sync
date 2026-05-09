@@ -24,7 +24,7 @@ export async function POST(req) {
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
     await dbConnect();
-    const { title, description, internId, priority, dueDate } = await req.json();
+    const { title, description, internId, priority, dueDate, taskType } = await req.json();
 
     const intern = await User.findById(internId);
     if (!intern) return Response.json({ success: false, message: "Intern not found" }, { status: 404 });
@@ -51,13 +51,20 @@ export async function POST(req) {
       description,
       internId,
       priority: priority || "Medium",
+      taskType: taskType || "General",
       dueDate: dueDate || null,
       status: "Pending",
     });
 
     // Send task assignment email
     try {
-      await sendTaskAssignmentEmail(intern.email, intern.name, { title, description, priority: priority || "Medium", dueDate });
+      await sendTaskAssignmentEmail(intern.email, intern.name, {
+        title,
+        description,
+        priority: priority || "Medium",
+        taskType: taskType || "General",
+        dueDate
+      });
     } catch (mailErr) {
        console.error("Failed to send task assignment email:", mailErr);
        // We don't return error here because the task was already created successfully

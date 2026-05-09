@@ -17,6 +17,19 @@ export function AuthProvider({ children }) {
   const [adminClientProjects, setAdminClientProjects] = useState([]); // All brands (for admin)
   const router = useRouter();
 
+  const parseJsonResponse = async (res, fallbackMessage) => {
+    const raw = await res.text();
+
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {
+        success: false,
+        message: `${fallbackMessage}${res.ok ? "" : ` (HTTP ${res.status})`}`
+      };
+    }
+  };
+
   const fetchInterns = useCallback(async (authToken) => {
     try {
       const res = await fetch("/api/admin/interns", {

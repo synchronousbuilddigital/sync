@@ -14,6 +14,11 @@ const TaskSchema = new mongoose.Schema({
     enum: ["Low", "Medium", "High"],
     default: "Medium"
   },
+  taskType: {
+    type: String,
+    enum: ["General", "Bug Fix", "Feature", "Design", "Content", "Research", "Meeting"],
+    default: "General"
+  },
   dueDate: { type: Date },
   isApproved: { type: Boolean, default: false },
   note: { type: String, default: "" }, // Intern's final note on completion
