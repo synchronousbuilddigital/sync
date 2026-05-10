@@ -10,7 +10,7 @@ export async function GET(req) {
     }
 
     await dbConnect();
-    const tasks = await Task.find({ internId: decoded.id });
+    const tasks = await Task.find({ internId: decoded.id }).populate("clientProjectId", "projectName workflow credentials requirements sop");
     return Response.json({ success: true, tasks });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });

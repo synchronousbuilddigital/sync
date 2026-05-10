@@ -141,6 +141,16 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const generateRoadmap = async (id) => {
+    const res = await fetch(`/api/admin/client-projects/${id}/generate-roadmap`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchAdminClientProjects(token);
+    return data;
+  };
+
   const purgeClientProject = async (id) => {
     const res = await fetch(`/api/admin/client-projects/${id}`, {
       method: "DELETE",
@@ -262,14 +272,14 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const addIntern = async (name, email) => {
+  const addIntern = async (name, email, password) => {
     const res = await fetch("/api/admin/interns", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ name, email })
+      body: JSON.stringify({ name, email, password })
     });
     const data = await res.json();
     if (data.success) fetchInterns(token);
@@ -448,6 +458,83 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const updateClientInfo = async (updateData) => {
+    const res = await fetch("/api/client/project", {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(updateData)
+    });
+    const data = await res.json();
+    if (data.success) fetchClientProject(token);
+    return data;
+  };
+
+  const generateAIStory = async (projectId) => {
+    const res = await fetch("/api/client/project/story", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ projectId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (user.role === 'admin') fetchAdminClientProjects(token);
+      else fetchClientProject(token);
+    }
+    return data;
+  };
+
+  const getAIBlockerSuggestion = async (taskId) => {
+    const res = await fetch(`/api/intern/tasks/${taskId}/ai-resolve`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    return await res.json();
+  };
+
+  const getAIInternRecommendation = async (taskTitle, taskDescription) => {
+    const res = await fetch("/api/admin/tasks/ai-recommend", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ taskTitle, taskDescription })
+    });
+    return await res.json();
+  };
+
+  const runAIRiskAnalysis = async (projectId) => {
+    const res = await fetch("/api/admin/client-projects/risk-analysis", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ projectId })
+    });
+    const data = await res.json();
+    if (data.success) fetchAdminClientProjects(token);
+    return data;
+  };
+
+  const getAIFeatureSuggestions = async (projectType, description) => {
+    const res = await fetch("/api/client/project/suggest-features", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ projectType, description })
+    });
+    return await res.json();
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
@@ -455,7 +542,8 @@ export function AuthProvider({ children }) {
       updateTaskStatus, deleteTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
       clientProject, adminClientProjects, createClient, createClientProject, 
-      updateClientProject, purgeClientProject, sendClientMessage
+      updateClientProject, purgeClientProject, sendClientMessage, sendDiscussion, updateClientInfo, generateRoadmap,
+      generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions
     }}>
       {children}
     </AuthContext.Provider>

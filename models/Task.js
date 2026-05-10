@@ -4,9 +4,10 @@ const TaskSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   internId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  clientProjectId: { type: mongoose.Schema.Types.ObjectId, ref: "ClientProject" },
   status: { 
     type: String, 
-    enum: ["Pending", "Complete", "Need Credentials", "Need Meeting"], 
+    enum: ["Pending", "Complete", "Need Credentials", "Need Meeting", "Blocked"], 
     default: "Pending" 
   },
   priority: {
@@ -20,6 +21,7 @@ const TaskSchema = new mongoose.Schema({
     default: "General"
   },
   dueDate: { type: Date },
+  estimatedHours: { type: Number, default: 2 },
   isApproved: { type: Boolean, default: false },
   note: { type: String, default: "" }, // Intern's final note on completion
   meetingLink: { type: String, default: "" }, // Auto-generated meeting link

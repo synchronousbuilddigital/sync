@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import bcrypt from "bcryptjs";
 import { verifyToken } from "@/lib/auth";
 import { sendOnboardingEmail } from "@/lib/mail";
 
@@ -16,12 +17,11 @@ export async function POST(req) {
     
     if (client) {
       // If client exists, just return it. Optionally update name if needed.
-      // return Response.json({ success: true, client, message: "Existing brand node synchronized." });
     } else {
       client = await User.create({
         name,
         email,
-        password, // In a real app, hash this!
+        password,
         role: "client",
         mustChangePassword: true
       });

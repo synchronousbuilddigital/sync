@@ -16,6 +16,9 @@ const ClientProjectSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
   }],
 
+  // File Management
+  googleDriveLink: { type: String, default: "" },
+
   // Credentials and Technical Access
   credentials: {
     env: { type: String, default: "" },
@@ -28,9 +31,33 @@ const ClientProjectSchema = new mongoose.Schema({
       password: { type: String, default: "" }
     },
     github: { type: String, default: "" },
+    hosting: { type: String, default: "" },
+    domain: { type: String, default: "" },
+    liveUrl: { type: String, default: "" },
+    devUrl: { type: String, default: "" },
     additional: { type: String, default: "" }
   },
 
+  // Project Briefing
+  projectType: { type: String, default: "Custom Web App" }, // Helps roadmap generation
+  requirements: [{
+    content: { type: String, required: true },
+    status: { type: String, enum: ["Pending", "Approved", "In Development"], default: "Pending" }
+  }],
+  features: [{
+    title: { type: String, required: true },
+    description: { type: String },
+    priority: { type: String, enum: ["Must-have", "Should-have", "Could-have"], default: "Must-have" }
+  }],
+
+  // Operational Strategy
+  sop: { type: String, default: "" }, // Custom SOP for this specific project
+  estimatedCompletionDate: { type: Date },
+
+  // AI-Driven Insights
+  aiStory: { type: String, default: "" }, // Human-readable progress summary
+  aiRiskAnalysis: { type: String, default: "" }, // Flags for potential delays
+  
   // Direct messaging between Admin and Client
   discussions: [{
     sender: { type: String, enum: ["admin", "client"] },

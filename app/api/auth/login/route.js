@@ -13,10 +13,8 @@ export async function POST(req) {
       return Response.json({ success: false, message: "Invalid email" }, { status: 401 });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      // Check if it's the first login with the default password for interns
-      // We set a default password for interns when added
       return Response.json({ success: false, message: "Invalid password" }, { status: 401 });
     }
 

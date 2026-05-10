@@ -13,11 +13,12 @@ export async function PATCH(req) {
     await dbConnect();
     const { newPassword } = await req.json();
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await User.findByIdAndUpdate(decoded.id, { 
-      password: hashedPassword, 
-      mustChangePassword: false 
-    });
+    const user = await User.findById(decoded.id);
+    if (!user) return Response.json({ success: false, message: "User not found" }, { status: 404 });
+
+    user.password = newPassword;
+    user.mustChangePassword = false;
+    await user.save();
 
     return Response.json({ success: true, message: "Password updated successfully" });
   } catch (err) {

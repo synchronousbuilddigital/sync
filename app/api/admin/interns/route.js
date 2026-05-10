@@ -23,20 +23,19 @@ export async function POST(req) {
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
     await dbConnect();
-    const { name, email } = await req.json();
+    const { name, email, password } = await req.json();
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return Response.json({ success: false, message: "Intern with this email already exists" }, { status: 400 });
     }
 
-    const defaultPassword = "SyncIntern123"; // Or generate random
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    const defaultPassword = password || "SyncIntern123";
 
     const intern = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password: defaultPassword,
       role: "intern",
       mustChangePassword: true,
     });

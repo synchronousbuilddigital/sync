@@ -11,7 +11,7 @@ export async function GET(req) {
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
     await dbConnect();
-    const tasks = await Task.find().populate("internId", "name email");
+    const tasks = await Task.find().populate("internId", "name email").populate("clientProjectId", "projectName");
     return Response.json({ success: true, tasks });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });
@@ -24,7 +24,7 @@ export async function POST(req) {
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
     await dbConnect();
-    const { title, description, internId, priority, dueDate, taskType } = await req.json();
+    const { title, description, internId, priority, dueDate, taskType, estimatedHours, clientProjectId } = await req.json();
 
     const intern = await User.findById(internId);
     if (!intern) return Response.json({ success: false, message: "Intern not found" }, { status: 404 });
@@ -53,6 +53,8 @@ export async function POST(req) {
       priority: priority || "Medium",
       taskType: taskType || "General",
       dueDate: dueDate || null,
+      estimatedHours: estimatedHours || 2,
+      clientProjectId: clientProjectId || null,
       status: "Pending",
     });
 
