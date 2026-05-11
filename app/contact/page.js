@@ -55,10 +55,10 @@ export default function ContactPage() {
                         <motion.h1 
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className={`text-[4rem] md:text-[5.5rem] lg:text-[6.5rem] font-bold tracking-tight leading-[0.9] mb-12 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}
+                            className={`text-[4.5rem] md:text-[6rem] lg:text-[7.5rem] font-bold tracking-tight leading-[0.85] mb-12 transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}
                         >
                             Partnering For <br />
-                            <span className={`italic font-light transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>Expansion.</span>
+                            <span className={`italic font-light transition-colors duration-500 ${isDark ? 'text-white/30' : 'text-slate-300'}`}>Growth.</span>
                         </motion.h1>
 
                         <motion.p 
@@ -68,31 +68,33 @@ export default function ContactPage() {
                             className={`text-[1.2rem] md:text-[1.5rem] font-medium max-w-lg leading-relaxed border-l-4 border-[#F05E23] pl-10 mb-20 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-50'}`}
                             style={{ color: isDark ? 'rgba(255,255,255,0.4)' : '#64748B' }}
                         >
-                            Ready to scale your digital ecosystem? Our innovation specialists are standing by to architect your growth framework.
+                            Ready to grow your business? We're here to help you build a professional brand and a fast website that works.
                         </motion.p>
 
-                        <div className="space-y-6 w-full max-w-md">
+                        <div className="grid grid-cols-1 gap-4 w-full max-w-md">
                             {[
-                                { icon: Mail, label: "Business Email", val: "biz@synchronousbuilddigital.com" },
-                                { icon: Phone, label: "Call Us", val: "+91 91613 91566" },
-                                { icon: Clock, label: "Availability", val: "Mon - Fri | 10AM - 7PM IST" }
+                                { icon: Mail, label: "Business Email", val: "biz@synchronousbuilddigital.com", href: "mailto:biz@synchronousbuilddigital.com" },
+                                { icon: Phone, label: "Direct Line", val: "+91 91613 91566", href: "tel:+919161391566" },
+                                { icon: Clock, label: "Support Hours", val: "Mon - Fri | 10AM - 7PM IST" }
                             ].map((info, i) => (
-                                <motion.div
+                                <motion.a
                                     key={i}
+                                    href={info.href}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.3 + i * 0.1 }}
-                                    className={`group flex items-center gap-6 p-6 lg:p-8 rounded-[2rem] border shadow-sm hover:shadow-xl hover:shadow-orange-500/5 transition-all duration-500 overflow-hidden relative ${isDark ? 'bg-white/5 border-white/5' : 'bg-white border-[rgba(0,0,0,0.04)]'}`}
+                                    className={`group flex items-center gap-6 p-6 rounded-[2.5rem] border shadow-sm hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-700 relative overflow-hidden ${isDark ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-white border-[rgba(0,0,0,0.04)] hover:border-[#F05E23]/20'}`}
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                    <div className={`relative z-10 w-14 h-14 rounded-2xl border flex items-center justify-center transition-all duration-500 group-hover:bg-white group-hover:text-[#F05E23] ${isDark ? 'bg-white/10 border-white/10 text-white/40' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] text-[#94A3B8]'}`}>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#F05E23]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                    <div className={`relative z-10 w-12 h-12 rounded-2xl border flex items-center justify-center transition-all duration-500 group-hover:bg-[#F05E23] group-hover:text-white group-hover:border-[#F05E23] ${isDark ? 'bg-white/5 border-white/10 text-white/40' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] text-[#94A3B8]'}`}>
                                         <info.icon className="w-5 h-5 transition-transform group-hover:scale-110" />
                                     </div>
                                     <div className="relative z-10 flex flex-col">
-                                        <span className={`text-[0.6rem] font-black uppercase tracking-widest mb-1 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>{info.label}</span>
-                                        <span className={`text-lg font-bold tracking-tight group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white/80' : 'text-[#111]'}`}>{info.val}</span>
+                                        <span className={`text-[0.6rem] font-black uppercase tracking-widest mb-0.5 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>{info.label}</span>
+                                        <span className={`text-[1.1rem] font-bold tracking-tight transition-colors duration-500 ${isDark ? 'text-white/80 group-hover:text-white' : 'text-[#111]'}`}>{info.val}</span>
                                     </div>
-                                </motion.div>
+                                    <ArrowRight className="ml-auto w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-500 text-[#F05E23]" />
+                                </motion.a>
                             ))}
                         </div>
                     </div>
@@ -112,56 +114,75 @@ export default function ContactPage() {
                             ></div>
 
                             <div className="relative z-10">
-                                <h3 className={`text-3xl lg:text-4xl font-bold mb-12 tracking-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Project Briefing</h3>
+                                <h3 className={`text-4xl lg:text-5xl font-bold mb-12 tracking-tighter transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Project Details.</h3>
                                 
                                 <form className="space-y-10" onSubmit={handleSubmit}>
                                     <div className="grid md:grid-cols-2 gap-10">
-                                        <div className="space-y-4">
-                                            <label className={`text-[0.65rem] font-black uppercase tracking-[0.2em] ml-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>Your Name</label>
-                                            <input 
-                                                name="name"
-                                                type="text" 
-                                                required
-                                                placeholder="Executive Talent" 
-                                                className={`w-full px-8 py-5 rounded-2xl border outline-none transition-all duration-300 font-bold ${isDark ? 'bg-white/5 border-white/5 text-white placeholder:text-white/10 focus:bg-white/10 focus:border-[#F05E23]' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 placeholder:text-slate-300 text-[#111]'}`} 
-                                            />
+                                        <div className="space-y-4 group">
+                                            <label className={`text-[0.65rem] font-black uppercase tracking-[0.3em] ml-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>Your Name</label>
+                                            <div className="relative">
+                                                <input 
+                                                    name="name"
+                                                    type="text" 
+                                                    required
+                                                    placeholder="Enter your name" 
+                                                    className={`w-full px-8 py-5 rounded-2xl border outline-none transition-all duration-300 font-bold ${isDark ? 'bg-white/5 border-white/5 text-white placeholder:text-white/10 focus:bg-white/10 focus:border-[#F05E23]' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 placeholder:text-slate-300 text-[#111]'}`} 
+                                                />
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-[#F05E23] transition-all duration-500 group-focus-within:w-full opacity-50"></div>
+                                            </div>
                                         </div>
-                                        <div className="space-y-4">
-                                            <label className={`text-[0.65rem] font-black uppercase tracking-[0.2em] ml-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>Digital HQ</label>
-                                            <input 
-                                                name="company"
-                                                type="text" 
-                                                placeholder="Company Name" 
-                                                className={`w-full px-8 py-5 rounded-2xl border outline-none transition-all duration-300 font-bold ${isDark ? 'bg-white/5 border-white/5 text-white placeholder:text-white/10 focus:bg-white/10 focus:border-[#F05E23]' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 placeholder:text-slate-300 text-[#111]'}`} 
-                                            />
+                                        <div className="space-y-4 group">
+                                            <label className={`text-[0.65rem] font-black uppercase tracking-[0.3em] ml-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>Company</label>
+                                            <div className="relative">
+                                                <input 
+                                                    name="company"
+                                                    type="text" 
+                                                    placeholder="Company Name" 
+                                                    className={`w-full px-8 py-5 rounded-2xl border outline-none transition-all duration-300 font-bold ${isDark ? 'bg-white/5 border-white/5 text-white placeholder:text-white/10 focus:bg-white/10 focus:border-[#F05E23]' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 placeholder:text-slate-300 text-[#111]'}`} 
+                                                />
+                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-[#F05E23] transition-all duration-500 group-focus-within:w-full opacity-50"></div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <label className={`text-[0.65rem] font-black uppercase tracking-[0.2em] ml-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>Priority Objective</label>
+                                    <div className="space-y-6">
+                                        <label className={`text-[0.65rem] font-black uppercase tracking-[0.3em] ml-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>What do you need?</label>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                            {[
+                                                "Branding & Design", "Websites & Apps", "AI & Automation", 
+                                                "Marketing & Sales", "Strategy & Audit", "Full Support"
+                                            ].map((opt) => (
+                                                <div key={opt} className="relative group">
+                                                    <input 
+                                                        type="radio" 
+                                                        name="objective" 
+                                                        value={opt} 
+                                                        id={opt}
+                                                        className="peer absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                        defaultChecked={opt === "Branding & Design"}
+                                                    />
+                                                    <label 
+                                                        htmlFor={opt}
+                                                        className={`flex items-center justify-center text-center px-4 py-5 rounded-2xl border text-[0.7rem] font-black uppercase tracking-wider transition-all duration-500 peer-checked:bg-[#F05E23] peer-checked:text-white peer-checked:border-[#F05E23] peer-checked:shadow-lg peer-checked:shadow-orange-500/20 ${isDark ? 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] text-slate-400 hover:bg-white hover:border-[#F05E23]/20'}`}
+                                                    >
+                                                        {opt}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4 group">
+                                        <label className={`text-[0.65rem] font-black uppercase tracking-[0.3em] ml-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>More Details</label>
                                         <div className="relative">
-                                            <select 
-                                                name="objective"
-                                                className={`w-full px-8 py-5 rounded-2xl border outline-none transition-all duration-300 font-bold appearance-none cursor-pointer pr-12 ${isDark ? 'bg-[#1A1A1A] border-white/5 text-white focus:border-[#F05E23]' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 text-[#111]'}`}
-                                            >
-                                                <option>Identity & Brand Systems</option>
-                                                <option>Digital Product Development</option>
-                                                <option>AI Operations & Automation</option>
-                                                <option>Growth Engineering (SEO/Ads)</option>
-                                                <option>Full-Scale Digital Audit</option>
-                                            </select>
-                                            <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none text-[#F05E23] w-2.5 h-2.5 border-r-2 border-b-2 border-current rotate-45 transform origin-center"></div>
+                                            <textarea 
+                                                name="details"
+                                                rows="5" 
+                                                placeholder="Tell us more about what you want to achieve." 
+                                                className={`w-full px-8 py-6 rounded-3xl border outline-none transition-all duration-300 font-bold resize-none ${isDark ? 'bg-white/5 border-white/5 text-white placeholder:text-white/10 focus:bg-white/10 focus:border-[#F05E23]' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 placeholder:text-slate-300 text-[#111]'}`}
+                                            ></textarea>
+                                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-[#F05E23] transition-all duration-500 group-focus-within:w-full opacity-50"></div>
                                         </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <label className={`text-[0.65rem] font-black uppercase tracking-[0.2em] ml-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>Deep Details</label>
-                                        <textarea 
-                                            name="details"
-                                            rows="5" 
-                                            placeholder="What are the critical success factors for this project?" 
-                                            className={`w-full px-8 py-5 rounded-3xl border outline-none transition-all duration-300 font-bold resize-none ${isDark ? 'bg-white/5 border-white/5 text-white placeholder:text-white/10 focus:bg-white/10 focus:border-[#F05E23]' : 'bg-[#FAFAF8] border-[rgba(0,0,0,0.04)] focus:bg-white focus:border-[#F05E23] focus:ring-4 focus:ring-orange-500/5 placeholder:text-slate-300 text-[#111]'}`}
-                                        ></textarea>
                                     </div>
 
                                     <div className="flex flex-col items-center gap-8 pt-4">
@@ -175,7 +196,7 @@ export default function ContactPage() {
                                         >
                                             {formState === "idle" && (
                                                 <>
-                                                    Initiate Deployment
+                                                    Send Message
                                                     <ArrowRight className="w-4 h-4 text-[#F05E23] group-hover:translate-x-2 transition-transform" strokeWidth={3} />
                                                 </>
                                             )}
@@ -185,7 +206,7 @@ export default function ContactPage() {
                                                     Processing...
                                                 </div>
                                             )}
-                                            {formState === "success" && "Deployment Success — We'll be in touch"}
+                                            {formState === "success" && "Message Sent — We'll be in touch"}
                                         </motion.button>
                                         
                                         <p className={`text-[0.65rem] font-bold uppercase tracking-[0.3em] flex items-center gap-2 transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-400'}`}>

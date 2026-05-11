@@ -10,29 +10,29 @@ import { useTheme } from './ThemeContext';
 const expertiseItems = [
     {
         id: "01",
-        title: "BRAND ARCHITECTURES.",
-        desc: "Surgical brand positioning and visual systems engineered for category dominance and high-equity compounding.",
+        title: "BRAND DESIGN.",
+        desc: "We create professional brand identities that help you stand out and build a lasting impression.",
         image: "/brand-arch.png",
         link: "/services/branding"
     },
     {
         id: "02",
-        title: "ECOSYSTEM ENGINEERING.",
-        desc: "Performance-obsessed digital platforms built on headless architectures with sub-100ms latency and 4x conversion lift.",
+        title: "QUALITY WEBSITES.",
+        desc: "We build fast, high-quality websites that work perfectly and help you turn visitors into customers.",
         image: "/digital-eco.png",
         link: "/services/ecosystems"
     },
     {
         id: "03",
-        title: "ACQUISITION FRAMEWORKS.",
-        desc: "Multi-channel growth engines powered by predictive models and surgical arbitrage to maximize ROAS and scale equity.",
+        title: "GROWTH STRATEGY.",
+        desc: "We create smart marketing plans based on real results to find your best customers and help you grow easily.",
         image: "/growth-eng.png",
         link: "/services/acquisition"
     },
     {
         id: "04",
-        title: "NEURAL INTEGRATION.",
-        desc: "Deploying custom LLM agents and agentic workflows into core operations to automate human-level cognitive tasks at scale.",
+        title: "AI & AUTOMATION.",
+        desc: "Use friendly AI assistants to handle everyday tasks so you and your team can focus on what matters most.",
         image: "/neural-marketing.png",
         link: "/services/ai"
     }

@@ -13,14 +13,14 @@ const advantages = [
         color: "from-orange-500/20 to-orange-600/20"
     },
     { 
-        title: "Full-Stack Brand", 
-        desc: "End-to-end digital identity architecting.", 
+        title: "Complete Branding", 
+        desc: "We build your entire online brand from scratch.", 
         icon: Shield,
         color: "from-blue-500/20 to-blue-600/20"
     },
     { 
-        title: "Tech + Market", 
-        desc: "Bridging code with conversion logic.", 
+        title: "Tech & Sales", 
+        desc: "We combine great code with smart sales strategies.", 
         icon: Zap,
         color: "from-yellow-500/20 to-yellow-600/20"
     },
@@ -31,8 +31,8 @@ const advantages = [
         color: "from-indigo-500/20 to-indigo-600/20"
     },
     { 
-        title: "Scalable Systems", 
-        desc: "Frameworks engineered for expansion.", 
+        title: "Easy to Grow", 
+        desc: "Systems built to handle more customers as you grow.", 
         icon: TrendingUp,
         color: "from-green-500/20 to-green-600/20"
     }
@@ -150,7 +150,7 @@ export default function WhyChooseUs() {
                             <div className="mt-16 pt-12 border-t border-white/5">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] mb-6 text-white/20">Strategic Capabilities</h4>
                                 <div className="flex flex-wrap gap-2">
-                                    {['Headless Logic', 'Predictive Modeling', 'Neural Scaling', 'Surgical UX', 'ROAS Optimization'].map((tag, i) => (
+                                    {['Modern Tech', 'Future Planning', 'Smart Growth', 'Perfect Design', 'Better Ad Results'].map((tag, i) => (
                                         <span key={i} className={`px-4 py-2 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${isDark ? 'bg-white/5 border-white/10 text-white/40 hover:border-[#F05E23]/50 hover:text-white' : 'bg-black/5 border-black/5 text-black/40 hover:bg-[#F05E23]/5 hover:text-[#F05E23]'}`}>
                                             {tag}
                                         </span>
@@ -190,8 +190,8 @@ export default function WhyChooseUs() {
                             <div className={`p-10 rounded-[3rem] border flex flex-col justify-between transition-all duration-700 ${isDark ? 'bg-[#F05E23] border-white/10 text-white' : 'bg-[#111] border-black/5 text-white'}`}>
                                 <div className="space-y-4">
                                     <HeartPulse className="w-10 h-10 mb-4 opacity-50" />
-                                    <h3 className="text-2xl font-black tracking-tighter leading-none uppercase">Excellence Protocol.</h3>
-                                    <p className="text-sm font-medium opacity-60 leading-relaxed">Verified long-term partnerships through surgical execution and technical innovation.</p>
+                                    <h3 className="text-2xl font-black tracking-tighter leading-none uppercase">Quality Standards.</h3>
+                                    <p className="text-sm font-medium opacity-60 leading-relaxed">Long-term partners trust us for our high-quality work and new ideas.</p>
                                 </div>
                                 <div className="pt-8 border-t border-white/10 mt-8">
                                     <div className="text-4xl font-black tracking-tighter uppercase">100%</div>

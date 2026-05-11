@@ -8,32 +8,32 @@ import { useChat } from "../../components/ChatContext";
 
 const highlights = [
     {
-        title: "Brand Identity Architecture",
-        desc: "We engineer market-defining identities that translate complex visions into commanding visual and verbal legacies.",
+        title: "Professional Branding",
+        desc: "We create clear, professional brand designs that help you stand out and build a lasting impression.",
         accent: "#F05E23",
         bgHover: "rgba(240,94,35,0.05)"
     },
     {
-        title: "Autonomous Systems Integration",
-        desc: "Deploying custom AI agents and intelligent automation to future-proof your core digital operations.",
+        title: "AI & Automation",
+        desc: "Use friendly AI assistants to handle everyday tasks so you and your team can focus on what matters most.",
         accent: "#F05E23",
         bgHover: "rgba(240,94,35,0.05)"
     },
     {
-        title: "Data-Backed Growth Logic",
-        desc: "Eliminating market guesswork through rigorous audience intelligence and surgical performance tracking.",
+        title: "Smart Growth Plans",
+        desc: "We create marketing plans based on real results to find your best customers and help you grow easily.",
         accent: "#F05E23",
         bgHover: "rgba(240,94,35,0.05)"
     },
     {
-        title: "High-Performance Ecosystems",
-        desc: "Architecting scalable digital infrastructure where aesthetic precision meets high-velocity conversion.",
+        title: "Quality Websites",
+        desc: "We build fast, high-quality websites that work perfectly and help you turn visitors into customers.",
         accent: "#F05E23",
         bgHover: "rgba(240,94,35,0.05)"
     },
     {
-        title: "Strategic Partnerships",
-        desc: "Operating as your technical and marketing arm, scaling in synchronization with your business evolution.",
+        title: "Close Support",
+        desc: "We work closely with you to help your business grow and reach new goals.",
         accent: "#F05E23",
         bgHover: "rgba(240,94,35,0.05)"
     }
@@ -104,7 +104,7 @@ export default function AboutPage() {
                     className="flex flex-col md:flex-row gap-12 items-start justify-between border-l-4 border-[#F05E23] pl-10"
                 >
                     <p className="text-[1.2rem] md:text-[1.5rem] text-slate-500 font-medium max-w-3xl leading-relaxed">
-                        Synchronous is a high-performance digital partner for brands that demand precision. We architect identities from the ground up and scale them through a rigorous fusion of AI automation, strategic branding, and data-driven performance marketing.
+                        Synchronous helps businesses grow with fast websites, smart marketing, and easy-to-use AI tools. We work with you to build a professional brand that lasts.
                     </p>
                     <div className="flex items-center gap-4 text-[#F05E23] font-black uppercase text-[0.7rem] tracking-[0.5em] pt-4 md:whitespace-nowrap">
                         ESTABLISHED 2026
@@ -125,7 +125,7 @@ export default function AboutPage() {
                         <span className="text-[0.65rem] font-bold text-white tracking-[0.3em] uppercase">Core Pillars</span>
                     </div>
                     <h2 className="text-[3.5rem] lg:text-[5.5rem] font-bold text-[#111] tracking-tight leading-[1]">
-                        Architectural <span className="italic font-light text-[#F05E23]">Growth.</span>
+                        Quality <span className="italic font-light text-[#F05E23]">Standards.</span>
                     </h2>
                 </motion.div>
 
@@ -152,7 +152,7 @@ export default function AboutPage() {
                                 {/* Floating Number */}
                                 <div className="relative z-10 w-14 h-14 rounded-2xl bg-[#FAFAF8] border border-[rgba(0,0,0,0.04)] flex items-center justify-center transition-all duration-700 group-hover:scale-110 group-hover:bg-[#111] group-hover:text-[#F05E23] mb-10"
                                 >
-                                    <span className="font-bold text-slate-300 group-hover:text-[#F05E23] transition-colors">0{i + 1}</span>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#F05E23] animate-pulse"></div>
                                 </div>
 
                                 <div className="relative z-10 flex-1 flex flex-col">
@@ -183,15 +183,15 @@ export default function AboutPage() {
                             <div className="absolute bottom-0 left-0 w-80 h-80 bg-orange-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3"></div>
 
                             <h3 className="text-4xl font-bold text-white mb-12 relative z-10 leading-[1.1] tracking-tight">
-                                Delivering <br /> The Unfair <br /> <span className="text-[#F05E23] italic font-light">Advantage.</span>
+                                Delivering <br /> Your Next <br /> <span className="text-[#F05E23] italic font-light">Success.</span>
                             </h3>
 
                             <div className="grid grid-cols-2 gap-8 relative z-10 mt-auto">
                                 {[
-                                    { icon: Users2, label: "Identity", val: "Branding Core" },
-                                    { icon: Sparkles, label: "Innovation", val: "AI Systems" },
-                                    { icon: Network, label: "Execution", val: "Scale Logic" },
-                                    { icon: Rocket, label: "Impact", val: "Growth ROI" }
+                                    { icon: Users2, label: "Identity", val: "Expert Design" },
+                                    { icon: Sparkles, label: "Innovation", val: "AI Tools" },
+                                    { icon: Network, label: "Execution", val: "Smart Growth" },
+                                    { icon: Rocket, label: "Impact", val: "Real Results" }
                                 ].map((stat, i) => (
                                     <div key={i}>
                                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-[#F05E23] mb-4 bg-white/5 border border-white/10 group-hover:bg-[#F05E23] group-hover:text-white transition-all duration-500">
@@ -239,7 +239,7 @@ export default function AboutPage() {
                             viewport={{ once: true }}
                             className="inline-flex items-center gap-3 px-4 py-2 bg-[#F05E23]/10 rounded-full mb-10"
                         >
-                            <span className="text-[0.65rem] font-bold text-[#F05E23] tracking-[0.3em] uppercase">The Visionary Force</span>
+                            <span className="text-[0.65rem] font-bold text-[#F05E23] tracking-[0.3em] uppercase">Our Founder</span>
                         </motion.div>
 
                         <motion.h3
@@ -260,11 +260,11 @@ export default function AboutPage() {
                             className="space-y-8"
                         >
                             <p className="text-[1.2rem] text-slate-500 font-medium leading-relaxed max-w-xl">
-                                "Synchronous was built on a singular vision: to bridge the gap between creative storytelling and technical precision. We don't just build websites; we architect growth ecosystems that operate with surgical accuracy."
+                                "Synchronous was built to help businesses grow easily by combining great design with fast technology. We don't just build websites; we build systems that help you succeed."
                             </p>
                             <div className="w-16 h-1 bg-[#F05E23]"></div>
                             <p className="text-[1.1rem] text-slate-400 font-normal leading-relaxed max-w-xl">
-                                Guided by Devam's leadership, our mission is to empower brands with the same high-velocity digital tools used by industry titans, democratizing deep-tech innovation through human-centric design.
+                                Guided by Devam's leadership, our mission is to help brands of all sizes use the same high-quality tools as the world's biggest companies, with designs made for real people.
                             </p>
                         </motion.div>
                     </div>

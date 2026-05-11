@@ -94,7 +94,7 @@ export default function CTA() {
                         transition={{ delay: 0.7 }}
                         className="mt-10 sm:mt-12 text-[0.55rem] sm:text-[0.6rem] font-bold text-slate-500 tracking-[0.3em] sm:tracking-[0.4em] uppercase px-4"
                     >
-                        No commitment required • Surgical Precision Guaranteed
+                        No commitment required • High Quality Guaranteed
                     </motion.div>
                 </div>
             </div>

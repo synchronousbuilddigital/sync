@@ -47,7 +47,7 @@ export default function VerifiedOutcomes() {
                         transition={{ delay: 0.3 }}
                         className={`text-sm sm:text-lg font-medium max-w-xl mx-auto leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}
                     >
-                        Global industry leaders leveraging our surgical digital frameworks for market dominance.
+                        Top brands use our expert digital systems to lead their markets.
                     </motion.p>
                 </div>
 

@@ -41,7 +41,7 @@ export default function Footer() {
                                 Empowering high-growth <br /> <span className="text-[#F05E23]">elite brands.</span>
                             </h2>
                             <p className={`text-lg sm:text-xl font-medium max-w-2xl leading-relaxed transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
-                                Architecting sustainable, high-velocity digital ecosystems for high-growth elite brands.
+                                Building strong, fast digital systems for growing brands.
                             </p>
                         </div>
                     </div>

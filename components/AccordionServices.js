@@ -161,7 +161,7 @@ export default function AccordionServices() {
 
                 {/* Cards Container */}
                 <div 
-                    className="relative grid grid-cols-2 lg:flex lg:flex-row gap-4 sm:gap-6 mb-6 lg:mb-12 lg:h-[850px] min-h-[600px]"
+                    className="relative grid grid-cols-2 lg:flex lg:flex-row gap-4 sm:gap-6 mb-6 lg:mb-12 lg:h-[650px] min-h-[500px]"
                     onMouseLeave={() => setOpenIndex(null)}
                 >
                     {services.map((service, index) => {
@@ -193,36 +193,22 @@ export default function AccordionServices() {
                                     willChange: "flex, opacity, filter",
                                 }}
                             >
-                                {/* Spine / Tab */}
-                                <div className={`flex lg:flex-col items-center lg:items-center justify-between lg:justify-start p-3 sm:p-4 lg:p-10 h-12 sm:h-16 lg:h-full lg:w-24 shrink-0 transition-all duration-300 ${isOpen ? (isDark ? 'border-r border-neutral-800' : 'border-r border-neutral-100') : ''} ${!isOpen && isSomethingHovered && isDesktop ? 'flex' : 'hidden md:flex lg:flex'}`}>
-                                    <div className="flex lg:flex-col items-center gap-3">
-                                        <span className={`text-sm sm:text-base lg:text-xl font-black ${isOpen ? 'text-[#F05E23]' : (isDark ? 'text-neutral-700' : 'text-neutral-400')}`}>{service.num} .</span>
-                                    </div>
-
-                                    {!isOpen && isSomethingHovered && (
-                                        <div className="hidden lg:flex flex-1 items-center justify-center -rotate-180" style={{ writingMode: 'vertical-rl' }}>
-                                            <h3 className="text-xl font-black tracking-widest whitespace-nowrap text-neutral-500 uppercase">
-                                                {service.title.split(' ')[0]}
-                                            </h3>
-                                        </div>
-                                    )}
-                                </div>
 
                                 {/* Content area */}
                                 <div className="flex-1 overflow-hidden relative h-full">
-                                    <div className={`p-6 sm:p-8 lg:p-10 xl:p-12 flex flex-col justify-between h-full w-full relative z-10 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
+                                    <div className={`p-6 sm:p-8 lg:p-8 flex flex-col justify-between h-full w-full relative z-10 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
                                         
                                         <div className="relative z-10 w-full lg:max-w-4xl">
                                             {/* Header Content */}
-                                            <div className="mb-6 lg:mb-12">
+                                            <div className="mb-4 lg:mb-8">
                                                 <div className="flex flex-wrap items-center gap-3 mb-6">
-                                                    <span className="text-[0.7rem] font-black text-[#F05E23] uppercase">Service {service.num}</span>
+                                                    <span className="text-[0.7rem] font-black text-[#F05E23] uppercase">Expert Solution</span>
                                                     {!isSomethingHovered && (
                                                         <span className={`text-[0.6rem] font-bold uppercase px-2 py-0.5 rounded border ${isDark ? 'border-neutral-800 text-neutral-600' : 'border-neutral-200 text-neutral-400'}`}>Expert Help</span>
                                                     )}
                                                 </div>
                                                 
-                                                <h3 className={`font-black tracking-tight leading-[1.02] transition-all duration-500 ${isDark ? 'text-white' : 'text-black'} ${isOpen ? 'text-2xl sm:text-5xl lg:text-5xl mb-6' : 'text-sm sm:text-2xl lg:text-3xl'}`}>
+                                                <h3 className={`font-black tracking-tight leading-[1.02] transition-all duration-500 ${isDark ? 'text-white' : 'text-black'} ${isOpen ? 'text-2xl sm:text-4xl lg:text-4xl mb-4' : 'text-sm sm:text-xl lg:text-2xl'}`}>
                                                     {service.title}
                                                 </h3>
 
@@ -350,9 +336,7 @@ export default function AccordionServices() {
                     className="flex items-center justify-between mt-4 mb-2 opacity-50"
                 >
                     <div className="flex items-center gap-4">
-                        <span className={`text-xs font-black tracking-widest ${isDark ? 'text-white' : 'text-black'}`}>01</span>
                         <div className={`w-12 h-[1px] ${isDark ? 'bg-white/20' : 'bg-black/20'}`} />
-                        <span className={`text-xs font-black tracking-widest ${isDark ? 'text-white' : 'text-black'}`}>0{services.length}</span>
                     </div>
                     
                     <div className={`text-[0.6rem] font-black uppercase tracking-[0.3em] ${isDark ? 'text-white/40' : 'text-black/40'}`}>

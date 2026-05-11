@@ -8,19 +8,19 @@ import { useTheme } from './ThemeContext';
 // Featured Testimonials Data
 const testimonials = [
     {
-        quote: "Synchronized our vision with clinical digital precision. The AI tools they built for BOXFOX didn't just improve UX; they created a new revenue stream entirely.",
+        quote: "They brought our vision to life with perfect detail. The AI tools they built for BOXFOX didn't just improve the experience; they created a whole new way to grow.",
         author: "Sarah Jenkins",
         role: "VP of Growth, BOXFOX",
         rating: 5
     },
     {
-        quote: "Relentless execution. The energy management ecosystem we architected together is now the benchmark for high-end data visualization in our sector.",
+        quote: "Excellent work. The high-quality digital systems we built together are now the standard for data and design in our industry.",
         author: "Marcus Thorne",
         role: "CTO, RYM Grenergy",
         rating: 5
     },
     {
-        quote: "Their growth engineering is surgical. We saw a 3x increase in conversion rates within the first quarter of launching our unified dashboard.",
+        quote: "Their marketing plans really work. We saw a 3x increase in results within the first few months of launching our new dashboard.",
         author: "David Chen",
         role: "Founder, BWORTH",
         rating: 5
@@ -242,7 +242,7 @@ export default function Testimonials() {
                             className="hidden md:block md:max-w-[320px]"
                         >
                             <p className="text-[0.7rem] font-semibold text-slate-400 uppercase tracking-[.25em] leading-relaxed text-right">
-                                Global industry leaders leveraging our surgical digital frameworks for market dominance.
+                                Global business leaders using our high-quality digital systems to reach their goals.
                             </p>
                         </motion.div>
                     </div>

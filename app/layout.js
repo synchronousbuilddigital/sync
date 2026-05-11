@@ -14,17 +14,17 @@ const outfit = Outfit({
 export const metadata = {
   metadataBase: new URL('https://synchronousbuilddigital.com'),
   title: {
-    default: "Synchronous Build Digital | High-Velocity Growth Architecture",
+    default: "Synchronous Build Digital | Expert Branding & Websites",
     template: "%s | Synchronous Build Digital"
   },
-  description: "Architecting sustainable, high-performance digital ecosystems for high-growth brands. Specialized in AI automation, brand systems, and data-backed performance marketing.",
+  description: "Helping brands grow with fast websites, expert design, and smart AI tools. We build high-quality digital systems that work for you.",
   keywords: [
-    "digital marketing", "AI automation", "brand architecture", "growth engineering",
-    "Synchronous Build Digital", "performance marketing", "surgical UX", "conversion optimization",
-    "headless website development", "AI-powered branding", "neural marketing scaling",
-    "data-driven growth strategy", "premium digital design", "high-velocity ecommerce",
-    "boutique digital agency", "enterprise growth systems", "algorithmic marketing",
-    "B2B growth architecture", "DTC scaling frameworks", "custom AI assistants for business"
+    "digital marketing", "AI tools", "brand design", "growth strategy",
+    "Synchronous Build Digital", "performance marketing", "quality design", "conversion optimization",
+    "website development", "AI branding", "marketing scaling",
+    "data-driven growth", "premium digital design", "fast ecommerce",
+    "boutique digital agency", "business growth", "smart marketing",
+    "B2B growth", "scaling strategy", "custom AI assistants"
   ],
   authors: [{ name: "Devam Srivastava" }],
   creator: "Devam Srivastava",
@@ -38,8 +38,8 @@ export const metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "Synchronous Build Digital | High-Velocity Growth Architecture",
-    description: "Architecting sustainable, high-performance digital ecosystems for high-growth brands.",
+    title: "Synchronous Build Digital | Expert Branding & Websites",
+    description: "Helping brands grow with fast websites, expert design, and smart AI tools.",
     url: 'https://synchronousbuilddigital.com',
     siteName: 'Synchronous Build Digital',
     locale: 'en_US',
@@ -55,8 +55,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Synchronous Build Digital | Growth Architecture",
-    description: "Architecting sustainable, high-performance digital ecosystems.",
+    title: "Synchronous Build Digital | Branding & Websites",
+    description: "Helping brands grow with fast websites and smart AI tools.",
     images: ['/og-image.png'],
   },
   robots: {

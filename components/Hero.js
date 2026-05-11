@@ -295,7 +295,7 @@ export default function Hero() {
             bg: "bg-[#3B82F6]",
             border: "border-blue-400",
             text: "text-white",
-            services: ["UI/UX Surgery", "Headless Tech", "Premium Motion"]
+            services: ["UI/UX Design", "Fast Websites", "Smooth Motion"]
         },
         {
             title: "Marketing",
@@ -303,7 +303,7 @@ export default function Hero() {
             bg: "bg-[#111]",
             border: "border-slate-800",
             text: "text-white",
-            services: ["Growth Engines", "Precision Ads", "Social Scaling"]
+            services: ["Growth Tools", "Targeted Ads", "Social Growth"]
         },
         {
             title: "Strategy",
@@ -311,7 +311,7 @@ export default function Hero() {
             bg: "bg-[#FFD700]",
             border: "border-yellow-300",
             text: "text-yellow-900",
-            services: ["Market Arbitrage", "ROAS Logic", "Equity Vectors"]
+            services: ["Market Growth", "Ad Profits", "Brand Value"]
         }
     ];
 
@@ -412,7 +412,7 @@ export default function Hero() {
                                 >
                                     <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                                 </motion.div>
-                                <span className="font-black text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] whitespace-nowrap">Acquisition Optimized</span>
+                                <span className="font-black text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] whitespace-nowrap">Growth Ready</span>
                             </motion.button>
                         </Magnetic>
                     </div>
@@ -538,7 +538,7 @@ export default function Hero() {
                                     className={`relative group overflow-hidden px-10 sm:px-12 lg:px-16 py-5.5 sm:py-6 lg:py-7 rounded-2xl sm:rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] transition-all active:scale-95 text-center flex items-center justify-center border ${!isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5'} w-full sm:w-auto max-w-xs sm:max-w-none`}
                                 >
                                     <div className={`font-black text-xs sm:text-base lg:text-lg tracking-[0.05em] sm:tracking-[0.1em] uppercase relative z-10 flex items-center justify-center gap-3 sm:gap-4 transition-colors duration-500 ${!isDark ? 'text-white' : 'text-[#111]'}`}>
-                                        Start Acquisition Cycle
+                                        Start Growing
                                         <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-2 transition-transform duration-500" />
                                     </div>
                                     <div className="absolute inset-0 bg-[#F05E23] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[0.16, 1, 0.3, 1]"></div>

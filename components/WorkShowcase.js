@@ -36,7 +36,7 @@ export default function WorkShowcase() {
             plan: "Step: Simple Setup",
             happiness: "100% Success",
             results: ["Better Solar Energy", "Smarter Saving"],
-            impact: "Enhanced SEO rankings helping them secure green energy subsidies.",
+            impact: "Better search rankings helping them grow in green energy.",
             image: "/website ss/RYM.png",
             category: "Verified Partner",
             type: "CleanTech",
@@ -75,7 +75,7 @@ export default function WorkShowcase() {
             plan: "Step: Daily Rentals",
             happiness: "100% Success",
             results: ["Fashion Rental", "Affordable Price"],
-            impact: "Established a scalable rental infrastructure for premium fashion assets.",
+            impact: "Built a system for easy and fast fashion rentals.",
             image: "/website ss/fashquick.png",
             category: "Verified Partner",
             type: "E-commerce",
@@ -88,7 +88,7 @@ export default function WorkShowcase() {
             plan: "Step: Logistics Layer",
             happiness: "100% Success",
             results: ["5000+ Fleet Nodes", "Pan-India Network"],
-            impact: "Enabled real-time logistics tracking for a pan-India relocation network.",
+            impact: "Added live tracking for moving homes across the country.",
             image: "/website ss/prl.png",
             category: "Verified Partner",
             type: "Logistics",
@@ -223,7 +223,6 @@ export default function WorkShowcase() {
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                                         <div className="absolute bottom-6 left-6 sm:bottom-12 sm:left-12">
                                             <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                                                <span className="text-[10px] sm:text-[12px] font-black text-[#F05E23] uppercase tracking-[0.2em] sm:tracking-[0.3em]">{project.id}</span>
                                                 <div className="w-8 sm:w-12 h-[1px] bg-[#F05E23]" />
                                             </div>
                                             <h3 className="text-3xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">{project.title}</h3>
@@ -323,10 +322,6 @@ export default function WorkShowcase() {
                 </div>
             </div>
             
-            {/* Ambient Background Number - Hidden on small mobile */}
-            <div className="hidden sm:block absolute -bottom-10 -right-10 pointer-events-none opacity-[0.02] select-none">
-                <span className={`text-[20rem] font-black ${isDark ? 'text-white' : 'text-black'}`}>0{activeIndex + 1}</span>
-            </div>
         </section>
     );
 }

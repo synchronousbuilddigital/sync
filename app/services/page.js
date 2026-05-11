@@ -24,30 +24,30 @@ import { useChat } from "../../components/ChatContext";
 const serviceCategories = [
     {
         id: "01",
-        title: "Brand Architecture",
+        title: "Brand Design",
         icon: Fingerprint,
-        desc: "We don't just design logos; we engineer visual and verbal identities that command market authority. Establish a premium presence that builds long-term brand equity.",
-        services: ["Visual Identity System", "Strategic Brand Positioning", "Verbal Identity & Messaging", "Premium Packaging Design"],
+        desc: "We help you create a professional look and a clear message that helps your business stand out and grow for years.",
+        services: ["Logo & Visual Design", "Brand Strategy", "Brand Voice", "Packaging Design"],
         image: "/ChatGPT Image Apr 3, 2026, 11_35_08 AM.png",
         accent: "from-[#F05E23]/10",
         href: "/services/brand-systems"
     },
     {
         id: "02",
-        title: "Digital Ecosystems",
+        title: "Websites & Apps",
         icon: Layout,
-        desc: "Architecting high-performance digital infrastructure. We build scalable platforms where supreme aesthetic precision meets rigorous, high-conversion engineering.",
-        services: ["Enterprise Web Platforms", "High-Conversion E-commerce", "Interactive Web Applications", "Custom SaaS Interfaces"],
+        desc: "We build fast, high-quality websites and mobile apps that work perfectly and help you turn more visitors into customers.",
+        services: ["Business Websites", "Online Stores", "Custom Apps", "SaaS Design"],
         image: "/ChatGPT Image Apr 3, 2026, 11_36_48 AM.png",
         accent: "from-blue-500/10",
         href: "/services/digital-platforms"
     },
     {
         id: "03",
-        title: "Growth Engineering",
+        title: "Sales & Marketing",
         icon: BarChart3,
-        desc: "Transforming attention into revenue. We execute data-backed, precision-targeted campaigns designed to drive exponential growth and measurable ROI.",
-        services: ["Performance Advertising", "SEO & Search Dominance", "Strategic Content Architecture", "Growth Analytics & Audits"],
+        desc: "We create smart marketing plans that find your best customers and help you get the most out of your budget.",
+        services: ["Paid Ads", "SEO & Search", "Content Plans", "Growth Audits"],
         image: "/ChatGPT Image Apr 3, 2026, 11_39_48 AM.png",
         accent: "from-green-500/10",
         href: "/services/growth-engine"
@@ -56,8 +56,8 @@ const serviceCategories = [
         id: "04",
         title: "AI & Automation",
         icon: Cpu,
-        desc: "Integrating autonomous intelligence into your operations. Deploy custom AI agents and workflows that revolutionize efficiency and user engagement.",
-        services: ["Custom AI Chatbots", "Generative AI Systems", "Intelligent Process Automation", "Neural Search Integration"],
+        desc: "Use friendly AI assistants to handle everyday tasks so you and your team can focus on what matters most.",
+        services: ["AI Assistants", "AI Creation", "Process Auto", "Smart Search"],
         image: "/ChatGPT Image Apr 3, 2026, 11_39_44 AM.png",
         accent: "from-purple-500/10",
         href: "/services/ai-automation"
@@ -115,7 +115,7 @@ export default function ServicesPage() {
                             className="max-w-sm border-l-2 border-[#F05E23] pl-10 pb-4"
                         >
                             <p className={`text-lg md:text-xl font-medium leading-relaxed italic transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
-                                "We engineer elite digital infrastructure where aesthetic precision meets relentless technical engineering."
+                                "We create friendly, high-speed digital systems to help your business grow easily."
                             </p>
                         </motion.div>
                     </div>
@@ -149,8 +149,7 @@ export default function ServicesPage() {
 
                                 {/* Floating Phase Badge */}
                                 <div className={`absolute top-10 left-10 p-6 backdrop-blur-3xl border rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-1 group-hover:scale-110 transition-all duration-700 ${isDark ? 'bg-black/40 border-white/10' : 'bg-white/80 border-white'}`}>
-                                    <span className="text-[0.6rem] font-black text-[#F05E23] tracking-[0.4em] uppercase">Phase</span>
-                                    <span className={`text-4xl font-bold leading-none transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>{phase.id}</span>
+                                    <span className={`text-2xl font-bold leading-none transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Step</span>
                                 </div>
 
                                 {/* Floating Icon */}
@@ -220,14 +219,14 @@ export default function ServicesPage() {
                     </motion.div>
 
                     <h2 className="text-[3rem] md:text-[5.5rem] font-bold text-white tracking-tighter leading-[0.9] mb-12">
-                        Ready to Begin Your <br /> <span className="text-[#F05E23]">Synchronous</span> Engineering.
+                        Ready to grow your <br /> <span className="text-[#F05E23]">Business</span> with us.
                     </h2>
 
                     <Link
                         href="/contact"
                         className="group relative px-14 py-8 rounded-[2.5rem] bg-white text-[#111] font-black uppercase text-[0.8rem] tracking-[0.4em] overflow-hidden hover:scale-105 active:scale-95 transition-all duration-500"
                     >
-                        <span className="relative z-10 group-hover:text-white transition-colors duration-500">Initialize Acquisition</span>
+                        <span className="relative z-10 group-hover:text-white transition-colors duration-500">Start Growing Today</span>
                         <div className="absolute inset-0 bg-[#F05E23] translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                     </Link>
                 </div>

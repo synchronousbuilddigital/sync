@@ -21,40 +21,36 @@ import { useChat } from "../../components/ChatContext";
 const steps = [
     {
         id: "01",
-        protocol: "PROTOCOL 01",
-        subtitle: "Audience Intelligence",
-        title: "Deep Discovery",
-        desc: "We begin by dissecting your current market positioning and identifying the unique surgical advantages of your brand. We don't guess; we leverage data-backed audience intelligence to define your ideal path.",
+        subtitle: "Learning Your Market",
+        title: "Discovery",
+        desc: "We start by learning about your business and your customers. We use real data to find the best way for you to grow.",
         image: "/services/brand-architecture.png",
         accent: "#F05E23",
         tags: ["Market Analysis", "Competitor Research", "ICP Definition"]
     },
     {
         id: "02",
-        protocol: "PROTOCOL 02",
-        subtitle: "Architectural Blueprinting",
-        title: "Growth Strategy",
-        desc: "Precision engineering starts with a robust plan. We design a custom digital framework that integrates AI automation, brand narrative, and performance logic into a single cohesive growth engine.",
+        subtitle: "Custom Roadmap",
+        title: "Strategy & Planning",
+        desc: "A great build starts with a solid plan. We create a custom strategy for your website, branding, and marketing to work together perfectly.",
         image: "/services/ai-automation.png",
         accent: "#111",
         tags: ["Funnel Mapping", "AI Integration Plan", "Brand Alignment"]
     },
     {
         id: "03",
-        protocol: "PROTOCOL 03",
-        subtitle: "Building the Ecosystem",
-        title: "High-Velocity Execution",
-        desc: "Our technical arm deploys your digital ecosystem at scale. From high-performance interfaces to custom AI agents, we architect every component for maximum speed and conversion authority.",
+        subtitle: "Quality Construction",
+        title: "Build & Design",
+        desc: "We build your website and tools with high speed and quality. Everything we create is designed to look great and turn visitors into customers.",
         image: "/services/digital-ecosystems.png",
         accent: "#F05E23",
         tags: ["Full-Stack Dev", "UI/UX Orchestration", "Systems Integration"]
     },
     {
         id: "04",
-        protocol: "PROTOCOL 04",
-        subtitle: "Performance Scaling",
-        title: "Continuous Pulse",
-        desc: "Launch is just the beginning. We maintain a zero-waste policy, continuously split-testing variables and scaling only the high-performers to ensure your growth is compounding and verified.",
+        subtitle: "Scale & Optimize",
+        title: "Growth & Support",
+        desc: "Launching is only the start. We keep testing and improving your results to make sure your business continues to grow and succeed.",
         image: "/services/growth-engineering.png",
         accent: "#111",
         tags: ["Data Analytics", "Performance Marketing", "ROI Optimization"]
@@ -99,7 +95,7 @@ export default function ProcessPage() {
                             transition={{ delay: 0.6 }}
                             className="max-w-xl border-l-2 border-[#F05E23] pl-10 pb-4 text-lg md:text-xl text-slate-500 font-medium leading-relaxed italic"
                         >
-                            "Our mission is to replace market guesswork with architectural precision. We follow a rigorous four-stage protocol designed to extract maximum value from every digital interaction."
+                            "We help you grow by using real data and smart design. Our simple four-step process is built to help your business get the best results."
                         </motion.p>
                     </div>
                 </div>
@@ -131,8 +127,7 @@ export default function ProcessPage() {
                                 
                                 {/* Floating Badge */}
                                 <div className="absolute top-8 left-8 p-5 backdrop-blur-3xl bg-white/80 border border-white rounded-[2rem] shadow-2xl flex flex-col items-center gap-1 group-hover:scale-110 transition-transform duration-700">
-                                    <span className="text-[0.55rem] font-black text-[#F05E23] tracking-[0.4em] uppercase">{step.protocol}</span>
-                                    <span className="text-3xl font-bold text-[#111] leading-none">{step.id}</span>
+                                    <span className="text-2xl font-bold text-[#111] leading-none">Step</span>
                                 </div>
                             </div>
                         </div>
@@ -185,18 +180,18 @@ export default function ProcessPage() {
                         </motion.div>
 
                         <h2 className="text-[3.5rem] md:text-[5.5rem] font-bold text-white tracking-tighter leading-[0.9] mb-10">
-                            Zero <span className="text-[#F05E23] italic font-light">Placeholders.</span> <br /> Pure Execution.
+                            Quality <span className="text-[#F05E23] italic font-light">Results.</span> <br /> Every Time.
                         </h2>
 
                         <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-xl mb-12">
-                            Every step in our process is governed by a strict Verification Protocol. We don't ship "maybe" — we ship results that are architecturally sound and performance-guaranteed.
+                            We care about quality. Every step of our process is focused on delivering results that work for your business.
                         </p>
 
                         <div className="space-y-6 w-full max-w-md">
                             {[
-                                { label: "High-Velocity Deployment Cycles", icon: Zap },
-                                { label: "Automated Verification Gates", icon: Shield },
-                                { label: "Direct Performance Analytics", icon: Activity }
+                                { label: "Fast Delivery", icon: Zap },
+                                { label: "Quality Checks", icon: Shield },
+                                { label: "Growth Reports", icon: Activity }
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-6 p-4 rounded-3xl bg-white/5 border border-white/5 hover:border-white/20 transition-all duration-500">
                                     <div className="w-12 h-12 rounded-2xl bg-[#F05E23]/10 flex items-center justify-center text-[#F05E23]">
@@ -212,7 +207,7 @@ export default function ProcessPage() {
                         <div className="rounded-[4rem] bg-gradient-to-br from-white/10 to-transparent border border-white/10 p-12 md:p-20 flex flex-col items-center text-center backdrop-blur-xl">
                             <div className="text-[0.7rem] font-black text-[#F05E23] uppercase tracking-[0.5em] mb-12">Current Efficiency Rating</div>
                             <div className="text-[8rem] md:text-[10rem] font-black text-white leading-none mb-4 tracking-tighter">98%</div>
-                            <div className="text-slate-400 font-medium tracking-widest uppercase text-[0.6rem]">Architectural Accuracy</div>
+                            <div className="text-slate-400 font-medium tracking-widest uppercase text-[0.6rem]">Success Rate</div>
                             
                             <div className="w-full h-px bg-white/10 my-12"></div>
                             
@@ -220,7 +215,7 @@ export default function ProcessPage() {
                                 href="/contact"
                                 className="group relative px-12 py-6 rounded-full bg-[#F05E23] text-white font-black uppercase text-[0.75rem] tracking-[0.3em] overflow-hidden hover:scale-105 active:scale-95 transition-all duration-500"
                             >
-                                <span className="relative z-10">Start Your Build</span>
+                                <span className="relative z-10">Start Today</span>
                                 <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                             </Link>
                         </div>

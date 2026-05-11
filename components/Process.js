@@ -11,45 +11,45 @@ import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 const steps = [
     {
         id: "01",
-        label: "ANALYSIS",
-        title: "Neural Audit",
-        desc: "Mapping your business architecture and auditing algorithmic arbitrage vectors across the digital landscape.",
+        label: "REVIEW",
+        title: "Expert Review",
+        desc: "We look at your business and find the best ways for you to grow online.",
         icon: <Search className="w-6 h-6 md:w-8 md:h-8" />,
         color: "#F05E23",
         tag: "Track 01"
     },
     {
         id: "02",
-        label: "ENGINEERING",
-        title: "Architecture",
-        desc: "Engineering a custom growth blueprint optimized for high-velocity conversion and long-term equity scaling.",
+        label: "PLANNING",
+        title: "Strategy",
+        desc: "We create a custom plan to help you get more customers and build long-term value.",
         icon: <Compass className="w-6 h-6 md:w-8 md:h-8" />,
         color: "#F05E23",
         tag: "Track 02"
     },
     {
         id: "03",
-        label: "DEPLOY",
-        title: "Deployment",
-        desc: "Building high-performance ecosystems with surgical precision and vertically integrated brand identities.",
+        label: "BUILD",
+        title: "Build",
+        desc: "We build fast, high-quality websites and apps that match your brand perfectly.",
         icon: <Cpu className="w-6 h-6 md:w-8 md:h-8" />,
         color: "#F05E23",
         tag: "Track 03"
     },
     {
         id: "04",
-        label: "GROWTH",
-        title: "Acquisition",
-        desc: "Activating growth frameworks via surgical media buying and performance-obsessed retention logic.",
+        label: "MARKETING",
+        title: "Growth",
+        desc: "We start smart marketing plans to find new customers and keep them coming back.",
         icon: <Rocket className="w-6 h-6 md:w-8 md:h-8" />,
         color: "#F05E23",
         tag: "Track 04"
     },
     {
         id: "05",
-        label: "SCALE",
-        title: "Compounding",
-        desc: "Continuously optimizing neural conversion loops and market dominance via algorithmic process automation.",
+        label: "SUPPORT",
+        title: "Scaling",
+        desc: "We keep improving your systems to help your business stay ahead and grow automatically.",
         icon: <TrendingUp className="w-6 h-6 md:w-8 md:h-8" />,
         color: "#F05E23",
         tag: "Track 05"
@@ -121,8 +121,6 @@ export default function Process() {
                         className="w-full bg-[#F05E23] origin-top shadow-[0_0_15px_#F05E23]"
                     />
                     <div className="absolute inset-0 flex flex-col justify-between items-center py-2 text-[0.5rem] font-bold text-white/20">
-                        <span>01</span>
-                        <span>05</span>
                     </div>
                 </div>
 
@@ -148,13 +146,13 @@ export default function Process() {
                             className={`inline-flex items-center gap-3 px-4 py-2 border rounded-full mb-6 ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'}`}
                         >
                             <span className="w-2 h-2 rounded-full bg-[#F05E23] animate-pulse shadow-[0_0_8px_#F05E23]"></span>
-                            <span className={`text-[0.6rem] font-bold tracking-[0.4em] uppercase ${isDark ? 'text-white/60' : 'text-black/60'}`}>Methodology v4.0</span>
+                            <span className={`text-[0.6rem] font-bold tracking-[0.4em] uppercase ${isDark ? 'text-white/60' : 'text-black/60'}`}>Our Process</span>
                         </motion.div>
                         <h2 className={`text-[2.5rem] md:text-[5rem] font-bold tracking-tighter leading-[0.9] ${isDark ? 'text-white' : 'text-black'}`}>
-                            Growth <em className="not-italic text-[#F05E23]">Architecture</em>.
+                            Growth <em className="not-italic text-[#F05E23]">Strategy</em>.
                         </h2>
                         <p className={`mt-10 text-[0.9rem] font-light italic max-w-sm ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-                            Discover proprietary frameworks engineered to accelerate your digital equity. Take the lead.
+                            Find out how our simple steps help your business grow and reach more customers.
                         </p>
                     </div>
 
@@ -187,9 +185,6 @@ export default function Process() {
                                             <div className={`w-20 h-20 md:w-28 md:h-28 rounded-[2.5rem] md:rounded-[3rem] border flex items-center justify-center text-[#F05E23] transition-all duration-700 bg-white/5 border-white/10 group-hover:bg-[#F05E23] group-hover:text-white group-hover:shadow-[0_0_50px_rgba(240,94,35,0.4)] ${!isDark && 'bg-white shadow-xl'}`}>
                                                 <div className="scale-110">{step.icon}</div>
                                             </div>
-                                            <div className={`absolute -top-4 -right-4 w-10 h-10 md:w-12 md:h-12 rounded-2xl border flex items-center justify-center text-[0.8rem] font-bold shadow-2xl transition-transform group-hover:rotate-12 ${isDark ? 'bg-[#0a0a0a] border-white/20 text-white' : 'bg-white border-black/10 text-black'}`}>
-                                                {step.id}
-                                            </div>
                                         </div>
 
                                         <div className="pt-2">
@@ -208,7 +203,7 @@ export default function Process() {
 
                                     <div className="mt-12 flex items-center gap-6 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                                         <div className="h-px flex-grow bg-gradient-to-r from-[#F05E23]/40 to-transparent" />
-                                        <span className="text-[0.65rem] font-bold tracking-widest text-[#F05E23] uppercase">{step.tag} ACTIVE</span>
+                                        <span className="text-[0.65rem] font-bold tracking-widest text-[#F05E23] uppercase">ACTIVE</span>
                                     </div>
                                 </div>
                             </div>
