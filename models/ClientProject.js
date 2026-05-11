@@ -6,6 +6,7 @@ const ClientProjectSchema = new mongoose.Schema({
   projectName: { type: String, required: true },
   description: { type: String },
   status: { type: String, default: "In Prep" }, // e.g., "Active", "Completed"
+  assignedIntern: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   
   // The detailed checklist/workflow
   workflow: [{
@@ -13,6 +14,7 @@ const ClientProjectSchema = new mongoose.Schema({
     description: { type: String },
     status: { type: String, enum: ["Pending", "In Progress", "Complete"], default: "Pending" },
     adminNote: { type: String, default: "" },
+    assignedIntern: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     updatedAt: { type: Date, default: Date.now }
   }],
 
@@ -37,6 +39,10 @@ const ClientProjectSchema = new mongoose.Schema({
     devUrl: { type: String, default: "" },
     additional: { type: String, default: "" }
   },
+
+  // System Access Parameters
+  systemAccessEmail: { type: String, default: "intern@sync.com" },
+  systemAccessPassword: { type: String, default: "SyncIntern123" },
 
   // Project Briefing
   projectType: { type: String, default: "Custom Web App" }, // Helps roadmap generation
@@ -65,5 +71,10 @@ const ClientProjectSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
   }]
 }, { timestamps: true });
+
+// Force refresh model in dev to update schema
+if (process.env.NODE_ENV === "development") {
+  delete mongoose.models.ClientProject;
+}
 
 export default mongoose.models.ClientProject || mongoose.model("ClientProject", ClientProjectSchema);

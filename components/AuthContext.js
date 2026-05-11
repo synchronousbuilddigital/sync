@@ -15,6 +15,7 @@ export function AuthProvider({ children }) {
   const [projects, setProjects] = useState([]); // Portfolio projects
   const [clientProject, setClientProject] = useState(null); // High-level Brand workflow
   const [adminClientProjects, setAdminClientProjects] = useState([]); // All brands (for admin)
+  const [internProjects, setInternProjects] = useState([]); // Projects assigned to intern
   const router = useRouter();
 
   const parseJsonResponse = async (res, fallbackMessage) => {
@@ -98,6 +99,18 @@ export function AuthProvider({ children }) {
       if (data.success) setAdminClientProjects(data.projects);
     } catch (e) {
       console.error("Failed to fetch admin client projects", e);
+    }
+  }, []);
+
+  const fetchInternProjects = useCallback(async (authToken) => {
+    try {
+      const res = await fetch("/api/intern/projects", {
+        headers: { "Authorization": `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      if (data.success) setInternProjects(data.projects);
+    } catch (e) {
+      console.error("Failed to fetch intern projects", e);
     }
   }, []);
 
@@ -192,6 +205,9 @@ export function AuthProvider({ children }) {
         fetchInterns(storedToken);
         fetchAdminClientProjects(storedToken);
       }
+      if (parsedUser.role === "intern") {
+        fetchInternProjects(storedToken);
+      }
       if (parsedUser.role === "client") fetchClientProject(storedToken);
 
       // Real-time updates: Poll every 10 seconds
@@ -202,6 +218,9 @@ export function AuthProvider({ children }) {
         if (parsedUser.role === "admin") {
           fetchInterns(storedToken);
           fetchAdminClientProjects(storedToken);
+        }
+        if (parsedUser.role === "intern") {
+          fetchInternProjects(storedToken);
         }
         if (parsedUser.role === "client") fetchClientProject(storedToken);
       }, 10000);
@@ -535,15 +554,28 @@ export function AuthProvider({ children }) {
     return await res.json();
   };
 
+  const generateBrandIntel = async (brandData) => {
+    const res = await fetch("/api/admin/client-projects/generate-intel", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(brandData)
+    });
+    return await res.json();
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
       interns, tasks, leaves, projects, addIntern, removeIntern, assignTask, 
       updateTaskStatus, deleteTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
-      clientProject, adminClientProjects, createClient, createClientProject, 
+      clientProject, adminClientProjects, internProjects, createClient, createClientProject, 
       updateClientProject, purgeClientProject, sendClientMessage, sendDiscussion, updateClientInfo, generateRoadmap,
-      generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions
+      generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions,
+      generateBrandIntel
     }}>
       {children}
     </AuthContext.Provider>

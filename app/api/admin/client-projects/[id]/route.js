@@ -23,6 +23,9 @@ export async function PATCH(req, { params }) {
     if (body.projectType) update.projectType = body.projectType;
     if (body.sop !== undefined) update.sop = body.sop;
     if (body.estimatedCompletionDate) update.estimatedCompletionDate = body.estimatedCompletionDate;
+    if (body.assignedIntern !== undefined) update.assignedIntern = body.assignedIntern || null;
+    if (body.systemAccessEmail) update.systemAccessEmail = body.systemAccessEmail;
+    if (body.systemAccessPassword) update.systemAccessPassword = body.systemAccessPassword;
     
     // Handle message/discussion update
     if (body.message) {
@@ -38,7 +41,7 @@ export async function PATCH(req, { params }) {
       return Response.json({ success: true, project });
     }
 
-    const project = await ClientProject.findByIdAndUpdate(id, update, { new: true });
+    const project = await ClientProject.findByIdAndUpdate(id, update, { returnDocument: 'after' });
     return Response.json({ success: true, project });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });

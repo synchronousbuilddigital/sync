@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req) {
   try {
     const { messages, currentUrl } = await req.json();
-    const apiKeyRaw = process.env.APIKEY;
+    const apiKeyRaw = process.env.SARVAM_API_KEY || process.env.APIKEY;
     const apiKey = apiKeyRaw?.trim();
 
     if (!apiKey) {

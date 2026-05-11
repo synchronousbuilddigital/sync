@@ -3,29 +3,30 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Users, CheckCircle2, Clock, Plus, Trash2, 
+import {
+  Users, CheckCircle2, Clock, Plus, Trash2,
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
   ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { 
-    user, interns, tasks, leaves, projects, 
-    addIntern, removeIntern, assignTask, updateTaskStatus, deleteTask, reassignTask, 
+  const {
+    user, interns, tasks, leaves, projects,
+    addIntern, removeIntern, assignTask, updateTaskStatus, deleteTask, reassignTask,
     approveLeave, announceToAll, addProject, updateProject, deleteProject,
-    adminClientProjects, createClient, createClientProject, updateClientProject, 
-    purgeClientProject, generateRoadmap, loading 
+    adminClientProjects, createClient, createClientProject, updateClientProject,
+    purgeClientProject, generateRoadmap, generateBrandIntel, loading
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState("interns");
-  
+
   // Client Management States
   const [isAddingClient, setIsAddingClient] = useState(false);
   const [isGeneratingRoadmap, setIsGeneratingRoadmap] = useState(false);
-  const [clientForm, setClientForm] = useState({ 
+  const [clientForm, setClientForm] = useState({
     name: "", email: "", password: "SyncClient123", projectName: "",
+    brandDescription: "", colorStyle: "", theme: "Single", features: "", pages: "",
     credentials: {
       env: "",
       gmail: { email: "", password: "" },
@@ -34,17 +35,19 @@ export default function AdminDashboard() {
       additional: ""
     }
   });
+  const [brandFormStep, setBrandFormStep] = useState(1);
+  const [brandIntelLoading, setBrandIntelLoading] = useState(false);
   const [isAddingIntern, setIsAddingIntern] = useState(false);
   const [isAssigningTask, setIsAssigningTask] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
-  
+
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [newIntern, setNewIntern] = useState({ name: "", email: "", password: "SyncIntern123" });
-  const [newTask, setNewTask] = useState({ 
-    title: "", 
-    description: "", 
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
     internId: "",
     taskType: "General",
     priority: "Medium",
@@ -53,8 +56,8 @@ export default function AdminDashboard() {
     clientProjectId: ""
   });
   const [projectForm, setProjectForm] = useState({
-    title: "", index: "", category: "Verified Partner", 
-    description: "", strategyDetail: "", happinessDetail: "", 
+    title: "", index: "", category: "Verified Partner",
+    description: "", strategyDetail: "", happinessDetail: "",
     tags: "", impact: ""
   });
   const [chatTaskId, setChatTaskId] = useState(null);
@@ -71,7 +74,7 @@ export default function AdminDashboard() {
   const [aiRiskResult, setAiRiskResult] = useState("");
   const [analyzingRisk, setAnalyzingRisk] = useState(false);
   const { getAIInternRecommendation, runAIRiskAnalysis, generateAIStory } = useAuth();
-  
+
   // Credential Management States
   const [isEditingCredentials, setIsEditingCredentials] = useState(false);
   const [selectedCredentialProject, setSelectedCredentialProject] = useState(null);
@@ -105,11 +108,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     const calculateFeasibility = () => {
       const totalTasks = (selectedSteps || []).length + (customTasks || []).length;
-      const totalHours = totalTasks * 2; 
-      
+      const totalHours = totalTasks * 2;
+
       const internTasks = (tasks || []).filter(t => t.internId?._id === newTask.internId && t.status !== 'Complete');
       const currentLoad = internTasks.reduce((acc, curr) => acc + (curr.estimatedHours || 2), 0);
-      
+
       setFeasibility({
         feasible: (totalHours + currentLoad) <= 8,
         totalHours: totalHours + currentLoad,
@@ -135,14 +138,14 @@ export default function AdminDashboard() {
   const handleApproveTask = async (taskId) => {
     const res = await updateTaskStatus(taskId, "Complete", "Task approved by Admin.", true);
     if (res.success) {
-       setStatusMsg({ type: "success", msg: "Task approved and finalized!" });
+      setStatusMsg({ type: "success", msg: "Task approved and finalized!" });
     }
   };
 
   const handleSendChat = async (e) => {
     e.preventDefault();
     if (!chatMsg.trim() || !chatTask) return;
-    
+
     // Placeholder as per structure
     const res = await { success: false };
     if (res.success) {
@@ -212,7 +215,7 @@ export default function AdminDashboard() {
   const handleProjectSubmit = async (e) => {
     e.preventDefault();
     const payload = { ...projectForm, tags: projectForm.tags.split(",").map(t => t.trim()) };
-    
+
     let res;
     if (editingProject) {
       res = await updateProject(editingProject._id, payload);
@@ -309,35 +312,35 @@ export default function AdminDashboard() {
   };
 
   const getWeeklyData = () => {
-     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-     const results = [];
-     const now = new Date();
-     now.setHours(23, 59, 59, 999);
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const results = [];
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
 
-     for (let i = 6; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(now.getDate() - i);
-        const dayStr = d.toDateString();
-        
-        // Count tasks updated or created today
-        const dayTasks = tasks.filter(t => {
-           const updateDate = new Date(t.updatedAt || t.createdAt).toDateString();
-           return updateDate === dayStr;
-        });
-        const completions = dayTasks.filter(t => t.status === "Complete").length;
-        
-        // Calculate activity level (completions + new tasks)
-        const totalActivity = dayTasks.length;
-        const percentage = totalActivity > 0 ? Math.min(Math.round(((completions + (totalActivity * 0.2)) / (totalActivity || 1)) * 100), 100) : 0;
-        
-        results.push({ 
-          label: days[d.getDay()], 
-          val: percentage,
-          height: Math.max(percentage, 5),
-          count: totalActivity
-        });
-     }
-     return results;
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const dayStr = d.toDateString();
+
+      // Count tasks updated or created today
+      const dayTasks = tasks.filter(t => {
+        const updateDate = new Date(t.updatedAt || t.createdAt).toDateString();
+        return updateDate === dayStr;
+      });
+      const completions = dayTasks.filter(t => t.status === "Complete").length;
+
+      // Calculate activity level (completions + new tasks)
+      const totalActivity = dayTasks.length;
+      const percentage = totalActivity > 0 ? Math.min(Math.round(((completions + (totalActivity * 0.2)) / (totalActivity || 1)) * 100), 100) : 0;
+
+      results.push({
+        label: days[d.getDay()],
+        val: percentage,
+        height: Math.max(percentage, 5),
+        count: totalActivity
+      });
+    }
+    return results;
   };
 
   const getInternAwards = () => {
@@ -349,7 +352,7 @@ export default function AdminDashboard() {
       const internTasks = tasks.filter(t => t.internId?._id === intern._id);
       const weekTasks = internTasks.filter(t => new Date(t.updatedAt || t.createdAt) >= oneWeekAgo && t.status === "Complete");
       const monthTasks = internTasks.filter(t => new Date(t.updatedAt || t.createdAt) >= oneMonthAgo && t.status === "Complete");
-      
+
       // Calculate efficiency (completed vs assigned in that period)
       const assignedWeek = internTasks.filter(t => new Date(t.createdAt) >= oneWeekAgo).length;
       const efficiency = assignedWeek > 0 ? (weekTasks.length / assignedWeek) : 0;
@@ -392,19 +395,19 @@ export default function AdminDashboard() {
         <div className="absolute -top-20 -left-20 w-80 h-80 bg-[#F05E23]/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="relative z-10">
           <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex items-center gap-3 mb-4">
-             <div className="w-12 h-0.5 bg-[#F05E23]" />
-           <span className="text-[0.65rem] font-black uppercase tracking-[0.4em] text-[#F05E23]">Admin Workspace</span>
+            <div className="w-12 h-0.5 bg-[#F05E23]" />
+            <span className="text-[0.65rem] font-black uppercase tracking-[0.4em] text-[#F05E23]">Admin Workspace</span>
           </motion.div>
-         <motion.h1 initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-5xl sm:text-7xl font-black tracking-tighter leading-none text-slate-950 dark:text-white">Admin <span className="text-[#F05E23] drop-shadow-[0_0_15px_rgba(240,94,35,0.2)]">Dashboard</span></motion.h1>
-         <p className="mt-6 text-slate-500 dark:text-white/35 font-semibold uppercase tracking-[0.2em] text-[0.6rem] flex items-center gap-3">
-             <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-             </span>
-           Logged in as <span className="text-black dark:text-white">{user?.name}</span>
+          <motion.h1 initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-5xl sm:text-7xl font-black tracking-tighter leading-none text-slate-950 dark:text-white">Admin <span className="text-[#F05E23] drop-shadow-[0_0_15px_rgba(240,94,35,0.2)]">Dashboard</span></motion.h1>
+          <p className="mt-6 text-slate-500 dark:text-white/35 font-semibold uppercase tracking-[0.2em] text-[0.6rem] flex items-center gap-3">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            Logged in as <span className="text-black dark:text-white">{user?.name}</span>
           </p>
         </div>
-        
+
         <div className="flex flex-wrap gap-3 relative z-10">
           <button onClick={() => setIsBroadcasting(true)} className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 transition-all border border-black/5 dark:border-white/5 active:scale-95">
             <Send className="w-3.5 h-3.5 text-[#F05E23]" /> Send Update
@@ -413,7 +416,7 @@ export default function AdminDashboard() {
             <Plus className="w-3.5 h-3.5 text-[#F05E23]" /> Add Project
           </button>
           <button onClick={() => {
-            setClientForm({ 
+            setClientForm({
               name: "", email: "", password: "SyncClient123", projectName: "",
               credentials: {
                 env: "",
@@ -462,9 +465,9 @@ export default function AdminDashboard() {
           { id: "brands", icon: Shield },
           { id: "overview", icon: TrendingUp }
         ].map((tab) => (
-          <button 
-            key={tab.id} 
-            onClick={() => setActiveTab(tab.id)} 
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             className={`px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.65rem] transition-all relative flex items-center gap-3 ${activeTab === tab.id ? "bg-[#F05E23] text-white shadow-lg shadow-[#F05E23]/30" : "bg-white dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-white border border-black/5 dark:border-white/10"}`}
           >
             <tab.icon className="w-4 h-4" />
@@ -482,16 +485,16 @@ export default function AdminDashboard() {
                 const completedTasks = iTasks.filter(t => t.status === "Complete").length;
                 const rate = Math.round((completedTasks / (iTasks.length || 1)) * 100);
                 const pendingTasks = iTasks.filter(t => t.status === "Pending").length;
-                
+
                 return (
                   <motion.div layout initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} key={intern._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-5 rounded-2xl relative group overflow-hidden hover:border-[#F05E23]/20 transition-all">
                     <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
-                       <button onClick={() => openTaskModalForIntern(intern._id)} className="p-2 bg-[#F05E23]/10 text-[#F05E23] rounded-lg hover:bg-[#F05E23] hover:text-white transition-all" title="Assign task">
-                         <Plus className="w-3.5 h-3.5" />
-                       </button>
-                       <button onClick={() => removeIntern(intern._id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => openTaskModalForIntern(intern._id)} className="p-2 bg-[#F05E23]/10 text-[#F05E23] rounded-lg hover:bg-[#F05E23] hover:text-white transition-all" title="Assign task">
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => removeIntern(intern._id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
-                    
+
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#F05E23] to-[#FF8C61] flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
                         {intern.name?.[0]}
@@ -505,22 +508,22 @@ export default function AdminDashboard() {
                     <div className="space-y-3">
                       <div className="bg-slate-50 dark:bg-white/5 rounded-lg p-3">
                         <div className="flex justify-between items-center mb-1.5">
-                           <span className="text-[0.55rem] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tight">Progress</span>
-                           <span className="text-[#F05E23] font-black text-xs">{rate}%</span>
+                          <span className="text-[0.55rem] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tight">Progress</span>
+                          <span className="text-[#F05E23] font-black text-xs">{rate}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
-                           <motion.div initial={{ width: 0 }} animate={{ width: `${rate}%` }} className="h-full bg-[#F05E23]" />
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${rate}%` }} className="h-full bg-[#F05E23]" />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
                         <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
-                           <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Total</span>
-                           <span className="text-base font-black text-slate-900 dark:text-white">{iTasks.length}</span>
+                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Total</span>
+                          <span className="text-base font-black text-slate-900 dark:text-white">{iTasks.length}</span>
                         </div>
                         <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
-                           <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Done</span>
-                           <span className="text-base font-black text-green-600 dark:text-green-400">{completedTasks}</span>
+                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Done</span>
+                          <span className="text-base font-black text-green-600 dark:text-green-400">{completedTasks}</span>
                         </div>
                       </div>
 
@@ -591,7 +594,7 @@ export default function AdminDashboard() {
 
                           {task.note && (
                             <p className="text-[0.6rem] text-slate-500 dark:text-slate-400 italic mb-2 line-clamp-1 border-l-2 border-[#F05E23]/30 pl-2">
-                               &quot;{task.note}&quot;
+                              &quot;{task.note}&quot;
                             </p>
                           )}
 
@@ -650,437 +653,371 @@ export default function AdminDashboard() {
                 <UserPlus className="w-4 h-4" /> Add Client
               </button>
             </div>
-            
+
             <div className="space-y-3">
-               {adminClientProjects.map((project) => (
-                 !expandedBrand || expandedBrand !== project._id ? (
-                   <motion.button
-                     key={project._id}
-                     onClick={() => setExpandedBrand(project._id)}
-                     className="w-full text-left bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between hover:border-[#F05E23]/30 transition-all group"
-                   >
-                     <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-lg bg-[#F05E23]/10 flex items-center justify-center">
-                         <Briefcase className="w-5 h-5 text-[#F05E23]" />
-                       </div>
-                       <div className="flex-1">
-                         <h4 className="font-black text-sm uppercase tracking-tight text-slate-900 dark:text-white group-hover:text-[#F05E23]">{project.projectName}</h4>
-                         <p className="text-[0.6rem] text-slate-500 dark:text-white/40 uppercase tracking-tight mt-0.5">Status: {project.status}</p>
-                       </div>
-                     </div>
-                     <div className="flex items-center gap-3">
-                       <span className={`text-[0.5rem] font-black uppercase px-3 py-1 rounded-full ${
-                         project.status === 'Active' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-500'
-                       }`}>{project.status}</span>
-                       <Plus className="w-4 h-4 text-slate-400 group-hover:text-[#F05E23] transition-colors" />
-                     </div>
-                   </motion.button>
-                 ) : (
-                   <motion.div
-                     key={project._id}
-                     layout
-                     className="bg-white dark:bg-[#0D0D14] border border-black/5 dark:border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/5"
-                   >
-                     <button
-                       onClick={() => setExpandedBrand(null)}
-                       className="w-full text-left bg-white dark:bg-[#0D0D14] border-b border-black/5 dark:border-white/5 p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/2 transition-all"
-                     >
-                       <div className="flex items-center gap-4">
-                         <div className="w-10 h-10 rounded-lg bg-[#F05E23]/10 flex items-center justify-center">
-                           <Briefcase className="w-5 h-5 text-[#F05E23]" />
-                         </div>
-                         <div>
-                           <h4 className="font-black text-sm uppercase tracking-tight text-[#F05E23]">{project.projectName}</h4>
-                         </div>
-                       </div>
-                       <X className="w-4 h-4 text-slate-400" />
-                     </button>
-                     <div className="p-10 border-b border-black/5 dark:border-white/5 flex flex-col lg:flex-row justify-between gap-10">
-                       <div className="space-y-4 max-w-2xl">
-                         <span className="px-4 py-1.5 rounded-full bg-green-500/10 text-green-500 text-[9px] font-black uppercase flex items-center gap-2 w-fit">
-                           <Activity className="w-3 h-3 animate-pulse" /> {project.status}
-                         </span>
-                         <div className="flex justify-between items-start gap-4">
-                           <div>
-                              <h4 className="text-2xl font-black uppercase tracking-tighter italic">{project.projectName}</h4>
-                              <p className="text-xs text-slate-500 dark:text-white/40 mt-3 leading-relaxed">{project.description}</p>
-                              {project.googleDriveLink && (
-                                <a href={project.googleDriveLink} target="_blank" className="inline-flex items-center gap-2 mt-4 text-[0.6rem] font-black uppercase tracking-widest text-[#4285F4] hover:underline">
-                                  <ExternalLink className="w-3.5 h-3.5" /> Drive Folder
-                                </a>
-                              )}
-                            </div>
-                           <div className="flex gap-2 shrink-0">
-                             <button 
-                                onClick={() => {
-                                  setSelectedCredentialProject(project);
-                                  setCredentialForm(project.credentials || {
-                                    env: "",
-                                    gmail: { email: "", password: "" },
-                                    vercel: { email: "", password: "" },
-                                    github: "",
-                                    additional: ""
-                                  });
-                                  setIsEditingCredentials(true);
-                                }}
-                                className="p-3 bg-green-500/10 text-green-500 rounded-xl hover:bg-green-500 hover:text-white transition-all shrink-0"
-                                title="Access details"
-                             >
-                                <Shield className="w-4 h-4" />
-                             </button>
-                             <button 
-                                onClick={() => {
-                                  const url = `${window.location.origin}/brands/${project.publicId}`;
-                                  navigator.clipboard.writeText(url);
-                                  setStatusMsg({ type: "success", msg: "Share link copied." });
-                                }}
-                                className="p-3 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition-all shrink-0"
-                                title="Copy Share Link"
-                             >
-                                <ExternalLink className="w-4 h-4" />
-                             </button>
-                             <button 
-                                onClick={async () => {
-                                  setAnalyzingRisk(true);
-                                  const res = await runAIRiskAnalysis(project._id);
-                                  if (res.success) setAiRiskResult(res.riskAnalysis);
-                                  setAnalyzingRisk(false);
-                                }}
-                                disabled={analyzingRisk}
-                                className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shrink-0"
-                                title="Predictive Risk Analysis"
-                             >
-                                <AlertCircle className={`w-4 h-4 ${analyzingRisk ? 'animate-pulse' : ''}`} />
-                             </button>
-                             <button 
-                                onClick={async () => {
-                                  const res = await generateAIStory(project._id);
-                                  if (res.success) setStatusMsg({ type: 'success', msg: "Narrative Updated." });
-                                }}
-                                className="p-3 bg-orange-500/10 text-orange-500 rounded-xl hover:bg-orange-500 hover:text-white transition-all shrink-0"
-                                title="Regenerate AI Story"
-                             >
-                                <Zap className="w-4 h-4" />
-                             </button>
-                             <button 
-                                onClick={() => {
-                                  if (confirm("Delete this client project?")) {
-                                    if (purgeClientProject) {
-                                      purgeClientProject(project._id);
-                                      setExpandedBrand(null);
-                                    }
-                                  }
-                                }}
-                                className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shrink-0"
-                             >
-                                <Trash2 className="w-4 h-4" />
-                             </button>
-                           </div>
-                         </div>
-                       </div>
-                       <div className="lg:w-96 flex flex-col gap-4">
-                          <div className="flex-1 bg-black/5 dark:bg-black/20 rounded-3xl p-6 h-40 overflow-y-auto space-y-4 scrollbar-hide text-[10px]">
-                             {project.discussions?.slice(-3).map((msg, i) => (
-                               <div key={i} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
-                                 <span className="text-[7px] font-black uppercase opacity-30 mb-1">{msg.sender}</span>
-                                 <p className={`p-3 rounded-2xl ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white/10 rounded-tl-none'}`}>
-                                   {msg.content}
-                                 </p>
-                               </div>
-                             ))}
+              {adminClientProjects.map((project) => (
+                !expandedBrand || expandedBrand !== project._id ? (
+                  <motion.button
+                    key={project._id}
+                    onClick={() => setExpandedBrand(project._id)}
+                    className="w-full text-left bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between hover:border-[#F05E23]/30 transition-all group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-[#F05E23]/10 flex items-center justify-center">
+                        <Briefcase className="w-5 h-5 text-[#F05E23]" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-black text-sm uppercase tracking-tight text-slate-900 dark:text-white group-hover:text-[#F05E23]">{project.projectName}</h4>
+                        <p className="text-[0.6rem] text-slate-500 dark:text-white/40 uppercase tracking-tight mt-0.5">Status: {project.status}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[0.5rem] font-black uppercase px-3 py-1 rounded-full ${project.status === 'Active' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-500'
+                        }`}>{project.status}</span>
+                      <Plus className="w-4 h-4 text-slate-400 group-hover:text-[#F05E23] transition-colors" />
+                    </div>
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key={project._id}
+                    layout
+                    className="bg-white dark:bg-[#0D0D14] border border-black/5 dark:border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/5"
+                  >
+                    <button
+                      onClick={() => setExpandedBrand(null)}
+                      className="w-full text-left bg-white dark:bg-[#0D0D14] border-b border-black/5 dark:border-white/5 p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/2 transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-[#F05E23]/10 flex items-center justify-center">
+                          <Briefcase className="w-5 h-5 text-[#F05E23]" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-sm uppercase tracking-tight text-[#F05E23]">{project.projectName}</h4>
+                        </div>
+                      </div>
+                      <X className="w-4 h-4 text-slate-400" />
+                    </button>
+                    <div className="p-10 border-b border-black/5 dark:border-white/5 flex flex-col lg:flex-row justify-between gap-10">
+                      <div className="space-y-4 max-w-2xl">
+                        <span className="px-4 py-1.5 rounded-full bg-green-500/10 text-green-500 text-[9px] font-black uppercase flex items-center gap-2 w-fit">
+                          <Activity className="w-3 h-3 animate-pulse" /> {project.status}
+                        </span>
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <h4 className="text-2xl font-black uppercase tracking-tighter italic">{project.projectName}</h4>
+                            <p className="text-xs text-slate-500 dark:text-white/40 mt-3 leading-relaxed">{project.description}</p>
+                            {project.googleDriveLink && (
+                              <a href={project.googleDriveLink} target="_blank" className="inline-flex items-center gap-2 mt-4 text-[0.6rem] font-black uppercase tracking-widest text-[#4285F4] hover:underline">
+                                <ExternalLink className="w-3.5 h-3.5" /> Drive Folder
+                              </a>
+                            )}
                           </div>
-                          <input 
-                             type="text" 
-                             placeholder="Message for the client..."
-                             onKeyPress={(e) => {
-                               if (e.key === 'Enter') {
-                                 updateClientProject(project._id, { message: e.target.value });
-                                 e.target.value = "";
-                               }
-                             }}
-                             className="w-full bg-slate-50 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-[0.7rem] font-black uppercase tracking-widest focus:outline-none focus:border-[#F05E23]"
-                          />
-                       </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => {
+                                setSelectedCredentialProject(project);
+                                setCredentialForm(project.credentials || {
+                                  env: "",
+                                  gmail: { email: "", password: "" },
+                                  vercel: { email: "", password: "" },
+                                  github: "",
+                                  additional: ""
+                                });
+                                setIsEditingCredentials(true);
+                              }}
+                              className="p-3 bg-green-500/10 text-green-500 rounded-xl hover:bg-green-500 hover:text-white transition-all shrink-0"
+                              title="Access details"
+                            >
+                              <Shield className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                const url = `${window.location.origin}/brands/${project.publicId}`;
+                                navigator.clipboard.writeText(url);
+                                setStatusMsg({ type: "success", msg: "Share link copied." });
+                              }}
+                              className="p-3 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition-all shrink-0"
+                              title="Copy Share Link"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                setAnalyzingRisk(true);
+                                const res = await runAIRiskAnalysis(project._id);
+                                if (res.success) setAiRiskResult(res.riskAnalysis);
+                                setAnalyzingRisk(false);
+                              }}
+                              disabled={analyzingRisk}
+                              className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shrink-0"
+                              title="Predictive Risk Analysis"
+                            >
+                              <AlertCircle className={`w-4 h-4 ${analyzingRisk ? 'animate-pulse' : ''}`} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                const res = await generateAIStory(project._id);
+                                if (res.success) setStatusMsg({ type: 'success', msg: "Narrative Updated." });
+                              }}
+                              className="p-3 bg-orange-500/10 text-orange-500 rounded-xl hover:bg-orange-500 hover:text-white transition-all shrink-0"
+                              title="Regenerate AI Story"
+                            >
+                              <Zap className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm("Delete this client project?")) {
+                                  if (purgeClientProject) {
+                                    purgeClientProject(project._id);
+                                    setExpandedBrand(null);
+                                  }
+                                }
+                              }}
+                              className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="px-10 py-8 bg-slate-50 dark:bg-white/2 border-t border-black/5 dark:border-white/5 grid grid-cols-1 md:grid-cols-3 gap-8">
-                         <div className="md:col-span-1 space-y-4">
-                            <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-[#F05E23] italic">Project Parameters</h5>
-                            <div className="space-y-4">
-                               <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">System Access Email</label>
-                               <input 
-                                 type="email" 
-                                 value={newIntern.email}
-                                 onChange={e => setNewIntern({ ...newIntern, email: e.target.value })}
-                                 placeholder="intern@sync.com" 
-                                 className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none font-black uppercase text-[0.7rem] focus:border-[#F05E23] transition-all" 
-                               />
+                      <div className="lg:w-96 flex flex-col gap-4">
+                        <div className="flex-1 bg-black/5 dark:bg-black/20 rounded-3xl p-6 h-40 overflow-y-auto space-y-4 scrollbar-hide text-[10px]">
+                          {project.discussions?.slice(-3).map((msg, i) => (
+                            <div key={i} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
+                              <span className="text-[7px] font-black uppercase opacity-30 mb-1">{msg.sender}</span>
+                              <p className={`p-3 rounded-2xl ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white/10 rounded-tl-none'}`}>
+                                {msg.content}
+                              </p>
                             </div>
-                            <div className="space-y-4">
-                               <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Initial Password</label>
-                               <input 
-                                 type="text" 
-                                 value={newIntern.password}
-                                 onChange={e => setNewIntern({ ...newIntern, password: e.target.value })}
-                                 className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none font-black uppercase text-[0.7rem] focus:border-[#F05E23] transition-all" 
-                               />
-                            </div>
-                            <div className="space-y-4">
-                               <div className="space-y-1">
-                                  <label className="text-[0.55rem] font-black uppercase text-slate-400">Project Type</label>
-                                  <input 
-                                     type="text" 
-                                     defaultValue={project.projectType || "Custom Web App"} 
-                                     onBlur={e => updateClientProject(project._id, { projectType: e.target.value })}
-                                     className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-xl py-3 px-4 text-[0.7rem] font-black uppercase tracking-widest outline-none focus:border-[#F05E23]"
-                                  />
-                               </div>
-                               <div className="space-y-1">
-                                  <label className="text-[0.55rem] font-black uppercase text-slate-400">Est. Completion</label>
-                                  <input 
-                                     type="date" 
-                                     defaultValue={project.estimatedCompletionDate ? new Date(project.estimatedCompletionDate).toISOString().split('T')[0] : ""} 
-                                     onBlur={e => updateClientProject(project._id, { estimatedCompletionDate: e.target.value })}
-                                     className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-xl py-3 px-4 text-[0.7rem] font-black uppercase tracking-widest outline-none focus:border-[#F05E23]"
-                                  />
-                               </div>
-                            </div>
-                         </div>
-                         <div className="md:col-span-2 space-y-4">
-                            <div className="flex items-center justify-between">
-                               <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-[#F05E23] italic">Standard Operating Procedure (SOP)</h5>
-                               <FileText className="w-4 h-4 text-slate-300" />
-                            </div>
-                            <textarea 
-                               rows={4}
-                               defaultValue={project.sop}
-                               onBlur={e => updateClientProject(project._id, { sop: e.target.value })}
-                               placeholder="Enter custom SOP for this brand..."
-                               className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-[2rem] p-6 text-[0.65rem] font-medium leading-relaxed outline-none focus:border-[#F05E23] scrollbar-hide"
+                          ))}
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Message for the client..."
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              updateClientProject(project._id, { message: e.target.value });
+                              e.target.value = "";
+                            }
+                          }}
+                          className="w-full bg-slate-50 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-[0.7rem] font-black uppercase tracking-widest focus:outline-none focus:border-[#F05E23]"
+                        />
+                      </div>
+                    </div>
+                    <div className="px-10 py-12 bg-slate-50 dark:bg-white/2 border-t border-black/5 dark:border-white/5 space-y-12">
+                      <div className="bg-white dark:bg-black/20 rounded-[3rem] p-10 border border-black/5 dark:border-white/5">
+                        <div className="flex items-center justify-between mb-8">
+                          <h3 className="text-xl font-black uppercase tracking-tight italic">Project <span className="text-[#F05E23]">Parameters</span></h3>
+                          <div className="flex gap-4">
+                              <button 
+                                  onClick={async () => {
+                                      if (confirm("Generate custom AI Roadmap based on features? This will overwrite the current plan.")) {
+                                          setIsGeneratingRoadmap(true);
+                                          await generateRoadmap(project._id);
+                                          setIsGeneratingRoadmap(false);
+                                          setStatusMsg({ type: "success", msg: "AI Roadmap Deployed." });
+                                      }
+                                  }}
+                                  disabled={isGeneratingRoadmap}
+                                  className="px-6 py-3 bg-[#F05E23] text-white rounded-2xl text-[0.6rem] font-black uppercase tracking-widest shadow-lg shadow-[#F05E23]/20 hover:scale-105 transition-all disabled:opacity-50"
+                              >
+                                  <Zap className={`w-4 h-4 inline-block mr-2 ${isGeneratingRoadmap ? 'animate-spin' : ''}`} /> {isGeneratingRoadmap ? 'Deploying...' : 'AI Roadmap'}
+                              </button>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                          <div className="space-y-2">
+                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">System Access Email</span>
+                            <input
+                              type="text"
+                              defaultValue={project.systemAccessEmail || "intern@sync.com"}
+                              onBlur={(e) => updateClientProject(project._id, { systemAccessEmail: e.target.value })}
+                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]/30 transition-all"
                             />
-                         </div>
-                      </div>
-
-                      <div className="px-10 py-8 border-t border-black/5 dark:border-white/5 grid grid-cols-1 md:grid-cols-2 gap-10">
-                         <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                               <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-blue-500 italic">Requirements Briefing</h5>
-                               <button 
-                                  onClick={() => updateClientProject(project._id, { requirements: [...(project.requirements || []), { content: "New requirement", status: "Pending" }] })}
-                                  className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all"
-                               >
-                                  <Plus className="w-3 h-3" />
-                               </button>
-                            </div>
-                            <div className="space-y-3">
-                               {(project.requirements || []).map((req, i) => (
-                                  <div key={i} className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-4 rounded-2xl border border-black/5 dark:border-white/5">
-                                     <input 
-                                        type="text" 
-                                        defaultValue={req.content} 
-                                        onBlur={e => {
-                                           const newReqs = [...project.requirements];
-                                           newReqs[i].content = e.target.value;
-                                           updateClientProject(project._id, { requirements: newReqs });
-                                        }}
-                                        className="flex-1 bg-transparent text-[0.7rem] font-bold outline-none"
-                                     />
-                                     <select 
-                                        defaultValue={req.status}
-                                        onChange={e => {
-                                           const newReqs = [...project.requirements];
-                                           newReqs[i].status = e.target.value;
-                                           updateClientProject(project._id, { requirements: newReqs });
-                                        }}
-                                        className="bg-black/10 text-[0.5rem] font-black uppercase px-2 py-1 rounded-lg outline-none"
-                                     >
-                                        {["Pending", "Approved", "In Development"].map(s => <option key={s} value={s} className="bg-white text-black">{s}</option>)}
-                                     </select>
-                                     <button 
-                                        onClick={() => updateClientProject(project._id, { requirements: project.requirements.filter((_, idx) => idx !== i) })}
-                                        className="text-red-500/30 hover:text-red-500 transition-all"
-                                     >
-                                        <Trash2 className="w-3 h-3" />
-                                     </button>
-                                  </div>
-                               ))}
-                            </div>
-                         </div>
-                         <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                               <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-green-500 italic">Feature Roadmap</h5>
-                               <button 
-                                  onClick={() => updateClientProject(project._id, { features: [...(project.features || []), { title: "New Feature", priority: "Must-have" }] })}
-                                  className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all"
-                               >
-                                  <Plus className="w-3 h-3" />
-                               </button>
-                            </div>
-                            <div className="space-y-3">
-                               {(project.features || []).map((feat, i) => (
-                                  <div key={i} className="flex items-center gap-3 bg-slate-50 dark:bg-black/20 p-4 rounded-2xl border border-black/5 dark:border-white/5">
-                                     <input 
-                                        type="text" 
-                                        defaultValue={feat.title} 
-                                        onBlur={e => {
-                                           const newFeats = [...project.features];
-                                           newFeats[i].title = e.target.value;
-                                           updateClientProject(project._id, { features: newFeats });
-                                        }}
-                                        className="flex-1 bg-transparent text-[0.7rem] font-bold outline-none"
-                                     />
-                                     <select 
-                                        defaultValue={feat.priority}
-                                        onChange={e => {
-                                           const newFeats = [...project.features];
-                                           newFeats[i].priority = e.target.value;
-                                           updateClientProject(project._id, { features: newFeats });
-                                        }}
-                                        className="bg-black/10 text-[0.5rem] font-black uppercase px-2 py-1 rounded-lg outline-none"
-                                     >
-                                        {["Must-have", "Should-have", "Could-have"].map(s => <option key={s} value={s} className="bg-white text-black">{s}</option>)}
-                                     </select>
-                                     <button 
-                                        onClick={() => updateClientProject(project._id, { features: project.features.filter((_, idx) => idx !== i) })}
-                                        className="text-red-500/30 hover:text-red-500 transition-all"
-                                     >
-                                        <Trash2 className="w-3 h-3" />
-                                     </button>
-                                  </div>
-                               ))}
-                            </div>
-                         </div>
-                      </div>
-
-                      <div className="p-8 bg-slate-50 dark:bg-white/2 border-t border-black/5 dark:border-white/5">
-                        <div className="flex items-center gap-6 mb-8">
-                          <h5 className="text-[0.6rem] font-black uppercase tracking-[0.4em] text-[#F05E23] flex items-center gap-3">
-                            <ClipboardList className="w-4 h-4" /> Plan
-                          </h5>
-                          <div className="flex gap-3">
-                             <button 
-                               onClick={async () => {
-                                  if (confirm("Generate custom AI Roadmap based on features? This will overwrite the current plan.")) {
-                                     setIsGeneratingRoadmap(true);
-                                     await generateRoadmap(project._id);
-                                     setIsGeneratingRoadmap(false);
-                                     setStatusMsg({ type: "success", msg: "AI Roadmap Deployed." });
-                                  }
-                               }}
-                               disabled={isGeneratingRoadmap}
-                               className="px-6 py-2 bg-[#F05E23] text-white rounded-xl text-[0.6rem] font-black uppercase tracking-widest flex items-center gap-2 hover:opacity-80 transition-all shadow-lg shadow-[#F05E23]/20 disabled:opacity-50"
-                             >
-                               <Zap className={`w-3 h-3 ${isGeneratingRoadmap ? 'animate-spin' : ''}`} /> {isGeneratingRoadmap ? 'Generating...' : 'AI Roadmap'}
-                             </button>
-                             <button 
-                               onClick={() => {
-                                  const title = prompt("New step title:");
-                                  if (title) {
-                                     updateClientProject(project._id, { workflow: [...project.workflow, { title, description: "Short description", status: "Pending" }] });
-                                  }
-                               }}
-                               className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl text-[0.6rem] font-black uppercase tracking-widest flex items-center gap-2 hover:opacity-80 transition-all shadow-lg"
-                             >
-                               <Plus className="w-3 h-3" /> Add Step
-                             </button>
+                          </div>
+                          <div className="space-y-2">
+                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Initial Password</span>
+                            <input
+                              type="text"
+                              defaultValue={project.systemAccessPassword || "SyncIntern123"}
+                              onBlur={(e) => updateClientProject(project._id, { systemAccessPassword: e.target.value })}
+                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]/30 transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Project Type</span>
+                            <input
+                              type="text"
+                              defaultValue={project.projectType || "Custom Web App"}
+                              onBlur={(e) => updateClientProject(project._id, { projectType: e.target.value })}
+                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-[#F05E23] outline-none focus:border-[#F05E23]/30 transition-all uppercase italic"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Est. Completion</span>
+                            <input
+                              type="date"
+                              defaultValue={project.estimatedCompletionDate ? new Date(project.estimatedCompletionDate).toISOString().split('T')[0] : ""}
+                              onChange={(e) => updateClientProject(project._id, { estimatedCompletionDate: e.target.value })}
+                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]/30 transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Assigned Unit</span>
+                            <select
+                                value={typeof project.assignedIntern === 'object' ? project.assignedIntern?._id : (project.assignedIntern || "")}
+                                onChange={(e) => updateClientProject(project._id, { assignedIntern: e.target.value })}
+                                className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-blue-500 outline-none focus:border-blue-500/30 transition-all appearance-none"
+                            >
+                                <option value="">Unassigned</option>
+                                {interns.map(intern => (
+                                    <option key={intern._id} value={intern._id}>{intern.name}</option>
+                                ))}
+                            </select>
                           </div>
                         </div>
 
-                       <div className="overflow-x-auto">
-                         <table className="w-full border-separate border-spacing-y-4">
-                           <thead>
-                             <tr className="text-[0.55rem] font-black uppercase tracking-[0.3em] text-slate-400">
-                               <th className="text-left px-6 py-3">Order</th>
-                               <th className="text-left px-6 py-3">Step</th>
-                               <th className="text-center px-6 py-3">Status</th>
-                               <th className="text-left px-6 py-3">Notes</th>
-                               <th className="px-6 py-3"></th>
-                             </tr>
-                           </thead>
-                           <tbody>
-                             {project.workflow.map((step, idx) => (
-                               <tr key={idx} className="group bg-white dark:bg-[#12121A] border border-black/5 dark:border-white/5 rounded-3xl transition-all hover:shadow-xl hover:shadow-black/5">
-                                 <td className="px-6 py-8 rounded-l-[2rem]">
-                                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all ${step.status === 'Complete' ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-500/20' : (step.status === 'In Progress' ? 'bg-[#F05E23]/10 border-[#F05E23]/30 text-[#F05E23]' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400')}`}>
-                                     {step.status === 'Complete' ? <CheckCircle2 className="w-6 h-6" /> : (step.status === 'In Progress' ? <Activity className="w-6 h-6 animate-pulse" /> : <Clock className="w-6 h-6" />)}
-                                   </div>
-                                 </td>
-                                 <td className="px-6 py-8 max-w-sm">
-                                   <input 
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 pt-8 border-t border-black/5 dark:border-white/5">
+                          <div className="space-y-2">
+                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Standard Operating Procedure (SOP)</span>
+                            <textarea
+                              defaultValue={project.sop}
+                              rows={4}
+                              onBlur={(e) => updateClientProject(project._id, { sop: e.target.value })}
+                              placeholder="Enter custom SOP for this brand..."
+                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-3xl py-6 px-8 text-xs font-medium text-slate-700 dark:text-white/80 outline-none focus:border-[#F05E23]/30 transition-all resize-none scrollbar-hide"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between px-6 mb-6">
+                          <h4 className="text-xl font-black uppercase italic tracking-tight">Feature <span className="text-[#F05E23]">Roadmap</span></h4>
+                          <button 
+                              onClick={() => {
+                                  const newWF = [...project.workflow, { title: "New Step", description: "Step description...", status: "Pending" }];
+                                  updateClientProject(project._id, { workflow: newWF });
+                              }}
+                              className="p-3 bg-black text-white rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 text-[0.6rem] font-black uppercase tracking-widest px-6"
+                          >
+                              <Plus className="w-4 h-4" /> Add Step
+                          </button>
+                        </div>
+
+                        <div className="overflow-hidden bg-white dark:bg-[#0D0D14] border border-black/5 dark:border-white/5 rounded-[3rem]">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50 dark:bg-white/5">
+                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5">Order</th>
+                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5">Step</th>
+                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5 text-center">Status</th>
+                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5">Assigned Unit</th>
+                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5">Notes</th>
+                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5"></th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                              {project.workflow.map((step, idx) => (
+                                <tr key={idx} className="group hover:bg-slate-50/50 dark:hover:bg-white/2 transition-colors">
+                                  <td className="px-8 py-8">
+                                    <span className="text-xs font-black italic opacity-20">{idx + 1}</span>
+                                  </td>
+                                  <td className="px-8 py-8 max-w-sm">
+                                    <input
                                       type="text"
                                       defaultValue={step.title}
                                       onBlur={(e) => {
-                                         const newWF = [...project.workflow];
-                                         newWF[idx].title = e.target.value;
-                                         updateClientProject(project._id, { workflow: newWF });
+                                        const newWF = [...project.workflow];
+                                        newWF[idx].title = e.target.value;
+                                        updateClientProject(project._id, { workflow: newWF });
                                       }}
                                       className="w-full bg-transparent text-sm font-black uppercase text-slate-900 dark:text-white outline-none focus:text-[#F05E23] transition-colors mb-2"
-                                   />
-                                   <textarea
+                                    />
+                                    <textarea
                                       defaultValue={step.description}
                                       onBlur={(e) => {
-                                         const newWF = [...project.workflow];
-                                         newWF[idx].description = e.target.value;
-                                         updateClientProject(project._id, { workflow: newWF });
+                                        const newWF = [...project.workflow];
+                                        newWF[idx].description = e.target.value;
+                                        updateClientProject(project._id, { workflow: newWF });
                                       }}
-                                      rows={1}
+                                      rows={2}
                                       className="w-full bg-transparent text-[0.65rem] text-slate-500 dark:text-white/40 font-medium leading-relaxed outline-none focus:text-slate-700 dark:focus:text-white transition-colors resize-none scrollbar-hide"
-                                   />
-                                 </td>
-                                 <td className="px-6 py-8">
-                                    <div className="flex items-center justify-center gap-2 bg-black/3 dark:bg-white/3 p-2 rounded-2xl border border-black/5 dark:border-white/5">
-                                       {["Pending", "In Progress", "Complete"].map((s) => (
-                                         <button
-                                           key={s}
-                                           onClick={() => {
-                                              const newWF = [...project.workflow];
-                                              newWF[idx].status = s;
-                                              updateClientProject(project._id, { workflow: newWF });
-                                           }}
-                                           className={`px-4 py-2 rounded-xl text-[0.5rem] font-black uppercase tracking-widest transition-all ${step.status === s ? (s === 'Complete' ? 'bg-green-500 text-white' : (s === 'In Progress' ? 'bg-[#F05E23] text-white' : 'bg-slate-400 text-white')) : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
-                                         >
-                                           {s}
-                                         </button>
-                                       ))}
-                                    </div>
-                                 </td>
-                                 <td className="px-6 py-8 min-w-50">
-                                    <div className="relative group/input">
-                                       <input 
-                                          type="text"
-                                          defaultValue={step.adminNote}
-                                          onBlur={(e) => {
-                                             const newWF = [...project.workflow];
-                                             newWF[idx].adminNote = e.target.value;
-                                             updateClientProject(project._id, { workflow: newWF });
+                                    />
+                                  </td>
+                                  <td className="px-8 py-8">
+                                    <div className="flex items-center justify-center gap-2 bg-black/3 dark:bg-white/3 p-2 rounded-2xl border border-black/5 dark:border-white/5 w-fit mx-auto">
+                                      {["Pending", "In Progress", "Complete"].map((s) => (
+                                        <button
+                                          key={s}
+                                          onClick={() => {
+                                            const newWF = [...project.workflow];
+                                            newWF[idx].status = s;
+                                            updateClientProject(project._id, { workflow: newWF });
                                           }}
-                                          placeholder="Add a note..."
-                                          className="w-full bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl py-4 px-6 text-[0.65rem] text-slate-800 dark:text-white italic font-medium outline-none focus:border-[#F05E23]/30"
-                                       />
-                                       <Activity className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#F05E23] opacity-30 group-focus-within/input:opacity-100 transition-opacity" />
+                                          className={`px-4 py-2 rounded-xl text-[0.5rem] font-black uppercase tracking-widest transition-all ${step.status === s ? (s === 'Complete' ? 'bg-green-500 text-white' : (s === 'In Progress' ? 'bg-[#F05E23] text-white' : 'bg-slate-400 text-white')) : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+                                        >
+                                          {s}
+                                        </button>
+                                      ))}
                                     </div>
-                                 </td>
-                                 <td className="px-6 py-8 rounded-r-[2rem]">
-                                    <button 
-                                       onClick={() => {
-                                          if (confirm("Delete this step?")) {
-                                             const newWF = project.workflow.filter((_, i) => i !== idx);
-                                             updateClientProject(project._id, { workflow: newWF });
-                                          }
-                                       }}
-                                       className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
+                                  </td>
+                                  <td className="px-8 py-8">
+                                    <select
+                                      value={step.assignedIntern || ""}
+                                      onChange={(e) => {
+                                        const newWF = [...project.workflow];
+                                        newWF[idx].assignedIntern = e.target.value || null;
+                                        updateClientProject(project._id, { workflow: newWF });
+                                      }}
+                                      className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl py-2 px-4 text-[0.6rem] font-black uppercase tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-600 dark:text-white/60 w-full"
                                     >
-                                       <X className="w-4 h-4" />
+                                      <option value="">Unassigned</option>
+                                      {interns.map(i => (
+                                        <option key={i._id} value={i._id}>{i.name}</option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="px-8 py-8 min-w-50">
+                                    <div className="relative group/input">
+                                      <textarea
+                                        defaultValue={step.adminNote}
+                                        onBlur={(e) => {
+                                          const newWF = [...project.workflow];
+                                          newWF[idx].adminNote = e.target.value;
+                                          updateClientProject(project._id, { workflow: newWF });
+                                        }}
+                                        rows={2}
+                                        placeholder="Add a note..."
+                                        className="w-full bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl py-4 px-6 text-[0.65rem] text-slate-800 dark:text-white italic font-medium outline-none focus:border-[#F05E23]/30 transition-all resize-none scrollbar-hide"
+                                      />
+                                      <Activity className="absolute right-4 bottom-4 w-3.5 h-3.5 text-[#F05E23] opacity-30 group-focus-within/input:opacity-100 transition-opacity" />
+                                    </div>
+                                  </td>
+                                  <td className="px-8 py-8 text-right">
+                                    <button
+                                      onClick={() => {
+                                        if (confirm("Delete this step?")) {
+                                          const newWF = project.workflow.filter((_, i) => i !== idx);
+                                          updateClientProject(project._id, { workflow: newWF });
+                                        }
+                                      }}
+                                      className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
                                     </button>
-                                 </td>
-                               </tr>
-                             ))}
-                           </tbody>
-                         </table>
-                       </div>
-                     </div>
-                   </motion.div>
-                 )
-               ))}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              ))}
             </div>
           </div>
         )}
@@ -1124,9 +1061,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-[0.5rem] font-black uppercase px-3 py-1 rounded-full ${
-                      leave.status === 'Approved' ? 'bg-green-500/10 text-green-500' : (leave.status === 'Rejected' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-600')
-                    }`}>{leave.status}</span>
+                    <span className={`text-[0.5rem] font-black uppercase px-3 py-1 rounded-full ${leave.status === 'Approved' ? 'bg-green-500/10 text-green-500' : (leave.status === 'Rejected' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-600')
+                      }`}>{leave.status}</span>
                     <Plus className="w-4 h-4 text-slate-400 group-hover:text-[#F05E23] transition-colors" />
                   </div>
                 </motion.button>
@@ -1175,7 +1111,7 @@ export default function AdminDashboard() {
                     </div>
                     {leave.status === 'Pending' && (
                       <div className="flex gap-4 pt-4 border-t border-black/5 dark:border-white/10">
-                        <button 
+                        <button
                           onClick={() => {
                             approveLeave(leave._id, "Approved");
                             setExpandedHoliday(null);
@@ -1184,7 +1120,7 @@ export default function AdminDashboard() {
                         >
                           Grant
                         </button>
-                        <button 
+                        <button
                           onClick={() => {
                             approveLeave(leave._id, "Rejected");
                             setExpandedHoliday(null);
@@ -1209,30 +1145,30 @@ export default function AdminDashboard() {
               {/* Weekly Analytics */}
               <div className="lg:col-span-7 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3.5rem] relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-10 opacity-5">
-                   <TrendingUp className="w-40 h-40" />
+                  <TrendingUp className="w-40 h-40" />
                 </div>
                 <div className="flex items-center justify-between mb-10 relative z-10">
-                   <div>
-                      <h3 className="text-2xl font-black uppercase tracking-tight italic">Operational <span className="text-[#F05E23]">Velocity</span></h3>
-                      <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest mt-1">7-Day execution matrix</p>
-                   </div>
-                   <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 px-4 py-2 rounded-2xl">
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-[0.6rem] font-black uppercase text-green-500 tracking-widest">Live Sync</span>
-                   </div>
+                  <div>
+                    <h3 className="text-2xl font-black uppercase tracking-tight italic">Operational <span className="text-[#F05E23]">Velocity</span></h3>
+                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest mt-1">7-Day execution matrix</p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 px-4 py-2 rounded-2xl">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[0.6rem] font-black uppercase text-green-500 tracking-widest">Live Sync</span>
+                  </div>
                 </div>
                 <div className="h-64 flex items-end gap-4 px-2 relative z-10">
                   {weeklyData.map((day, i) => (
                     <div key={i} className="flex-1 group relative h-full flex flex-col justify-end">
                       <div className="flex-1 bg-slate-50 dark:bg-white/5 rounded-2xl relative overflow-hidden flex items-end mb-4">
-                        <motion.div 
-                           initial={{ height: 0 }} 
-                           animate={{ height: `${day.height}%` }} 
-                           transition={{ type: "spring", stiffness: 100, damping: 15, delay: i * 0.1 }}
-                           className={`w-full ${day.val > 80 ? 'bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : (day.val > 40 ? 'bg-[#F05E23] shadow-[0_0_20px_rgba(240,94,35,0.3)]' : 'bg-slate-300 dark:bg-white/10')} transition-all`} 
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: `${day.height}%` }}
+                          transition={{ type: "spring", stiffness: 100, damping: 15, delay: i * 0.1 }}
+                          className={`w-full ${day.val > 80 ? 'bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : (day.val > 40 ? 'bg-[#F05E23] shadow-[0_0_20px_rgba(240,94,35,0.3)]' : 'bg-slate-300 dark:bg-white/10')} transition-all`}
                         />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                           <span className="bg-black text-white text-[0.6rem] font-black px-2 py-1 rounded-md">{day.val}%</span>
+                          <span className="bg-black text-white text-[0.6rem] font-black px-2 py-1 rounded-md">{day.val}%</span>
                         </div>
                       </div>
                       <span className="text-[0.6rem] font-black uppercase text-slate-400 text-center">{day.label}</span>
@@ -1243,223 +1179,223 @@ export default function AdminDashboard() {
 
               {/* Awards Section */}
               <div className="lg:col-span-5 grid grid-cols-1 gap-6">
-                 {/* Intern of the Week */}
-                 <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] p-10 text-white relative overflow-hidden group">
-                    <Zap className="absolute -top-10 -right-10 w-48 h-48 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
-                    <div className="relative z-10">
-                       <span className="bg-white/20 backdrop-blur-md text-[0.5rem] font-black uppercase tracking-[0.3em] px-4 py-2 rounded-full mb-6 inline-block">Elite Recognition</span>
-                       <h3 className="text-3xl font-black uppercase tracking-tighter italic leading-none mb-4">Intern of <br/> the <span className="text-blue-200 underline decoration-4 underline-offset-8">Week</span></h3>
-                       
-                       {awards.internOfWeek ? (
-                          <div className="flex items-center gap-6 mt-8 p-4 bg-white/10 rounded-[2rem] border border-white/10">
-                             <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-black">
-                                {awards.internOfWeek.name[0]}
-                             </div>
-                             <div>
-                                <span className="block text-xl font-black uppercase tracking-tighter">{awards.internOfWeek.name}</span>
-                                <span className="text-[0.6rem] font-bold uppercase opacity-60">{awards.internOfWeek.weekCount} Objectives Finalized</span>
-                             </div>
-                          </div>
-                       ) : (
-                          <p className="text-sm opacity-60 italic mt-8">Analyzing performance data...</p>
-                       )}
-                    </div>
-                 </div>
+                {/* Intern of the Week */}
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] p-10 text-white relative overflow-hidden group">
+                  <Zap className="absolute -top-10 -right-10 w-48 h-48 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
+                  <div className="relative z-10">
+                    <span className="bg-white/20 backdrop-blur-md text-[0.5rem] font-black uppercase tracking-[0.3em] px-4 py-2 rounded-full mb-6 inline-block">Elite Recognition</span>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter italic leading-none mb-4">Intern of <br /> the <span className="text-blue-200 underline decoration-4 underline-offset-8">Week</span></h3>
 
-                 {/* Intern of the Month */}
-                 <div className="bg-gradient-to-br from-[#F05E23] to-[#d04a1a] rounded-[3rem] p-10 text-white relative overflow-hidden group">
-                    <Shield className="absolute -bottom-10 -right-10 w-48 h-48 opacity-10 group-hover:-rotate-12 transition-transform duration-700" />
-                    <div className="relative z-10">
-                       <span className="bg-white/20 backdrop-blur-md text-[0.5rem] font-black uppercase tracking-[0.3em] px-4 py-2 rounded-full mb-6 inline-block">Legacy Achievement</span>
-                       <h3 className="text-3xl font-black uppercase tracking-tighter italic leading-none mb-4">Intern of <br/> the <span className="text-orange-200 underline decoration-4 underline-offset-8">Month</span></h3>
-                       
-                       {awards.internOfMonth ? (
-                          <div className="flex items-center gap-6 mt-8 p-4 bg-white/10 rounded-[2rem] border border-white/10">
-                             <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-black">
-                                {awards.internOfMonth.name[0]}
-                             </div>
-                             <div>
-                                <span className="block text-xl font-black uppercase tracking-tighter">{awards.internOfMonth.name}</span>
-                                <span className="text-[0.6rem] font-bold uppercase opacity-60">{awards.internOfMonth.monthCount} Monthly Objectives</span>
-                             </div>
-                          </div>
-                       ) : (
-                          <p className="text-sm opacity-60 italic mt-8">Calculating monthly matrix...</p>
-                       )}
-                    </div>
-                 </div>
+                    {awards.internOfWeek ? (
+                      <div className="flex items-center gap-6 mt-8 p-4 bg-white/10 rounded-[2rem] border border-white/10">
+                        <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-black">
+                          {awards.internOfWeek.name[0]}
+                        </div>
+                        <div>
+                          <span className="block text-xl font-black uppercase tracking-tighter">{awards.internOfWeek.name}</span>
+                          <span className="text-[0.6rem] font-bold uppercase opacity-60">{awards.internOfWeek.weekCount} Objectives Finalized</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm opacity-60 italic mt-8">Analyzing performance data...</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Intern of the Month */}
+                <div className="bg-gradient-to-br from-[#F05E23] to-[#d04a1a] rounded-[3rem] p-10 text-white relative overflow-hidden group">
+                  <Shield className="absolute -bottom-10 -right-10 w-48 h-48 opacity-10 group-hover:-rotate-12 transition-transform duration-700" />
+                  <div className="relative z-10">
+                    <span className="bg-white/20 backdrop-blur-md text-[0.5rem] font-black uppercase tracking-[0.3em] px-4 py-2 rounded-full mb-6 inline-block">Legacy Achievement</span>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter italic leading-none mb-4">Intern of <br /> the <span className="text-orange-200 underline decoration-4 underline-offset-8">Month</span></h3>
+
+                    {awards.internOfMonth ? (
+                      <div className="flex items-center gap-6 mt-8 p-4 bg-white/10 rounded-[2rem] border border-white/10">
+                        <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-black">
+                          {awards.internOfMonth.name[0]}
+                        </div>
+                        <div>
+                          <span className="block text-xl font-black uppercase tracking-tighter">{awards.internOfMonth.name}</span>
+                          <span className="text-[0.6rem] font-bold uppercase opacity-60">{awards.internOfMonth.monthCount} Monthly Objectives</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm opacity-60 italic mt-8">Calculating monthly matrix...</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Middle Row: AI Insights & Workspace Parameters */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-               {/* AI Operational Insights */}
-               <div className="lg:col-span-8 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3.5rem]">
-                  <div className="flex items-center justify-between mb-10">
-                     <h3 className="text-2xl font-black uppercase tracking-tight italic">AI Tactical <span className="text-blue-500">Insights</span></h3>
-                     <Activity className="w-6 h-6 text-blue-500 animate-pulse" />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     {interns.slice(0, 4).map((intern) => (
-                        <div key={intern._id} className="p-6 bg-slate-50 dark:bg-white/3 rounded-[2rem] border border-black/5 dark:border-white/5 flex gap-5 group hover:border-blue-500/30 transition-all">
-                           <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center border border-black/5 dark:border-white/10 font-black">
-                              {intern.name[0]}
-                           </div>
-                           <div className="flex-1">
-                              <span className="block text-xs font-black uppercase tracking-tight mb-2">{intern.name}</span>
-                              <div className="flex items-start gap-3">
-                                 <Zap className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                                 <p className="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400 italic line-clamp-2">
-                                    &quot;{generateAIInsight(intern)}&quot;
-                                 </p>
-                              </div>
-                           </div>
+              {/* AI Operational Insights */}
+              <div className="lg:col-span-8 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3.5rem]">
+                <div className="flex items-center justify-between mb-10">
+                  <h3 className="text-2xl font-black uppercase tracking-tight italic">AI Tactical <span className="text-blue-500">Insights</span></h3>
+                  <Activity className="w-6 h-6 text-blue-500 animate-pulse" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {interns.slice(0, 4).map((intern) => (
+                    <div key={intern._id} className="p-6 bg-slate-50 dark:bg-white/3 rounded-[2rem] border border-black/5 dark:border-white/5 flex gap-5 group hover:border-blue-500/30 transition-all">
+                      <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/5 flex items-center justify-center border border-black/5 dark:border-white/10 font-black">
+                        {intern.name[0]}
+                      </div>
+                      <div className="flex-1">
+                        <span className="block text-xs font-black uppercase tracking-tight mb-2">{intern.name}</span>
+                        <div className="flex items-start gap-3">
+                          <Zap className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                          <p className="text-[0.65rem] font-medium text-slate-500 dark:text-slate-400 italic line-clamp-2">
+                            &quot;{generateAIInsight(intern)}&quot;
+                          </p>
                         </div>
-                     ))}
-                     {interns.length === 0 && (
-                        <div className="col-span-2 py-10 text-center opacity-20">
-                           <p className="text-[0.6rem] font-black uppercase tracking-widest italic">Awaiting unit deployment for intelligence analysis.</p>
-                        </div>
-                     )}
-                  </div>
-               </div>
+                      </div>
+                    </div>
+                  ))}
+                  {interns.length === 0 && (
+                    <div className="col-span-2 py-10 text-center opacity-20">
+                      <p className="text-[0.6rem] font-black uppercase tracking-widest italic">Awaiting unit deployment for intelligence analysis.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-               {/* Performance Summary Cards */}
-               <div className="lg:col-span-4 space-y-6">
-                  <div className="bg-[#0D0D14] rounded-[3rem] p-10 text-white relative overflow-hidden h-full">
-                     <Shield className="absolute -bottom-10 -right-10 w-48 h-48 opacity-10" />
-                     <h3 className="text-xl font-black uppercase mb-12 italic tracking-tight">Workspace <span className="text-[#F05E23]">Parameters</span></h3>
-                     
-                     <div className="space-y-8">
-                        <div className="flex justify-between items-end border-b border-white/5 pb-4">
-                           <div>
-                              <span className="block text-[0.55rem] font-black uppercase opacity-40 mb-1">Fleet Capacity</span>
-                              <span className="text-3xl font-black italic">{interns.length} Units</span>
-                           </div>
-                           <div className="text-right">
-                              <span className="block text-[0.5rem] font-black text-green-500 uppercase">Operational</span>
-                           </div>
-                        </div>
-                        <div className="flex justify-between items-end border-b border-white/5 pb-4">
-                           <div>
-                              <span className="block text-[0.55rem] font-black uppercase opacity-40 mb-1">Target Assets</span>
-                              <span className="text-3xl font-black italic">{adminClientProjects.length} Projects</span>
-                           </div>
-                           <div className="text-right">
-                              <span className="block text-[0.5rem] font-black text-[#F05E23] uppercase">Live Tracking</span>
-                           </div>
-                        </div>
-                        <div className="flex justify-between items-end">
-                           <div>
-                              <span className="block text-[0.55rem] font-black uppercase opacity-40 mb-1">System Efficiency</span>
-                              <span className="text-3xl font-black italic">
-                                 {Math.round((tasks.filter(t => t.status === "Complete").length / (tasks.length || 1)) * 100)}%
-                              </span>
-                           </div>
-                           <div className="text-right">
-                              <span className="block text-[0.5rem] font-black text-blue-500 uppercase">Optimized</span>
-                           </div>
-                        </div>
-                     </div>
+              {/* Performance Summary Cards */}
+              <div className="lg:col-span-4 space-y-6">
+                <div className="bg-[#0D0D14] rounded-[3rem] p-10 text-white relative overflow-hidden h-full">
+                  <Shield className="absolute -bottom-10 -right-10 w-48 h-48 opacity-10" />
+                  <h3 className="text-xl font-black uppercase mb-12 italic tracking-tight">Workspace <span className="text-[#F05E23]">Parameters</span></h3>
+
+                  <div className="space-y-8">
+                    <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                      <div>
+                        <span className="block text-[0.55rem] font-black uppercase opacity-40 mb-1">Fleet Capacity</span>
+                        <span className="text-3xl font-black italic">{interns.length} Units</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="block text-[0.5rem] font-black text-green-500 uppercase">Operational</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                      <div>
+                        <span className="block text-[0.55rem] font-black uppercase opacity-40 mb-1">Target Assets</span>
+                        <span className="text-3xl font-black italic">{adminClientProjects.length} Projects</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="block text-[0.5rem] font-black text-[#F05E23] uppercase">Live Tracking</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <span className="block text-[0.55rem] font-black uppercase opacity-40 mb-1">System Efficiency</span>
+                        <span className="text-3xl font-black italic">
+                          {Math.round((tasks.filter(t => t.status === "Complete").length / (tasks.length || 1)) * 100)}%
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="block text-[0.5rem] font-black text-blue-500 uppercase">Optimized</span>
+                      </div>
+                    </div>
                   </div>
-               </div>
+                </div>
+              </div>
             </div>
 
             {/* Client Intelligence Snapshot */}
             <div className="bg-white dark:bg-[#0D0D14] border border-black/5 dark:border-white/5 rounded-[3.5rem] p-10">
-               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                  <div>
-                    <h3 className="text-3xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Client <span className="text-[#F05E23]">Intelligence</span></h3>
-                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Active project surveillance</p>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                <div>
+                  <h3 className="text-3xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Client <span className="text-[#F05E23]">Intelligence</span></h3>
+                  <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Active project surveillance</p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="px-6 py-3 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5 text-slate-900 dark:text-white">
+                    <span className="text-[0.55rem] font-black uppercase text-slate-400">Total Tracking: {adminClientProjects.length}</span>
                   </div>
-                  <div className="flex gap-4">
-                     <div className="px-6 py-3 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5 text-slate-900 dark:text-white">
-                        <span className="text-[0.55rem] font-black uppercase text-slate-400">Total Tracking: {adminClientProjects.length}</span>
-                     </div>
-                  </div>
-               </div>
+                </div>
+              </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {adminClientProjects.map((project, idx) => {
-                    const totalSteps = project.workflow?.length || 0;
-                    const completedSteps = project.workflow?.filter(s => s.status === 'Complete').length || 0;
-                    const efficiency = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-                    const status = efficiency === 100 ? "OPTIMIZED" : (efficiency > 50 ? "STABLE" : "SYNCING");
-                    
-                    return (
-                      <motion.div 
-                        key={project._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="bg-slate-50 dark:bg-white/2 border border-black/5 dark:border-white/5 rounded-3xl p-8 hover:border-[#F05E23]/30 transition-all group"
-                      >
-                        <div className="flex items-start justify-between mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                {adminClientProjects.map((project, idx) => {
+                  const totalSteps = project.workflow?.length || 0;
+                  const completedSteps = project.workflow?.filter(s => s.status === 'Complete').length || 0;
+                  const efficiency = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+                  const status = efficiency === 100 ? "OPTIMIZED" : (efficiency > 50 ? "STABLE" : "SYNCING");
+
+                  return (
+                    <motion.div
+                      key={project._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="bg-slate-50 dark:bg-white/2 border border-black/5 dark:border-white/5 rounded-3xl p-8 hover:border-[#F05E23]/30 transition-all group"
+                    >
+                      <div className="flex items-start justify-between mb-8">
+                        <div>
+                          <span className="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 text-[8px] font-black text-slate-400 uppercase mb-2 block w-fit">ID: {project._id.slice(-6)}</span>
+                          <h4 className="text-xl font-black uppercase tracking-tight italic group-hover:text-[#F05E23] transition-colors text-slate-900 dark:text-white">{project.projectName}</h4>
+                        </div>
+                        <div className={`px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest ${status === 'OPTIMIZED' ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                          {status}
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-[0.6rem] font-black uppercase text-slate-400 tracking-tighter">Progress</span>
+                            <span className="text-lg font-black italic text-slate-900 dark:text-white">{efficiency}%</span>
+                          </div>
+                          <div className="h-2.5 w-full bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${efficiency}%` }}
+                              className={`h-full ${efficiency === 100 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-[#F05E23]'} transition-all`}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                            <span className="block text-[0.55rem] font-black text-slate-400 uppercase mb-1">Steps</span>
+                            <span className="text-xl font-black italic text-slate-900 dark:text-white">{completedSteps}/{totalSteps}</span>
+                          </div>
+                          <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                            <span className="block text-[0.55rem] font-black text-slate-400 uppercase mb-1">Messages</span>
+                            <span className="text-xl font-black italic text-slate-900 dark:text-white">{project.discussions?.length || 0}</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
                           <div>
-                            <span className="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 text-[8px] font-black text-slate-400 uppercase mb-2 block w-fit">ID: {project._id.slice(-6)}</span>
-                            <h4 className="text-xl font-black uppercase tracking-tight italic group-hover:text-[#F05E23] transition-colors text-slate-900 dark:text-white">{project.projectName}</h4>
+                            <span className="text-[0.5rem] font-black uppercase text-slate-400 mb-2 block">Latest note</span>
+                            <p className="text-[0.65rem] font-medium text-slate-500 dark:text-white/40 italic line-clamp-1">
+                              {project.discussions?.length > 0 ? `"${project.discussions[project.discussions.length - 1].content}"` : "No messages yet."}
+                            </p>
                           </div>
-                          <div className={`px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest ${status === 'OPTIMIZED' ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}`}>
-                            {status}
-                          </div>
+
+                          {project.requirements?.length > 0 && (
+                            <div className="p-4 bg-[#F05E23]/5 rounded-2xl border border-[#F05E23]/10">
+                              <span className="text-[0.5rem] font-black uppercase text-[#F05E23] mb-2 block">Client Briefing</span>
+                              <div className="space-y-1.5">
+                                {project.requirements.slice(0, 2).map((req, i) => (
+                                  <div key={i} className="flex items-start gap-2">
+                                    <div className="w-1 h-1 rounded-full bg-[#F05E23] mt-1.5 shrink-0" />
+                                    <p className="text-[0.6rem] font-bold text-slate-600 dark:text-white/60 line-clamp-1">{req.content}</p>
+                                  </div>
+                                ))}
+                                {project.requirements.length > 2 && (
+                                  <p className="text-[0.5rem] font-black text-[#F05E23] mt-1">+ {project.requirements.length - 2} more requirements</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-
-                        <div className="space-y-6">
-                           <div>
-                              <div className="flex justify-between items-center mb-3">
-                                 <span className="text-[0.6rem] font-black uppercase text-slate-400 tracking-tighter">Progress</span>
-                                 <span className="text-lg font-black italic text-slate-900 dark:text-white">{efficiency}%</span>
-                              </div>
-                              <div className="h-2.5 w-full bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
-                                 <motion.div 
-                                    initial={{ width: 0 }} 
-                                    animate={{ width: `${efficiency}%` }} 
-                                    className={`h-full ${efficiency === 100 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-[#F05E23]'} transition-all`} 
-                                 />
-                              </div>
-                           </div>
-
-                           <div className="grid grid-cols-2 gap-4">
-                              <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
-                                 <span className="block text-[0.55rem] font-black text-slate-400 uppercase mb-1">Steps</span>
-                                 <span className="text-xl font-black italic text-slate-900 dark:text-white">{completedSteps}/{totalSteps}</span>
-                              </div>
-                              <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
-                                 <span className="block text-[0.55rem] font-black text-slate-400 uppercase mb-1">Messages</span>
-                                 <span className="text-xl font-black italic text-slate-900 dark:text-white">{project.discussions?.length || 0}</span>
-                              </div>
-                           </div>
-
-                           <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
-                              <div>
-                                <span className="text-[0.5rem] font-black uppercase text-slate-400 mb-2 block">Latest note</span>
-                                <p className="text-[0.65rem] font-medium text-slate-500 dark:text-white/40 italic line-clamp-1">
-                                  {project.discussions?.length > 0 ? `"${project.discussions[project.discussions.length - 1].content}"` : "No messages yet."}
-                                </p>
-                              </div>
-                              
-                              {project.requirements?.length > 0 && (
-                                <div className="p-4 bg-[#F05E23]/5 rounded-2xl border border-[#F05E23]/10">
-                                   <span className="text-[0.5rem] font-black uppercase text-[#F05E23] mb-2 block">Client Briefing</span>
-                                   <div className="space-y-1.5">
-                                      {project.requirements.slice(0, 2).map((req, i) => (
-                                        <div key={i} className="flex items-start gap-2">
-                                           <div className="w-1 h-1 rounded-full bg-[#F05E23] mt-1.5 shrink-0" />
-                                           <p className="text-[0.6rem] font-bold text-slate-600 dark:text-white/60 line-clamp-1">{req.content}</p>
-                                        </div>
-                                      ))}
-                                      {project.requirements.length > 2 && (
-                                        <p className="text-[0.5rem] font-black text-[#F05E23] mt-1">+ {project.requirements.length - 2} more requirements</p>
-                                      )}
-                                   </div>
-                                </div>
-                              )}
-                           </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-               </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -1469,546 +1405,798 @@ export default function AdminDashboard() {
       <AnimatePresence>
         {isBroadcasting && (
           <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-              animate={{ scale: 1, opacity: 1, y: 0 }} 
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
               className="bg-white border border-slate-200 w-full max-w-lg p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
             >
-               <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-[#F05E23] to-transparent opacity-50" />
-               <h2 className="text-4xl font-black uppercase mb-10 tracking-tighter text-center italic text-slate-900">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
-               <form onSubmit={handleBroadcast} className="space-y-8">
-                  <div className="relative group">
-                    <textarea 
-                      rows={6} 
-                      required 
-                      value={broadcastMsg} 
-                      onChange={e => setBroadcastMsg(e.target.value)} 
-                      placeholder="Directive for the synchronized collective..." 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-[2rem] p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none shadow-inner" 
-                    />
-                  </div>
-                  <div className="flex gap-4">
-                     <button 
-                        type="button" 
-                        onClick={() => setIsBroadcasting(false)} 
-                        className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 hover:bg-slate-50 transition-all text-slate-400"
-                     >
-                        Abort Sync
-                     </button>
-                     <button 
-                        type="submit" 
-                        className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_b0px_rgba(240,94,35,0.2)] hover:shadow-[0_0_30px_rgba(240,94,35,0.4)] transition-all active:scale-95"
-                     >
-                        Deploy Signal
-                     </button>
-                  </div>
-               </form>
+              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-[#F05E23] to-transparent opacity-50" />
+              <h2 className="text-4xl font-black uppercase mb-10 tracking-tighter text-center italic text-slate-900">Strategic <span className="text-[#F05E23]">Broadcast</span></h2>
+              <form onSubmit={handleBroadcast} className="space-y-8">
+                <div className="relative group">
+                  <textarea
+                    rows={6}
+                    required
+                    value={broadcastMsg}
+                    onChange={e => setBroadcastMsg(e.target.value)}
+                    placeholder="Directive for the synchronized collective..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-[2rem] p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none shadow-inner"
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsBroadcasting(false)}
+                    className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 hover:bg-slate-50 transition-all text-slate-400"
+                  >
+                    Abort Sync
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_b0px_rgba(240,94,35,0.2)] hover:shadow-[0_0_30px_rgba(240,94,35,0.4)] transition-all active:scale-95"
+                  >
+                    Deploy Signal
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
 
         {isAddingClient && (
           <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-              animate={{ scale: 1, opacity: 1, y: 0 }} 
-              className="bg-white border border-slate-200 w-full max-w-xl rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden"
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white border border-slate-200 w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px] -mr-32 -mt-32" />
-              <h2 className="text-4xl font-black uppercase tracking-tighter italic mb-12 text-slate-900">Provision <span className="text-[#F05E23]">Brand</span></h2>
-              <div className="space-y-5">
-                {[
-                  { id: 'name', placeholder: 'Brand Name', type: 'text' },
-                  { id: 'email', placeholder: 'Contact Email', type: 'email' },
-                  { id: 'projectName', placeholder: 'Primary Project Name', type: 'text' }
-                ].map((input) => (
-                  <div key={input.id} className="relative group">
-                    <input 
-                      type={input.type} 
-                      value={clientForm[input.id] || ""} 
-                      onChange={e => setClientForm({...clientForm, [input.id]: e.target.value})} 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-300" 
-                      placeholder={input.placeholder} 
+              
+              <div className="flex items-center justify-between mb-12">
+                <h2 className="text-4xl font-black uppercase tracking-tighter italic text-slate-900">Provision <span className="text-[#F05E23]">Brand</span></h2>
+                <div className="flex gap-2">
+                  <div className={`w-3 h-3 rounded-full ${brandFormStep === 1 ? 'bg-[#F05E23]' : 'bg-slate-200'}`} />
+                  <div className={`w-3 h-3 rounded-full ${brandFormStep === 2 ? 'bg-[#F05E23]' : 'bg-slate-200'}`} />
+                </div>
+              </div>
+
+              {brandFormStep === 1 ? (
+                <div className="space-y-5">
+                  <span className="text-[10px] font-black uppercase text-[#F05E23] tracking-[0.3em] mb-2 block">Step 01: Core Identity</span>
+                  {[
+                    { id: 'name', placeholder: 'Brand Name', type: 'text' },
+                    { id: 'email', placeholder: 'Contact Email', type: 'email' },
+                    { id: 'projectName', placeholder: 'Primary Project Name', type: 'text' }
+                  ].map((input) => (
+                    <div key={input.id} className="relative group">
+                      <input
+                        type={input.type}
+                        value={clientForm[input.id] || ""}
+                        onChange={e => setClientForm({ ...clientForm, [input.id]: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-300"
+                        placeholder={input.placeholder}
+                      />
+                      <div className="absolute inset-y-0 left-0 w-1 bg-[#F05E23] scale-y-0 group-focus-within:scale-y-50 transition-transform rounded-r-full" />
+                    </div>
+                  ))}
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      value={clientForm.password}
+                      onChange={e => setClientForm({ ...clientForm, password: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-300"
+                      placeholder="Portal Password"
                     />
                     <div className="absolute inset-y-0 left-0 w-1 bg-[#F05E23] scale-y-0 group-focus-within:scale-y-50 transition-transform rounded-r-full" />
                   </div>
-                ))}
-                <div className="relative group">
-                  <input 
-                    type="text" 
-                    value={clientForm.password} 
-                    onChange={e => setClientForm({...clientForm, password: e.target.value})} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-300" 
-                    placeholder="Portal Password" 
-                  />
-                  <div className="absolute inset-y-0 left-0 w-1 bg-[#F05E23] scale-y-0 group-focus-within:scale-y-50 transition-transform rounded-r-full" />
+                  
+                  <div className="flex gap-4 pt-10">
+                    <button
+                      onClick={() => {
+                        if (!clientForm.name || !clientForm.email || !clientForm.projectName) return alert("Identity keys required for synchronization.");
+                        setBrandFormStep(2);
+                      }}
+                      className="flex-1 bg-black text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all active:scale-95"
+                    >
+                      Configure Intelligence
+                    </button>
+                    <button
+                      onClick={() => setIsAddingClient(false)}
+                      className="px-10 py-5 rounded-2xl border border-slate-200 font-black uppercase text-[0.65rem] tracking-[0.2em] text-slate-400 hover:bg-slate-50 transition-all"
+                    >
+                      Abort
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-4 pt-10">
-                  <button 
-                    onClick={async () => {
-                      if (!clientForm.name || !clientForm.email || !clientForm.projectName) return alert("All synchronization keys required");
-                       const res = await createClient(clientForm.name, clientForm.email, clientForm.password);
-                       if (res.success) {
-                         await createClientProject({ 
-                           clientId: res.client._id, 
-                           projectName: clientForm.projectName, 
-                           description: `Ecosystem for ${clientForm.name}`,
-                           credentials: clientForm.credentials 
-                         });
-                         setIsAddingClient(false);
-                        setStatusMsg({ type: 'success', msg: "Brand Integrated into Matrix." });
-                      } else {
-                        alert(res.message);
-                      }
-                    }} 
-                    className="flex-1 bg-[#F05E23] text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_30px_rgba(240,94,35,0.2)] hover:shadow-[0_0_40px_rgba(240,94,35,0.4)] transition-all active:scale-95"
-                  >
-                    Establish Node
-                  </button>
-                  <button 
-                    onClick={() => setIsAddingClient(false)} 
-                    className="px-10 py-5 rounded-2xl border border-slate-200 font-black uppercase text-[0.65rem] tracking-[0.2em] text-slate-400 hover:bg-slate-50 transition-all"
-                  >
-                    Abort
-                  </button>
+              ) : (
+                <div className="space-y-6">
+                  <span className="text-[10px] font-black uppercase text-[#F05E23] tracking-[0.3em] mb-2 block">Step 02: Strategic Matrix</span>
+                  
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Technical Description</label>
+                    <textarea
+                      rows={3}
+                      value={clientForm.brandDescription}
+                      onChange={e => setClientForm({ ...clientForm, brandDescription: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none"
+                      placeholder="High-end brand technical description..."
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">SOP Matrix (Markdown)</label>
+                    <textarea
+                      rows={5}
+                      value={clientForm.sop}
+                      onChange={e => setClientForm({ ...clientForm, sop: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-mono text-xs text-slate-800 placeholder:text-slate-300 resize-none"
+                      placeholder="Custom SOP for this brand..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between pl-2 mb-3">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Requirements</label>
+                          <button 
+                            type="button"
+                            onClick={() => setClientForm({ ...clientForm, requirements: [...(clientForm.requirements || []), { content: "" }] })}
+                            className="text-[8px] font-black uppercase text-[#F05E23] flex items-center gap-1 hover:opacity-70"
+                          >
+                            <Plus className="w-3 h-3" /> Add
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                            {(clientForm.requirements || []).map((req, i) => (
+                                <div key={i} className="flex gap-2">
+                                  <input
+                                      type="text"
+                                      value={req.content}
+                                      onChange={e => {
+                                          const newReqs = [...clientForm.requirements];
+                                          newReqs[i].content = e.target.value;
+                                          setClientForm({ ...clientForm, requirements: newReqs });
+                                      }}
+                                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[0.6rem] font-bold outline-none focus:border-[#F05E23]/30"
+                                  />
+                                  <button 
+                                    type="button"
+                                    onClick={() => setClientForm({ ...clientForm, requirements: clientForm.requirements.filter((_, idx) => idx !== i) })}
+                                    className="p-3 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-all"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between pl-2 mb-3">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Core Features</label>
+                          <button 
+                            type="button"
+                            onClick={() => setClientForm({ ...clientForm, aiFeatures: [...(clientForm.aiFeatures || []), { title: "", description: "" }] })}
+                            className="text-[8px] font-black uppercase text-[#F05E23] flex items-center gap-1 hover:opacity-70"
+                          >
+                            <Plus className="w-3 h-3" /> Add
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                            {(clientForm.aiFeatures || []).map((feat, i) => (
+                                <div key={i} className="flex gap-2">
+                                  <input
+                                      type="text"
+                                      value={feat.title}
+                                      onChange={e => {
+                                          const newFeats = [...clientForm.aiFeatures];
+                                          newFeats[i].title = e.target.value;
+                                          setClientForm({ ...clientForm, aiFeatures: newFeats });
+                                      }}
+                                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[0.6rem] font-bold outline-none focus:border-[#F05E23]/30"
+                                  />
+                                  <button 
+                                    type="button"
+                                    onClick={() => setClientForm({ ...clientForm, aiFeatures: clientForm.aiFeatures.filter((_, idx) => idx !== i) })}
+                                    className="p-3 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-all"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Color Archetype</label>
+                      <input
+                        type="text"
+                        value={clientForm.colorStyle}
+                        onChange={e => setClientForm({ ...clientForm, colorStyle: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-6 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30"
+                        placeholder="e.g. Electric Blue & Slate"
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Interface Theme</label>
+                      <select
+                        value={clientForm.theme}
+                        onChange={e => setClientForm({ ...clientForm, theme: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-6 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30 appearance-none"
+                      >
+                        <option value="Single">Single (Dark/Light)</option>
+                        <option value="Dual">Dual (Dynamic Switch)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Assigned Unit</label>
+                      <select
+                        value={clientForm.assignedIntern || ""}
+                        onChange={e => setClientForm({ ...clientForm, assignedIntern: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-4 px-6 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30 appearance-none text-blue-500"
+                      >
+                        <option value="">Select Primary Unit</option>
+                        {interns.map(i => (
+                          <option key={i._id} value={i._id}>{i.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Tactical Features</label>
+                    <input
+                      type="text"
+                      value={clientForm.features}
+                      onChange={e => setClientForm({ ...clientForm, features: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30"
+                      placeholder="e.g. AI Search, Real-time Sync, Dashboard"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Site Architecture (Pages)</label>
+                    <input
+                      type="text"
+                      value={clientForm.pages}
+                      onChange={e => setClientForm({ ...clientForm, pages: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30"
+                      placeholder="e.g. Home, Service Nodes, Portfolio, Command Center"
+                    />
+                  </div>
+
+                  <div className="flex gap-4 pt-8">
+                    <button
+                      disabled={brandIntelLoading}
+                      onClick={async () => {
+                        if (!clientForm.brandDescription) return alert("Strategic vision required for AI analysis.");
+                        setBrandIntelLoading(true);
+                        try {
+                          const intelRes = await generateBrandIntel({
+                            projectName: clientForm.projectName,
+                            brandIdea: clientForm.brandDescription,
+                            colorStyle: clientForm.colorStyle,
+                            theme: clientForm.theme,
+                            features: clientForm.features,
+                            pages: clientForm.pages
+                          });
+
+                          if (intelRes.success) {
+                            setClientForm(prev => ({
+                              ...prev,
+                              projectType: intelRes.intel.projectType,
+                              brandDescription: intelRes.intel.technicalDescription,
+                              requirements: intelRes.intel.requirements.map(r => ({ content: r })),
+                              aiFeatures: intelRes.intel.features,
+                              sop: intelRes.intel.sop,
+                              workflow: intelRes.intel.workflow,
+                              estimatedWeeks: intelRes.intel.estimatedWeeks
+                            }));
+                            setStatusMsg({ type: 'success', msg: "Intelligence Analysis Complete. Reviewing Matrix..." });
+                          } else {
+                            throw new Error(intelRes.message);
+                          }
+                        } catch (e) {
+                          alert(e.message);
+                        } finally {
+                          setBrandIntelLoading(false);
+                        }
+                      }}
+                      className="flex-1 bg-blue-600 text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                    >
+                      {brandIntelLoading ? <Activity className="w-4 h-4 animate-pulse" /> : <Zap className="w-4 h-4" />}
+                      Sync AI Intel
+                    </button>
+                    <button
+                      disabled={brandIntelLoading}
+                      onClick={async () => {
+                        if (!clientForm.brandDescription) return alert("Strategic vision required.");
+                        setBrandIntelLoading(true);
+                        try {
+                          // Step 1: Create Client User
+                          const res = await createClient(clientForm.name, clientForm.email, clientForm.password);
+                          if (!res.success) throw new Error(res.message);
+
+                          // Step 2: Calculate completion date
+                          const estDate = new Date();
+                          estDate.setDate(estDate.getDate() + ((clientForm.estimatedWeeks || 8) * 7));
+
+                          // Step 3: Create Project
+                          await createClientProject({
+                            clientId: res.client._id,
+                            projectName: clientForm.projectName,
+                            projectType: clientForm.projectType || "Custom Web App",
+                            description: clientForm.brandDescription,
+                            requirements: clientForm.requirements || [],
+                            features: clientForm.aiFeatures || [],
+                            sop: clientForm.sop,
+                            workflow: clientForm.workflow,
+                            estimatedCompletionDate: estDate,
+                            systemAccessEmail: "intern@sync.com",
+                            systemAccessPassword: "SyncIntern123",
+                            credentials: clientForm.credentials,
+                            assignedIntern: clientForm.assignedIntern
+                          });
+
+                          setIsAddingClient(false);
+                          setBrandFormStep(1);
+                          setStatusMsg({ type: 'success', msg: "Brand Synchronized into Digital Ecosystem." });
+                        } catch (e) {
+                          alert(e.message);
+                        } finally {
+                          setBrandIntelLoading(false);
+                        }
+                      }}
+                      className="flex-[2] bg-[#F05E23] text-white py-6 rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] shadow-2xl shadow-[#F05E23]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                    >
+                      Initialize Deployment
+                    </button>
+                    <button
+                      onClick={() => setBrandFormStep(1)}
+                      className="flex-1 py-6 rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] border-2 border-slate-200 text-slate-400 hover:bg-slate-50 transition-all italic"
+                    >
+                      Back
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           </div>
         )}
 
         {isAddingIntern && (
-           <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
-             <motion.div 
-               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-               animate={{ scale: 1, opacity: 1, y: 0 }} 
-               className="bg-white border border-slate-200 w-full max-w-lg p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
-             >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-[60px]" />
-                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900">Onboard <span className="text-[#F05E23]">Intern</span></h2>
-                <form onSubmit={handleAddIntern} className="space-y-5">
-                   <div className="relative group">
-                      <input type="text" required value={newIntern.name} onChange={e => setNewIntern({...newIntern, name: e.target.value})} placeholder="Full Identity" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
-                   </div>
-                   <div className="relative group">
-                      <input type="email" required value={newIntern.email} onChange={e => setNewIntern({...newIntern, email: e.target.value})} placeholder="System Access Email" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
-                   </div>
-                   <div className="relative group">
-                      <input type="text" required value={newIntern.password} onChange={e => setNewIntern({...newIntern, password: e.target.value})} placeholder="Initial Password" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
-                   </div>
-                   <div className="flex gap-4 pt-8">
-                     <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all">Cancel</button>
-                     <button type="submit" className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:bg-slate-800 transition-all active:scale-95">Verify & Deploy</button>
-                   </div>
-                </form>
-             </motion.div>
-           </div>
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white border border-slate-200 w-full max-w-lg p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-[60px]" />
+              <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900">Onboarding</h2>
+              <form onSubmit={handleAddIntern} className="space-y-5">
+                <div className="relative group">
+                  <input type="text" required value={newIntern.name} onChange={e => setNewIntern({ ...newIntern, name: e.target.value })} placeholder="Full Identity" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                </div>
+                <div className="relative group">
+                  <input type="email" required value={newIntern.email} onChange={e => setNewIntern({ ...newIntern, email: e.target.value })} placeholder="System Access Email" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                </div>
+                <div className="relative group">
+                  <input type="text" required value={newIntern.password} onChange={e => setNewIntern({ ...newIntern, password: e.target.value })} placeholder="Initial Password" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                </div>
+                <div className="flex gap-4 pt-8">
+                  <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all">Cancel</button>
+                  <button type="submit" className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:bg-slate-800 transition-all active:scale-95">Verify & Deploy</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
 
         {isAssigningTask && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/60">
-             <motion.div 
-               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-               animate={{ scale: 1, opacity: 1, y: 0 }} 
-               className="bg-white border border-slate-200 w-full max-w-4xl p-10 sm:p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
-             >
-                <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px]" />
-                
-                <div className="flex justify-between items-start mb-12">
-                   <div>
-                      <h2 className="text-5xl font-black uppercase tracking-tighter italic text-slate-900 leading-none">Task <span className="text-[#F05E23]">Matrix</span></h2>
-                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mt-4">Multi-Assignment Deployment Console</p>
-                   </div>
-                   <div className={`px-8 py-4 rounded-3xl border-2 flex flex-col items-center gap-1 transition-all ${feasibility.feasible ? 'border-green-500/20 bg-green-500/5 text-green-600' : 'border-red-500/20 bg-red-500/5 text-red-600'}`}>
-                      <span className="text-[10px] font-black uppercase tracking-widest">{feasibility.feasible ? 'Feasible' : 'Overloaded'}</span>
-                      <span className="text-xl font-black italic">{feasibility.totalHours}h / 8h</span>
-                      <p className="text-[8px] font-bold uppercase opacity-60">AI Daily Prediction</p>
-                   </div>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/60">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white border border-slate-200 w-full max-w-4xl p-10 sm:p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
+            >
+              <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px]" />
+
+              <div className="flex justify-between items-start mb-12">
+                <div>
+                  <h2 className="text-5xl font-black uppercase tracking-tighter italic text-slate-900 leading-none">Task <span className="text-[#F05E23]">Matrix</span></h2>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mt-4">Multi-Assignment Deployment Console</p>
+                </div>
+                <div className={`px-8 py-4 rounded-3xl border-2 flex flex-col items-center gap-1 transition-all ${feasibility.feasible ? 'border-green-500/20 bg-green-500/5 text-green-600' : 'border-red-500/20 bg-red-500/5 text-red-600'}`}>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{feasibility.feasible ? 'Feasible' : 'Overloaded'}</span>
+                  <span className="text-xl font-black italic">{feasibility.totalHours}h / 8h</span>
+                  <p className="text-[8px] font-bold uppercase opacity-60">AI Daily Prediction</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleAssignTask} className="space-y-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="space-y-8">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Assign To Unit</label>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!selectedSteps.length && !customTasks.length) return alert("Define objectives first.");
+                            const title = selectedSteps[0] || customTasks[0];
+                            const res = await getAIInternRecommendation(title, "Operational deployment.");
+                            if (res.success) {
+                              setAiRecommendation(res.recommendation);
+                              setNewTask({ ...newTask, internId: res.recommendation.recommendedInternId });
+                            }
+                          }}
+                          className="text-[8px] font-black uppercase tracking-widest text-[#F05E23] flex items-center gap-2 hover:opacity-70 transition-all"
+                        >
+                          <Zap className="w-3 h-3" /> AI Recommend
+                        </button>
+                      </div>
+                      {aiRecommendation && (
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[8px] font-bold text-[#F05E23] italic pl-2">
+                          AI Tip: {aiRecommendation.justification}
+                        </motion.p>
+                      )}
+                      <select
+                        required
+                        value={newTask.internId}
+                        onChange={e => setNewTask({ ...newTask, internId: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800 appearance-none"
+                      >
+                        <option value="">Select team member...</option>
+                        {interns.map(i => <option key={i._id} value={i._id}>{i.name}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Link Project Scope</label>
+                      <select
+                        value={newTask.clientProjectId}
+                        onChange={e => {
+                          setNewTask({ ...newTask, clientProjectId: e.target.value });
+                          setSelectedSteps([]);
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-[#F05E23] appearance-none"
+                      >
+                        <option value="">Independent Mission...</option>
+                        {adminClientProjects.map(p => <option key={p._id} value={p._id}>{p.projectName}</option>)}
+                      </select>
+                    </div>
+
+                    {newTask.clientProjectId && (
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2 flex items-center gap-2">
+                          <ClipboardList className="w-4 h-4" /> Workflow Checkbox List
+                        </label>
+                        <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-3 max-h-60 overflow-y-auto scrollbar-hide">
+                          {adminClientProjects.find(p => p._id === newTask.clientProjectId)?.workflow?.filter(s => s.status !== 'Complete').map((step, idx) => (
+                            <label key={idx} className="flex items-center gap-4 p-4 rounded-xl hover:bg-white transition-all cursor-pointer group">
+                              <div
+                                onClick={() => {
+                                  setSelectedSteps(prev => prev.includes(step.title) ? prev.filter(s => s !== step.title) : [...prev, step.title]);
+                                }}
+                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedSteps.includes(step.title) ? 'bg-[#F05E23] border-[#F05E23] shadow-lg shadow-[#F05E23]/20' : 'border-slate-300 group-hover:border-[#F05E23]/50'}`}
+                              >
+                                {selectedSteps.includes(step.title) && <Check className="w-4 h-4 text-white" />}
+                              </div>
+                              <span className={`text-xs font-bold uppercase tracking-tight ${selectedSteps.includes(step.title) ? 'text-slate-900' : 'text-slate-400'}`}>{step.title}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Custom Objectives</label>
+                      <div className="flex gap-3">
+                        <input
+                          type="text"
+                          value={customTaskInput}
+                          onChange={e => setCustomTaskInput(e.target.value)}
+                          placeholder="Enter task title..."
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customTaskInput.trim()) {
+                              setCustomTasks([...customTasks, customTaskInput.trim()]);
+                              setCustomTaskInput("");
+                            }
+                          }}
+                          className="p-5 bg-black text-white rounded-2xl hover:bg-slate-800 transition-all shadow-xl"
+                        >
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <div className="space-y-3 p-6 bg-slate-50 border border-slate-200 rounded-3xl max-h-60 overflow-y-auto scrollbar-hide">
+                        {customTasks.map((task, i) => (
+                          <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-slate-100">
+                            <span className="text-xs font-bold uppercase tracking-tight text-slate-700">{task}</span>
+                            <button type="button" onClick={() => setCustomTasks(customTasks.filter((_, idx) => idx !== i))} className="text-red-500/40 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        ))}
+                        {customTasks.length === 0 && <p className="text-[10px] font-black uppercase text-slate-300 text-center py-10 tracking-widest">No custom tasks added</p>}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 italic">Assignment Metadata</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <span className="text-[8px] font-black uppercase text-slate-300 pl-2 tracking-widest">Priority</span>
+                          <select
+                            value={newTask.priority}
+                            onChange={e => setNewTask({ ...newTask, priority: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30"
+                          >
+                            {["Low", "Medium", "High"].map(p => <option key={p} value={p}>{p}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <span className="text-[8px] font-black uppercase text-slate-300 pl-2 tracking-widest">Task Class</span>
+                          <select
+                            value={newTask.taskType}
+                            onChange={e => setNewTask({ ...newTask, taskType: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30"
+                          >
+                            {["General", "Bug Fix", "Feature", "Design", "Research"].map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <form onSubmit={handleAssignTask} className="space-y-10">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <div className="space-y-8">
-                         <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Assign To Unit</label>
-                               <button 
-                                 type="button"
-                                 onClick={async () => {
-                                    if (!selectedSteps.length && !customTasks.length) return alert("Define objectives first.");
-                                    const title = selectedSteps[0] || customTasks[0];
-                                    const res = await getAIInternRecommendation(title, "Operational deployment.");
-                                    if (res.success) {
-                                       setAiRecommendation(res.recommendation);
-                                       setNewTask({ ...newTask, internId: res.recommendation.recommendedInternId });
-                                    }
-                                 }}
-                                 className="text-[8px] font-black uppercase tracking-widest text-[#F05E23] flex items-center gap-2 hover:opacity-70 transition-all"
-                               >
-                                  <Zap className="w-3 h-3" /> AI Recommend
-                               </button>
-                            </div>
-                            {aiRecommendation && (
-                               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[8px] font-bold text-[#F05E23] italic pl-2">
-                                  AI Tip: {aiRecommendation.justification}
-                               </motion.p>
-                            )}
-                            <select
-                              required
-                              value={newTask.internId}
-                              onChange={e => setNewTask({ ...newTask, internId: e.target.value })}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800 appearance-none"
-                            >
-                              <option value="">Select team member...</option>
-                              {interns.map(i => <option key={i._id} value={i._id}>{i.name}</option>)}
-                            </select>
-                         </div>
-
-                         <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Link Project Scope</label>
-                            <select
-                              value={newTask.clientProjectId}
-                              onChange={e => {
-                                setNewTask({ ...newTask, clientProjectId: e.target.value });
-                                setSelectedSteps([]);
-                              }}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-[#F05E23] appearance-none"
-                            >
-                              <option value="">Independent Mission...</option>
-                              {adminClientProjects.map(p => <option key={p._id} value={p._id}>{p.projectName}</option>)}
-                            </select>
-                         </div>
-
-                         {newTask.clientProjectId && (
-                           <div className="space-y-4">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2 flex items-center gap-2">
-                                 <ClipboardList className="w-4 h-4" /> Workflow Checkbox List
-                              </label>
-                              <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-3 max-h-60 overflow-y-auto scrollbar-hide">
-                                 {adminClientProjects.find(p => p._id === newTask.clientProjectId)?.workflow?.filter(s => s.status !== 'Complete').map((step, idx) => (
-                                    <label key={idx} className="flex items-center gap-4 p-4 rounded-xl hover:bg-white transition-all cursor-pointer group">
-                                       <div 
-                                          onClick={() => {
-                                             setSelectedSteps(prev => prev.includes(step.title) ? prev.filter(s => s !== step.title) : [...prev, step.title]);
-                                          }}
-                                          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedSteps.includes(step.title) ? 'bg-[#F05E23] border-[#F05E23] shadow-lg shadow-[#F05E23]/20' : 'border-slate-300 group-hover:border-[#F05E23]/50'}`}
-                                       >
-                                          {selectedSteps.includes(step.title) && <Check className="w-4 h-4 text-white" />}
-                                       </div>
-                                       <span className={`text-xs font-bold uppercase tracking-tight ${selectedSteps.includes(step.title) ? 'text-slate-900' : 'text-slate-400'}`}>{step.title}</span>
-                                    </label>
-                                 ))}
-                              </div>
-                           </div>
-                         )}
-                      </div>
-
-                      <div className="space-y-8">
-                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Custom Objectives</label>
-                            <div className="flex gap-3">
-                               <input 
-                                  type="text" 
-                                  value={customTaskInput}
-                                  onChange={e => setCustomTaskInput(e.target.value)}
-                                  placeholder="Enter task title..."
-                                  className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800"
-                               />
-                               <button 
-                                  type="button" 
-                                  onClick={() => {
-                                     if (customTaskInput.trim()) {
-                                        setCustomTasks([...customTasks, customTaskInput.trim()]);
-                                        setCustomTaskInput("");
-                                     }
-                                  }}
-                                  className="p-5 bg-black text-white rounded-2xl hover:bg-slate-800 transition-all shadow-xl"
-                               >
-                                  <Plus className="w-5 h-5" />
-                               </button>
-                            </div>
-                            <div className="space-y-3 p-6 bg-slate-50 border border-slate-200 rounded-3xl max-h-60 overflow-y-auto scrollbar-hide">
-                               {customTasks.map((task, i) => (
-                                  <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                                     <span className="text-xs font-bold uppercase tracking-tight text-slate-700">{task}</span>
-                                     <button type="button" onClick={() => setCustomTasks(customTasks.filter((_, idx) => idx !== i))} className="text-red-500/40 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
-                                  </div>
-                               ))}
-                               {customTasks.length === 0 && <p className="text-[10px] font-black uppercase text-slate-300 text-center py-10 tracking-widest">No custom tasks added</p>}
-                            </div>
-                         </div>
-
-                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 italic">Assignment Metadata</label>
-                            <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2">
-                                  <span className="text-[8px] font-black uppercase text-slate-300 pl-2 tracking-widest">Priority</span>
-                                  <select 
-                                     value={newTask.priority}
-                                     onChange={e => setNewTask({...newTask, priority: e.target.value})}
-                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30"
-                                  >
-                                     {["Low", "Medium", "High"].map(p => <option key={p} value={p}>{p}</option>)}
-                                  </select>
-                               </div>
-                               <div className="space-y-2">
-                                  <span className="text-[8px] font-black uppercase text-slate-300 pl-2 tracking-widest">Task Class</span>
-                                  <select 
-                                     value={newTask.taskType}
-                                     onChange={e => setNewTask({...newTask, taskType: e.target.value})}
-                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30"
-                                  >
-                                     {["General", "Bug Fix", "Feature", "Design", "Research"].map(t => <option key={t} value={t}>{t}</option>)}
-                                  </select>
-                               </div>
-                            </div>
-                         </div>
-                      </div>
-                   </div>
-
-                   <div className="flex gap-4 pt-10 border-t border-slate-100">
-                      <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-6 rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] border-2 border-slate-200 text-slate-400 hover:bg-slate-50 transition-all italic">Abort Deployment</button>
-                      <button 
-                        type="submit" 
-                        disabled={loading || (selectedSteps.length === 0 && customTasks.length === 0)}
-                        className="flex-[2] bg-[#F05E23] text-white py-6 rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] shadow-2xl shadow-[#F05E23]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 italic"
-                      >
-                         Deploy {selectedSteps.length + customTasks.length} Matrix Tasks
-                      </button>
-                   </div>
-                </form>
-             </motion.div>
-           </div>
+                <div className="flex gap-4 pt-10 border-t border-slate-100">
+                  <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-6 rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] border-2 border-slate-200 text-slate-400 hover:bg-slate-50 transition-all italic">Abort Deployment</button>
+                  <button
+                    type="submit"
+                    disabled={loading || (selectedSteps.length === 0 && customTasks.length === 0)}
+                    className="flex-[2] bg-[#F05E23] text-white py-6 rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] shadow-2xl shadow-[#F05E23]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 italic"
+                  >
+                    Deploy {selectedSteps.length + customTasks.length} Matrix Tasks
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
 
         {chatTask && (
-           <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[80vh]">
-                <div className="p-8 bg-[#F05E23] text-white flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <div className="p-3 bg-white/20 rounded-2xl"><MessageSquare className="w-6 h-6" /></div>
-                      <div>
-                        <h2 className="text-xl font-black uppercase tracking-tight">Mission <span className="opacity-60">Log</span></h2>
-                        <p className="text-[0.6rem] font-black uppercase tracking-widest opacity-60">Active Channel: {chatTask.title}</p>
-                      </div>
-                   </div>
-                   <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all"><PlusCircle className="w-6 h-6 rotate-45" /></button>
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
+            <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[80vh]">
+              <div className="p-8 bg-[#F05E23] text-white flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-2xl"><MessageSquare className="w-6 h-6" /></div>
+                  <div>
+                    <h2 className="text-xl font-black uppercase tracking-tight">Mission <span className="opacity-60">Log</span></h2>
+                    <p className="text-[0.6rem] font-black uppercase tracking-widest opacity-60">Active Channel: {chatTask.title}</p>
+                  </div>
                 </div>
+                <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all"><PlusCircle className="w-6 h-6 rotate-45" /></button>
+              </div>
 
-                <div className="grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50">
-                   {(chatTask.discussion || []).map((msg, idx) => (
-                      <div key={idx} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
-                         <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-2 px-2">{msg.sender === 'admin' ? 'YOU' : 'INTERN'} • {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                         <div className={`max-w-[80%] p-5 rounded-3xl font-bold text-sm shadow-sm ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white border border-slate-200 rounded-tl-none text-slate-700'}`}>
-                            {msg.content}
-                         </div>
-                      </div>
-                   ))}
-                   {(chatTask.discussion || []).length === 0 && (
-                      <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
-                         <MessageSquare className="w-16 h-16 mb-4" />
-                         <p className="font-black uppercase tracking-widest text-xs">Awaiting operational dialogue.</p>
-                      </div>
-                   )}
+              <div className="grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50">
+                {(chatTask.discussion || []).map((msg, idx) => (
+                  <div key={idx} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
+                    <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-2 px-2">{msg.sender === 'admin' ? 'YOU' : 'INTERN'} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div className={`max-w-[80%] p-5 rounded-3xl font-bold text-sm shadow-sm ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white border border-slate-200 rounded-tl-none text-slate-700'}`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {(chatTask.discussion || []).length === 0 && (
+                  <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
+                    <MessageSquare className="w-16 h-16 mb-4" />
+                    <p className="font-black uppercase tracking-widest text-xs">Awaiting operational dialogue.</p>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleSendChat} className="p-8 border-t border-slate-200 bg-white">
+                <div className="flex gap-4">
+                  <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Enter briefing intel..." className="grow bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-[#F05E23] font-bold text-sm" />
+                  <button type="submit" className="bg-[#F05E23] text-white p-4 rounded-2xl shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
                 </div>
-
-                <form onSubmit={handleSendChat} className="p-8 border-t border-slate-200 bg-white">
-                   <div className="flex gap-4">
-                      <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Enter briefing intel..." className="grow bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-[#F05E23] font-bold text-sm" />
-                      <button type="submit" className="bg-[#F05E23] text-white p-4 rounded-2xl shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
-                   </div>
-                </form>
-             </motion.div>
-           </div>
+              </form>
+            </motion.div>
+          </div>
         )}
 
         {isAddingProject && (
-           <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
-             <motion.div 
-               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-               animate={{ scale: 1, opacity: 1, y: 0 }} 
-               className="bg-white border border-slate-200 w-full max-w-4xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
-             >
-                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-[#F05E23] to-transparent opacity-30" />
-                <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900">{editingProject ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Showcase</span></h2>
-                <form onSubmit={handleProjectSubmit} className="space-y-8">
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="relative group">
-                         <input type="text" required value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})} placeholder="Project Title" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
-                      </div>
-                      <div className="relative group">
-                         <input type="text" value={projectForm.index} onChange={e => setProjectForm({...projectForm, index: e.target.value})} placeholder="Sequence Index (e.g. 01)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
-                      </div>
-                      <div className="relative group">
-                         <input type="text" value={projectForm.category} onChange={e => setProjectForm({...projectForm, category: e.target.value})} placeholder="Sync Category" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-[#F05E23] placeholder:text-[#F05E23]/20" />
-                      </div>
-                   </div>
-                   <div className="relative group">
-                      <textarea rows={4} required value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})} placeholder="Impact Narrative..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none" />
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="relative group">
-                         <input type="text" value={projectForm.tags} onChange={e => setProjectForm({...projectForm, tags: e.target.value})} placeholder="Technological Stack (comma separated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.6rem] tracking-widest text-slate-500 placeholder:text-slate-300" />
-                      </div>
-                      <div className="relative group">
-                         <input type="text" value={projectForm.impact} onChange={e => setProjectForm({...projectForm, impact: e.target.value})} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-green-500/30 transition-all font-black uppercase text-[0.6rem] tracking-widest text-green-600 placeholder:text-green-600/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
-                      </div>
-                   </div>
-                   <div className="flex gap-4 pt-10">
-                     <button type="button" onClick={() => setIsAddingProject(false)} className="flex-1 py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all">Abort</button>
-                     <button type="submit" className="flex-1 bg-slate-900 text-white py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black shadow-xl transition-all">Finalize Showcase</button>
-                   </div>
-                </form>
-             </motion.div>
-           </div>
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white border border-slate-200 w-full max-w-4xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-[#F05E23] to-transparent opacity-30" />
+              <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900">{editingProject ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Showcase</span></h2>
+              <form onSubmit={handleProjectSubmit} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="relative group">
+                    <input type="text" required value={projectForm.title} onChange={e => setProjectForm({ ...projectForm, title: e.target.value })} placeholder="Project Title" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                  </div>
+                  <div className="relative group">
+                    <input type="text" value={projectForm.index} onChange={e => setProjectForm({ ...projectForm, index: e.target.value })} placeholder="Sequence Index (e.g. 01)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                  </div>
+                  <div className="relative group">
+                    <input type="text" value={projectForm.category} onChange={e => setProjectForm({ ...projectForm, category: e.target.value })} placeholder="Sync Category" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-[#F05E23] placeholder:text-[#F05E23]/20" />
+                  </div>
+                </div>
+                <div className="relative group">
+                  <textarea rows={4} required value={projectForm.description} onChange={e => setProjectForm({ ...projectForm, description: e.target.value })} placeholder="Impact Narrative..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="relative group">
+                    <input type="text" value={projectForm.tags} onChange={e => setProjectForm({ ...projectForm, tags: e.target.value })} placeholder="Technological Stack (comma separated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.6rem] tracking-widest text-slate-500 placeholder:text-slate-300" />
+                  </div>
+                  <div className="relative group">
+                    <input type="text" value={projectForm.impact} onChange={e => setProjectForm({ ...projectForm, impact: e.target.value })} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-green-500/30 transition-all font-black uppercase text-[0.6rem] tracking-widest text-green-600 placeholder:text-green-600/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
+                  </div>
+                </div>
+                <div className="flex gap-4 pt-10">
+                  <button type="button" onClick={() => setIsAddingProject(false)} className="flex-1 py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all">Abort</button>
+                  <button type="submit" className="flex-1 bg-slate-900 text-white py-6 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black shadow-xl transition-all">Finalize Showcase</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
 
-         {isEditingCredentials && selectedCredentialProject && (
-           <div className="fixed inset-0 z-110 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
-             <motion.div 
-               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-               animate={{ scale: 1, opacity: 1, y: 0 }} 
-               className="bg-white border border-slate-200 w-full max-w-4xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
-             >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
-                <div className="flex items-center gap-4 mb-10">
-                   <div className="p-4 bg-green-500/10 rounded-3xl"><Shield className="w-8 h-8 text-green-500" /></div>
-                   <div>
-                      <h2 className="text-4xl font-black uppercase tracking-tighter italic text-slate-900">Credential <span className="text-[#F05E23]">Matrix</span></h2>
-                      <p className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">Managing Access for {selectedCredentialProject.projectName}</p>
-                   </div>
+        {isEditingCredentials && selectedCredentialProject && (
+          <div className="fixed inset-0 z-110 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white border border-slate-200 w-full max-w-4xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+              <div className="flex items-center gap-4 mb-10">
+                <div className="p-4 bg-green-500/10 rounded-3xl"><Shield className="w-8 h-8 text-green-500" /></div>
+                <div>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter italic text-slate-900">Credential <span className="text-[#F05E23]">Matrix</span></h2>
+                  <p className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">Managing Access for {selectedCredentialProject.projectName}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Environment Config */}
+                <div className="md:col-span-2 space-y-4">
+                  <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-[#F05E23]">Synchronous Environment (.env)</label>
+                  <textarea
+                    rows={6}
+                    value={credentialForm.env}
+                    onChange={e => setCredentialForm({ ...credentialForm, env: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-3xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-mono text-xs text-slate-800 placeholder:text-slate-300"
+                    placeholder="MONGODB_URI=...&#10;JWT_SECRET=..."
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   {/* Environment Config */}
-                   <div className="md:col-span-2 space-y-4">
-                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-[#F05E23]">Synchronous Environment (.env)</label>
-                      <textarea 
-                        rows={6} 
-                        value={credentialForm.env} 
-                        onChange={e => setCredentialForm({...credentialForm, env: e.target.value})}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-3xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-mono text-xs text-slate-800 placeholder:text-slate-300" 
-                        placeholder="MONGODB_URI=...&#10;JWT_SECRET=..."
-                      />
-                   </div>
-
-                   {/* Gmail */}
-                   <div className="space-y-4">
-                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Google Ecosystem (Gmail)</label>
-                      <div className="space-y-3">
-                         <input 
-                           type="text" 
-                           value={credentialForm.gmail.email} 
-                           onChange={e => setCredentialForm({...credentialForm, gmail: {...credentialForm.gmail, email: e.target.value}})}
-                           placeholder="Email ID" 
-                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
-                         />
-                         <input 
-                           type="password" 
-                           value={credentialForm.gmail.password} 
-                           onChange={e => setCredentialForm({...credentialForm, gmail: {...credentialForm.gmail, password: e.target.value}})}
-                           placeholder="App Password" 
-                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
-                         />
-                      </div>
-                   </div>
-
-                   {/* Vercel */}
-                   <div className="space-y-4">
-                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Production Node (Vercel)</label>
-                      <div className="space-y-3">
-                         <input 
-                           type="text" 
-                           value={credentialForm.vercel.email} 
-                           onChange={e => setCredentialForm({...credentialForm, vercel: {...credentialForm.vercel, email: e.target.value}})}
-                           placeholder="Account Email" 
-                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
-                         />
-                         <input 
-                           type="password" 
-                           value={credentialForm.vercel.password} 
-                           onChange={e => setCredentialForm({...credentialForm, vercel: {...credentialForm.vercel, password: e.target.value}})}
-                           placeholder="Access Token / Pass" 
-                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
-                         />
-                      </div>
-                   </div>
-
-                   {/* GitHub */}
-                   <div className="space-y-4">
-                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Source Control (GitHub ID)</label>
-                      <input 
-                        type="text" 
-                        value={credentialForm.github} 
-                        onChange={e => setCredentialForm({...credentialForm, github: e.target.value})}
-                        placeholder="Deployment Username / Repo Path" 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
-                      />
-                   </div>
-
-                   {/* Additional */}
-                   <div className="space-y-4">
-                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Other Strategic Passwords</label>
-                      <textarea 
-                        rows={1} 
-                        value={credentialForm.additional} 
-                        onChange={e => setCredentialForm({...credentialForm, additional: e.target.value})}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold resize-none" 
-                        placeholder="Hosting, Domain, API Keys..."
-                      />
-                   </div>
-
-                   {/* Google Drive Link */}
-                   <div className="md:col-span-2 space-y-4">
-                      <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-[#4285F4]">Google Drive Folder Link</label>
-                      <div className="relative group">
-                         <input 
-                           type="text" 
-                           value={selectedCredentialProject.googleDriveLink || ""} 
-                           onChange={e => {
-                              setSelectedCredentialProject({...selectedCredentialProject, googleDriveLink: e.target.value});
-                           }}
-                           placeholder="https://drive.google.com/drive/folders/..." 
-                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#4285F4]/30 text-slate-800 text-xs font-bold"
-                         />
-                         <ExternalLink className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4285F4] opacity-40" />
-                      </div>
-                   </div>
+                {/* Gmail */}
+                <div className="space-y-4">
+                  <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Google Ecosystem (Gmail)</label>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={credentialForm.gmail.email}
+                      onChange={e => setCredentialForm({ ...credentialForm, gmail: { ...credentialForm.gmail, email: e.target.value } })}
+                      placeholder="Email ID"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                    />
+                    <input
+                      type="password"
+                      value={credentialForm.gmail.password}
+                      onChange={e => setCredentialForm({ ...credentialForm, gmail: { ...credentialForm.gmail, password: e.target.value } })}
+                      placeholder="App Password"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                    />
+                  </div>
                 </div>
 
-                <div className="flex gap-4 pt-12">
-                   <button 
-                      onClick={() => setIsEditingCredentials(false)} 
-                      className="flex-1 py-5 rounded-3xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all"
-                   >
-                      Discard Changes
-                   </button>
-                   <button 
-                      onClick={async () => {
-                         const res = await updateClientProject(selectedCredentialProject._id, { 
-                            credentials: credentialForm,
-                            googleDriveLink: selectedCredentialProject.googleDriveLink
-                         });
-                         if (res.success) {
-                            setStatusMsg({ type: "success", msg: "Credential Matrix Synchronized." });
-                            setIsEditingCredentials(false);
-                         } else {
-                            alert("Sync Failure: " + res.message);
-                         }
+                {/* Vercel */}
+                <div className="space-y-4">
+                  <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Production Node (Vercel)</label>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={credentialForm.vercel.email}
+                      onChange={e => setCredentialForm({ ...credentialForm, vercel: { ...credentialForm.vercel, email: e.target.value } })}
+                      placeholder="Account Email"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                    />
+                    <input
+                      type="password"
+                      value={credentialForm.vercel.password}
+                      onChange={e => setCredentialForm({ ...credentialForm, vercel: { ...credentialForm.vercel, password: e.target.value } })}
+                      placeholder="Access Token / Pass"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* GitHub */}
+                <div className="space-y-4">
+                  <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Source Control (GitHub ID)</label>
+                  <input
+                    type="text"
+                    value={credentialForm.github}
+                    onChange={e => setCredentialForm({ ...credentialForm, github: e.target.value })}
+                    placeholder="Deployment Username / Repo Path"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold"
+                  />
+                </div>
+
+                {/* Additional */}
+                <div className="space-y-4">
+                  <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-slate-400">Other Strategic Passwords</label>
+                  <textarea
+                    rows={1}
+                    value={credentialForm.additional}
+                    onChange={e => setCredentialForm({ ...credentialForm, additional: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 text-slate-800 text-xs font-bold resize-none"
+                    placeholder="Hosting, Domain, API Keys..."
+                  />
+                </div>
+
+                {/* Google Drive Link */}
+                <div className="md:col-span-2 space-y-4">
+                  <label className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-[#4285F4]">Google Drive Folder Link</label>
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      value={selectedCredentialProject.googleDriveLink || ""}
+                      onChange={e => {
+                        setSelectedCredentialProject({ ...selectedCredentialProject, googleDriveLink: e.target.value });
                       }}
-                      className="flex-1 bg-green-500 text-white py-5 rounded-3xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_40px_rgba(34,197,94,0.2)] hover:shadow-[0_0_50px_rgba(34,197,94,0.4)] transition-all active:scale-95"
-                   >
-                      Finalize & Encrypt
-                   </button>
+                      placeholder="https://drive.google.com/drive/folders/..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 outline-none focus:border-[#4285F4]/30 text-slate-800 text-xs font-bold"
+                    />
+                    <ExternalLink className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4285F4] opacity-40" />
+                  </div>
                 </div>
-             </motion.div>
-           </div>
-         )}
+              </div>
+
+              <div className="flex gap-4 pt-12">
+                <button
+                  onClick={() => setIsEditingCredentials(false)}
+                  className="flex-1 py-5 rounded-3xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all"
+                >
+                  Discard Changes
+                </button>
+                <button
+                  onClick={async () => {
+                    const res = await updateClientProject(selectedCredentialProject._id, {
+                      credentials: credentialForm,
+                      googleDriveLink: selectedCredentialProject.googleDriveLink
+                    });
+                    if (res.success) {
+                      setStatusMsg({ type: "success", msg: "Credential Matrix Synchronized." });
+                      setIsEditingCredentials(false);
+                    } else {
+                      alert("Sync Failure: " + res.message);
+                    }
+                  }}
+                  className="flex-1 bg-green-500 text-white py-5 rounded-3xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_40px_rgba(34,197,94,0.2)] hover:shadow-[0_0_50px_rgba(34,197,94,0.4)] transition-all active:scale-95"
+                >
+                  Finalize & Encrypt
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {statusMsg.msg && (
-           <motion.div key="status-notification" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-200 p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>
-             <span className="font-black text-[0.7rem] uppercase tracking-widest">{statusMsg.msg}</span>
-           </motion.div>
+          <motion.div key="status-notification" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-200 p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>
+            <span className="font-black text-[0.7rem] uppercase tracking-widest">{statusMsg.msg}</span>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

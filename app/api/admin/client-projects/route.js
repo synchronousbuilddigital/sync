@@ -11,9 +11,23 @@ export async function GET(req) {
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
     await dbConnect();
-    const projects = await ClientProject.find().populate("clientId", "name email");
+    const projects = await ClientProject.find();
+    
+    // Manually populate to handle bad data
+    for (let i = 0; i < projects.length; i++) {
+        try {
+            await projects[i].populate("clientId", "name email");
+            if (projects[i].assignedIntern && projects[i].assignedIntern.toString() !== "") {
+                await projects[i].populate("assignedIntern", "name email");
+            }
+        } catch (popErr) {
+            console.error("Population error for project:", projects[i]._id, popErr.message);
+        }
+    }
+
     return Response.json({ success: true, projects });
   } catch (err) {
+    console.error("CRITICAL API ERROR /api/admin/client-projects:", err);
     return Response.json({ success: false, message: err.message }, { status: 500 });
   }
 }
@@ -73,6 +87,8 @@ export async function POST(req) {
     }
 
     data.publicId = crypto.randomBytes(6).toString("hex");
+
+    if (data.assignedIntern === "") data.assignedIntern = null;
 
     const project = await ClientProject.create(data);
 

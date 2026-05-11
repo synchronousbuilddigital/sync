@@ -1,6 +1,5 @@
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
-import bcrypt from "bcryptjs";
 import { verifyToken } from "@/lib/auth";
 import { sendOnboardingEmail } from "@/lib/mail";
 
@@ -43,11 +42,18 @@ export async function POST(req) {
     try {
       await sendOnboardingEmail(email, name, defaultPassword);
     } catch (mailErr) {
-      console.error("Failed to send onboarding email", mailErr);
+      console.error("Failed to send onboarding email:", mailErr);
     }
 
-    return Response.json({ success: true, intern: { ...intern._doc, password: defaultPassword } });
+    const internObj = intern.toObject();
+    delete internObj.password;
+
+    return Response.json({ 
+      success: true, 
+      intern: { ...internObj, password: defaultPassword } 
+    });
   } catch (err) {
+    console.error("Error in /api/admin/interns POST:", err);
     return Response.json({ success: false, message: err.message }, { status: 500 });
   }
 }

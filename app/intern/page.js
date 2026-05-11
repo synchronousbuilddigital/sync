@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export default function InternDashboard() {
-  const { user, tasks, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading } = useAuth();
+  const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading } = useAuth();
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [chatTaskId, setChatTaskId] = useState(null);
   const [note, setNote] = useState("");
@@ -236,29 +236,29 @@ export default function InternDashboard() {
               </div>
 
               <div className="space-y-10">
-                 {tasks.filter(t => t.clientProjectId).length === 0 ? (
+                 {internProjects.length === 0 ? (
                     <div className="text-center py-12 opacity-20">
                        <p className="text-[0.65rem] font-black uppercase tracking-widest italic">No operational project context detected.</p>
                     </div>
                  ) : (
-                    tasks.filter(t => t.clientProjectId).slice(0, 1).map((t) => (
-                      <div key={t.clientProjectId._id} className="space-y-10">
+                    internProjects.slice(0, 1).map((p) => (
+                      <div key={p._id} className="space-y-10">
                          {/* Brand Identity */}
                          <div className="p-6 bg-slate-50 dark:bg-black/20 rounded-3xl border border-black/5 dark:border-white/5">
                             <span className="text-[0.55rem] font-black uppercase text-[#F05E23] tracking-[0.4em] block mb-2">Target Asset</span>
-                            <h4 className="text-lg font-black uppercase tracking-tighter italic">{t.clientProjectId.projectName}</h4>
-                            <p className="text-[0.6rem] text-slate-400 mt-2 font-bold uppercase tracking-widest">{t.clientProjectId.projectType || "Custom Solution"}</p>
+                            <h4 className="text-lg font-black uppercase tracking-tighter italic">{p.projectName}</h4>
+                            <p className="text-[0.6rem] text-slate-400 mt-2 font-bold uppercase tracking-widest">{p.projectType || "Custom Solution"}</p>
                          </div>
 
                          {/* SOP Link */}
-                         {t.clientProjectId.sop && (
+                         {p.sop && (
                             <div className="space-y-4">
                                <div className="flex items-center gap-3">
                                   <FileText className="w-4 h-4 text-slate-300" />
                                   <span className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">Operational SOP</span>
                                </div>
                                <div className="p-6 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[0.65rem] font-bold leading-relaxed text-blue-300 italic">
-                                  {t.clientProjectId.sop}
+                                  {p.sop}
                                </div>
                             </div>
                          )}
@@ -270,14 +270,14 @@ export default function InternDashboard() {
                                   <Activity className="w-4 h-4 text-slate-300" />
                                   <span className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">Roadmap Progress</span>
                                </div>
-                               <span className="text-[0.6rem] font-black text-[#F05E23]">{t.clientProjectId.workflow?.filter(s => s.status === 'Complete').length} / {t.clientProjectId.workflow?.length}</span>
+                               <span className="text-[0.6rem] font-black text-[#F05E23]">{p.workflow?.filter(s => s.status === 'Complete').length} / {p.workflow?.length}</span>
                             </div>
                             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-4 scrollbar-hide">
-                               {t.clientProjectId.workflow?.map((step, idx) => (
+                               {p.workflow?.map((step, idx) => (
                                   <div key={idx} className="flex gap-4 group">
                                      <div className="flex flex-col items-center">
                                         <div className={`w-3 h-3 rounded-full transition-all ${step.status === 'Complete' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : (step.status === 'In Progress' ? 'bg-[#F05E23] animate-pulse' : 'bg-slate-300')}`} />
-                                        {idx !== (t.clientProjectId.workflow.length - 1) && <div className="w-0.5 h-10 bg-slate-100 dark:bg-white/5" />}
+                                        {idx !== (p.workflow.length - 1) && <div className="w-0.5 h-10 bg-slate-100 dark:bg-white/5" />}
                                      </div>
                                      <div className="pb-4">
                                         <span className={`text-[0.65rem] font-black uppercase tracking-widest block ${step.status === 'Complete' ? 'text-green-500' : (step.status === 'In Progress' ? 'text-[#F05E23]' : 'text-slate-400')}`}>{step.title}</span>
@@ -289,14 +289,14 @@ export default function InternDashboard() {
                          </div>
 
                          {/* Requirements */}
-                         {(t.clientProjectId.requirements || []).length > 0 && (
+                         {(p.requirements || []).length > 0 && (
                             <div className="space-y-4 pt-4 border-t border-white/5">
                                <div className="flex items-center gap-3">
                                   <ShieldCheck className="w-4 h-4 text-slate-300" />
                                   <span className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">Mission Directives</span>
                                </div>
                                <div className="space-y-2">
-                                  {t.clientProjectId.requirements.map((req, i) => (
+                                  {p.requirements.map((req, i) => (
                                      <div key={i} className="flex items-start gap-3 p-3 bg-white/2 rounded-xl">
                                         <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${req.status === 'Approved' ? 'bg-green-500' : 'bg-[#F05E23]'}`} />
                                         <p className="text-[0.65rem] font-bold text-slate-300 line-clamp-2">{req.content}</p>
