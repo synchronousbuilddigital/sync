@@ -16,7 +16,7 @@ export default function AdminDashboard() {
     addIntern, removeIntern, assignTask, updateTaskStatus, deleteTask, reassignTask,
     approveLeave, announceToAll, addProject, updateProject, deleteProject,
     adminClientProjects, createClient, createClientProject, updateClientProject,
-    purgeClientProject, generateRoadmap, generateBrandIntel, loading
+    purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed, loading
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState("interns");
@@ -781,8 +781,11 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="lg:w-96 flex flex-col gap-4">
-                        <div className="flex-1 bg-black/5 dark:bg-black/20 rounded-3xl p-6 h-40 overflow-y-auto space-y-4 scrollbar-hide text-[10px]">
-                          {project.discussions?.slice(-3).map((msg, i) => (
+                        <div className="flex items-center justify-between px-4">
+                          <span className="text-[8px] font-black uppercase tracking-widest text-[#F05E23]">Direct Sync</span>
+                        </div>
+                        <div className="flex-1 bg-black/5 dark:bg-black/20 rounded-3xl p-6 h-32 overflow-y-auto space-y-4 scrollbar-hide text-[10px]">
+                          {project.discussions?.slice(-5).map((msg, i) => (
                             <div key={i} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
                               <span className="text-[7px] font-black uppercase opacity-30 mb-1">{msg.sender}</span>
                               <p className={`p-3 rounded-2xl ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white/10 rounded-tl-none'}`}>
@@ -795,12 +798,38 @@ export default function AdminDashboard() {
                           type="text"
                           placeholder="Message for the client..."
                           onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === 'Enter' && e.target.value.trim()) {
                               updateClientProject(project._id, { message: e.target.value });
                               e.target.value = "";
                             }
                           }}
                           className="w-full bg-slate-50 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-[0.7rem] font-black uppercase tracking-widest focus:outline-none focus:border-[#F05E23]"
+                        />
+
+                        <div className="mt-4 flex items-center justify-between px-4">
+                          <span className="text-[8px] font-black uppercase tracking-widest text-blue-500">Mission Feed</span>
+                        </div>
+                        <div className="flex-1 bg-black/5 dark:bg-black/20 rounded-3xl p-6 h-32 overflow-y-auto space-y-4 scrollbar-hide text-[10px]">
+                          {project.feeds?.slice(-5).map((feed, i) => (
+                            <div key={i} className="flex flex-col items-start border-l border-blue-500/30 pl-3 py-1">
+                              <span className="text-[7px] font-black uppercase opacity-30 mb-1">{feed.sender} • {new Date(feed.timestamp).toLocaleTimeString()}</span>
+                              <p className="text-slate-800 dark:text-white/80 italic font-bold">
+                                "{feed.content}"
+                              </p>
+                            </div>
+                          ))}
+                          {(!project.feeds || project.feeds.length === 0) && <p className="text-[8px] text-white/20 uppercase text-center py-4">No feed updates.</p>}
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Post update to mission feed..."
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && e.target.value.trim()) {
+                              sendAdminFeed(project._id, e.target.value);
+                              e.target.value = "";
+                            }
+                          }}
+                          className="w-full bg-slate-50 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-[0.7rem] font-black uppercase tracking-widest focus:outline-none focus:border-blue-500"
                         />
                       </div>
                     </div>

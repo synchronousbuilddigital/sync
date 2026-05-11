@@ -188,6 +188,34 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const sendClientFeed = async (feed) => {
+    const res = await fetch("/api/client/project", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ feed })
+    });
+    const data = await res.json();
+    if (data.success) fetchClientProject(token);
+    return data;
+  };
+
+  const sendAdminFeed = async (id, feed) => {
+    const res = await fetch(`/api/admin/client-projects/${id}`, {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ feed })
+    });
+    const data = await res.json();
+    if (data.success) fetchAdminClientProjects(token);
+    return data;
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem("sync_user");
     const storedToken = localStorage.getItem("sync_token");
@@ -573,7 +601,7 @@ export function AuthProvider({ children }) {
       updateTaskStatus, deleteTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
       clientProject, adminClientProjects, internProjects, createClient, createClientProject, 
-      updateClientProject, purgeClientProject, sendClientMessage, sendDiscussion, updateClientInfo, generateRoadmap,
+      updateClientProject, purgeClientProject, sendClientMessage, sendClientFeed, sendAdminFeed, sendDiscussion, updateClientInfo, generateRoadmap,
       generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions,
       generateBrandIntel
     }}>

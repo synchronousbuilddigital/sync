@@ -41,6 +41,20 @@ export async function PATCH(req, { params }) {
       return Response.json({ success: true, project });
     }
 
+    // Handle feed update
+    if (body.feed) {
+      const project = await ClientProject.findById(id);
+      if (!project) return Response.json({ success: false, message: "Project not found" }, { status: 404 });
+      
+      project.feeds.push({
+        sender: "admin",
+        content: body.feed,
+        timestamp: new Date()
+      });
+      await project.save();
+      return Response.json({ success: true, project });
+    }
+
     const project = await ClientProject.findByIdAndUpdate(id, update, { returnDocument: 'after' });
     return Response.json({ success: true, project });
   } catch (err) {

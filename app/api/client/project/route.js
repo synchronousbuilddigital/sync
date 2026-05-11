@@ -24,11 +24,18 @@ export async function POST(req) {
     if (!decoded || decoded.role !== "client") return Response.json({ success: false, message: "Client only" }, { status: 401 });
 
     await dbConnect();
-    const { message } = await req.json();
+    const { message, feed } = await req.json();
     
+    let update = {};
+    if (feed) {
+      update = { $push: { feeds: { sender: "client", content: feed } } };
+    } else {
+      update = { $push: { discussions: { sender: "client", content: message } } };
+    }
+
     const project = await ClientProject.findOneAndUpdate(
       { clientId: decoded.userId },
-      { $push: { discussions: { sender: "client", content: message } } },
+      update,
       { new: true }
     );
 

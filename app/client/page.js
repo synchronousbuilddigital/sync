@@ -10,8 +10,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ClientDashboard() {
-  const { user, clientProject, sendClientMessage, updateClientInfo, logout, generateAIStory, getAIFeatureSuggestions } = useAuth();
+  const { user, clientProject, sendClientMessage, sendClientFeed, updateClientInfo, logout, generateAIStory, getAIFeatureSuggestions } = useAuth();
   const [message, setMessage] = useState("");
+  const [feedMessage, setFeedMessage] = useState("");
   const [expandedStep, setExpandedStep] = useState(null);
   
   // Edit Modals State
@@ -76,6 +77,13 @@ export default function ClientDashboard() {
     if (!message.trim()) return;
     await sendClientMessage(message);
     setMessage("");
+  };
+
+  const handleSendFeed = async (e) => {
+    e.preventDefault();
+    if (!feedMessage.trim()) return;
+    await sendClientFeed(feedMessage);
+    setFeedMessage("");
   };
 
   const handleUpdateInfo = async (e) => {
@@ -319,6 +327,62 @@ export default function ClientDashboard() {
                   </AnimatePresence>
                 </motion.div>
               ))}
+            </div>
+          </div>
+
+          {/* Project Feed Section */}
+          <div className="space-y-8">
+            <div className="flex items-center gap-6">
+                <h3 className="text-3xl font-black uppercase tracking-tighter italic whitespace-nowrap">Mission <span className="text-blue-500">Feed</span></h3>
+                <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 space-y-6">
+              <form onSubmit={handleSendFeed} className="relative">
+                <input 
+                  type="text" 
+                  value={feedMessage}
+                  onChange={(e) => setFeedMessage(e.target.value)}
+                  placeholder="Post an update to the mission feed..."
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-6 pr-16 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-blue-500 transition-all placeholder:text-white/20"
+                />
+                <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+                  <Send className="w-4 h-4 text-white" />
+                </button>
+              </form>
+
+              <div className="space-y-4 max-h-[400px] overflow-y-auto scrollbar-hide">
+                {clientProject.feeds && clientProject.feeds.length > 0 ? (
+                  [...clientProject.feeds].reverse().map((feed, idx) => (
+                    <motion.div 
+                      key={idx}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="p-6 rounded-2xl bg-white/5 border border-white/5 flex gap-4 items-start"
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${feed.sender === 'admin' ? 'bg-[#F05E23]/20 text-[#F05E23]' : 'bg-blue-500/20 text-blue-500'}`}>
+                        {feed.sender === 'admin' ? <ShieldCheck className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-white/40">
+                            {feed.sender === 'admin' ? 'HQ Command' : 'Source Alpha'}
+                          </span>
+                          <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">
+                            {new Date(feed.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm font-bold text-white/80 leading-relaxed italic">"{feed.content}"</p>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="py-12 text-center opacity-20">
+                    <Zap className="w-12 h-12 mx-auto mb-4" />
+                    <p className="text-[10px] font-black uppercase tracking-widest">No updates in the mission feed yet.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

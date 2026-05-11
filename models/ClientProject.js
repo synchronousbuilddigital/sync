@@ -64,6 +64,13 @@ const ClientProjectSchema = new mongoose.Schema({
   aiStory: { type: String, default: "" }, // Human-readable progress summary
   aiRiskAnalysis: { type: String, default: "" }, // Flags for potential delays
   
+  // Project Feed / Updates
+  feeds: [{
+    content: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now },
+    sender: { type: String, enum: ["admin", "client"], default: "client" }
+  }],
+
   // Direct messaging between Admin and Client
   discussions: [{
     sender: { type: String, enum: ["admin", "client"] },

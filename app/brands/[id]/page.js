@@ -152,6 +152,46 @@ export default function PublicBrandPage() {
           </div>
         </div>
 
+        {/* Mission Feed */}
+        <div className="space-y-10">
+          <div className="flex items-center gap-8">
+             <h3 className="text-3xl sm:text-5xl font-black uppercase tracking-tighter italic whitespace-nowrap">Mission <span className="text-blue-500">Updates</span></h3>
+             <div className="h-[2px] w-full bg-white/5" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 max-h-[600px] overflow-y-auto pr-4 scrollbar-hide">
+            {project.feeds && project.feeds.length > 0 ? (
+              [...project.feeds].reverse().map((feed, idx) => (
+                <motion.div 
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] p-10 flex gap-8 items-start"
+                >
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${feed.sender === 'admin' ? 'bg-[#F05E23]/20 text-[#F05E23]' : 'bg-blue-500/20 text-blue-500'}`}>
+                    {feed.sender === 'admin' ? <Layout className="w-6 h-6" /> : <Activity className="w-6 h-6" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
+                        {feed.sender === 'admin' ? 'Strategic Intelligence' : 'Field Operations'}
+                      </span>
+                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
+                        {new Date(feed.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-xl font-bold text-white/90 leading-relaxed italic">"{feed.content}"</p>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="py-24 text-center border border-dashed border-white/10 rounded-[3.5rem]">
+                <p className="text-sm font-black uppercase tracking-[0.5em] text-white/20">No Operational Updates Synchronized</p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Footer */}
         <div className="pt-24 pb-12 text-center border-t border-white/5">
            <p className="text-[10px] font-black uppercase tracking-[0.8em] text-white/20 italic">Synchronous Build Digital Matrix</p>
