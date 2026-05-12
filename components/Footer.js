@@ -19,7 +19,7 @@ export default function Footer() {
 
     return (
         <footer className={`relative pt-16 pb-8 mt-auto z-10 w-full overflow-hidden border-t transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-slate-100'}`}>
-            {/* Background Texture */ }
+            {/* Background Texture */}
             <div className={`absolute inset-0 z-0 opacity-[0.015] pointer-events-none transition-colors duration-700`} style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.5px, transparent 1.5px)`, backgroundSize: '48px 48px' }} />
 
             <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -88,6 +88,7 @@ export default function Footer() {
                                 { name: "Our Work", href: "/work" },
                                 { name: "Our Process", href: "/process" },
                                 { name: "About Us", href: "/about" },
+                                { name: "Hiring", href: "/hiring" },
                                 { name: "Contact", href: "/contact" }
                             ].map((link, i) => (
                                 <li key={i}>
@@ -135,6 +136,19 @@ export default function Footer() {
                         </div>
                     </div>
                 </div>
+
+                {/* Hiring Specific Call to Action */}
+                {pathname === '/hiring' && (
+                    <div className={`mb-16 p-12 rounded-[3rem] border transition-all duration-500 flex flex-col md:flex-row items-center justify-between gap-8 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
+                        <div className="max-w-xl text-center md:text-left">
+                            <h4 className="text-2xl font-black uppercase tracking-tighter italic mb-2">Can't find the right role?</h4>
+                            <p className={`text-sm font-bold uppercase tracking-widest ${isDark ? 'text-white/40' : 'text-slate-500'}`}>Send your portfolio to our strategic talent pool for future intelligence units.</p>
+                        </div>
+                        <Link href="/contact" className="bg-[#F05E23] text-white px-10 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.7rem] shadow-xl shadow-[#F05E23]/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                            General Application
+                        </Link>
+                    </div>
+                )}
 
                 {/* Compact Bottom Bar */}
                 <div className={`pt-10 border-t flex flex-col md:flex-row justify-between items-center gap-6 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-100'}`}>

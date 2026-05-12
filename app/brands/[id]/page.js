@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { 
-  CheckCircle2, Clock, Layout, Activity, ChevronDown, ChevronUp
+  CheckCircle2, Clock, Layout, Activity, ChevronDown, ChevronUp, Zap, MessageSquare, AlertTriangle, HelpCircle, Send
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,6 +12,32 @@ export default function PublicBrandPage() {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedStep, setExpandedStep] = useState(null);
+  const [feedback, setFeedback] = useState({ category: "Idea", content: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const submitFeedback = async (e) => {
+    e.preventDefault();
+    if (!feedback.content) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/public/project/${params.id}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(feedback)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccess(true);
+        setFeedback({ ...feedback, content: "" });
+        setTimeout(() => setSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -149,6 +175,175 @@ export default function PublicBrandPage() {
                  </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+
+        {/* Strategic Input Terminal */}
+        <div className="space-y-10">
+          <div className="flex items-center gap-8">
+             <h3 className="text-3xl sm:text-5xl font-black uppercase tracking-tighter italic whitespace-nowrap">Strategic <span className="text-[#F05E23]">Input</span></h3>
+             <div className="h-[2px] w-full bg-white/5" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <div className="lg:col-span-4 space-y-6">
+              <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] space-y-4">
+                 <Zap className="w-8 h-8 text-[#F05E23]" />
+                 <h4 className="text-xl font-black uppercase tracking-tight">Direct Intel Synchronization</h4>
+                 <p className="text-sm text-white/40 leading-relaxed uppercase font-bold tracking-widest">
+                   Have a new idea or feedback? Post it here directly. Our strategic team receives these in real-time. No login required.
+                 </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                {[
+                  { id: "Idea", icon: Zap, label: "New Idea", color: "text-amber-500", bg: "bg-amber-500/10" },
+                  { id: "Feedback", icon: MessageSquare, label: "Feedback", color: "text-blue-500", bg: "bg-blue-500/10" },
+                  { id: "Bug", icon: AlertTriangle, label: "Report Bug", color: "text-red-500", bg: "bg-red-500/10" },
+                  { id: "Question", icon: HelpCircle, label: "Question", color: "text-[#F05E23]", bg: "bg-[#F05E23]/10" }
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setFeedback({ ...feedback, category: cat.id })}
+                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${feedback.category === cat.id ? 'bg-white/10 border-white/20' : 'bg-transparent border-transparent opacity-40 hover:opacity-100'}`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.bg} ${cat.color}`}>
+                      <cat.icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:col-span-8">
+              <form onSubmit={submitFeedback} className="bg-white/[0.02] border border-white/5 rounded-[3.5rem] p-10 space-y-8 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05E23]/5 blur-[100px] pointer-events-none" />
+                
+                <div className="space-y-4 relative z-10">
+                   <label className="text-[10px] font-black uppercase tracking-[0.4em] text-[#F05E23] flex items-center gap-2">
+                     <span className="w-1.5 h-1.5 bg-[#F05E23] rounded-full animate-pulse" />
+                     {feedback.category} Chapter Entry
+                   </label>
+                   <textarea
+                    required
+                    rows={6}
+                    value={feedback.content}
+                    onChange={(e) => setFeedback({ ...feedback, content: e.target.value })}
+                    placeholder={`Sync your ${feedback.category.toLowerCase()} with the project matrix...`}
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-3xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-lg text-white placeholder:text-white/10 resize-none italic"
+                   />
+                </div>
+
+                <div className="flex items-center justify-between relative z-10">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">
+                     {success ? "Intelligence Synchronized ✓" : "Encrypted Channel Active"}
+                   </p>
+                   <button
+                    disabled={submitting || !feedback.content}
+                    className={`px-12 py-5 rounded-[1.5rem] font-black uppercase text-[0.7rem] tracking-[0.3em] flex items-center gap-3 transition-all ${success ? 'bg-green-500 text-white' : 'bg-[#F05E23] text-white hover:scale-105 active:scale-95 disabled:opacity-50'}`}
+                   >
+                     {submitting ? "Syncing..." : (success ? "Done" : "Transmit Intel")}
+                     <Send className="w-4 h-4" />
+                   </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        {/* Technical Access Terminal */}
+        <div className="space-y-10">
+          <div className="flex items-center gap-8">
+             <h3 className="text-3xl sm:text-5xl font-black uppercase tracking-tighter italic whitespace-nowrap text-blue-500">Technical <span className="text-white">Sync</span></h3>
+             <div className="h-[2px] w-full bg-blue-500/10" />
+          </div>
+
+          <div className="bg-white/[0.02] border border-blue-500/10 rounded-[3.5rem] p-8 sm:p-16 space-y-12 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/5 blur-[150px] pointer-events-none" />
+            
+            <div className="max-w-3xl">
+              <h4 className="text-2xl font-black uppercase tracking-tight mb-4">Operational Infrastructure Access</h4>
+              <p className="text-sm text-white/40 leading-relaxed uppercase font-bold tracking-widest">
+                Sync your technical environment with our engineering matrix. Provide repository access, hosting credentials, and environment variables for deployment.
+              </p>
+            </div>
+
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const creds = {
+                  env: formData.get('env'),
+                  github: formData.get('github'),
+                  hosting: formData.get('hosting'),
+                  additional: formData.get('additional')
+                };
+                
+                try {
+                  const res = await fetch(`/api/public/project/${params.id}/credentials`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(creds)
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    alert("Technical Matrix Synchronized Successfully.");
+                    e.target.reset();
+                  }
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
+            >
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Environment Variables (.env)</label>
+                <textarea 
+                  name="env"
+                  placeholder="KEY=VALUE&#10;DATABASE_URL=..."
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-6 outline-none focus:border-blue-500/30 transition-all font-mono text-sm text-white resize-none h-40"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Repository Access (GitHub/GitLab)</label>
+                  <input 
+                    name="github"
+                    type="text"
+                    placeholder="https://github.com/org/repo"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-6 outline-none focus:border-blue-500/30 transition-all font-bold text-sm text-white"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Hosting/Vercel Credentials</label>
+                  <input 
+                    name="hosting"
+                    type="text"
+                    placeholder="Vercel Team URL or Credentials"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-6 outline-none focus:border-blue-500/30 transition-all font-bold text-sm text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2 space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Additional Strategic Notes</label>
+                <textarea 
+                  name="additional"
+                  placeholder="Specific instructions for deployment, domain pointers, or API keys..."
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-6 outline-none focus:border-blue-500/30 transition-all font-bold text-sm text-white resize-none h-24"
+                />
+              </div>
+
+              <div className="md:col-span-2 flex justify-end">
+                <button 
+                  type="submit"
+                  className="px-16 py-6 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-[0.4em] text-[0.7rem] hover:bg-blue-500 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-blue-600/20"
+                >
+                  Synchronize Infrastructure
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 

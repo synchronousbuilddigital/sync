@@ -1,22 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, CheckCircle2, Clock, Plus, Trash2,
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
-  ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText
+  ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText,
+  Globe, ChevronRight
 } from "lucide-react";
+import AdminHiring from "../../components/AdminHiring";
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const {
     user, interns, tasks, leaves, projects,
     addIntern, removeIntern, assignTask, updateTaskStatus, deleteTask, reassignTask,
     approveLeave, announceToAll, addProject, updateProject, deleteProject,
     adminClientProjects, createClient, createClientProject, updateClientProject,
-    purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed, loading
+    purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed, 
+    markFeedbackAsRead, loading
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState("interns");
@@ -95,6 +100,7 @@ export default function AdminDashboard() {
     holidays: "Time Off",
     portfolio: "Projects",
     brands: "Clients",
+    hiring: "Hiring",
     overview: "Overview"
   };
 
@@ -134,6 +140,13 @@ export default function AdminDashboard() {
   if (!user || user.role !== "admin") {
     return <div className="p-20 text-center font-bold text-red-500 uppercase tracking-widest">Access Denied. Unauthorized Personnel.</div>;
   }
+
+  const isCurrentMonth = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const now = new Date();
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  };
 
   const handleApproveTask = async (taskId) => {
     const res = await updateTaskStatus(taskId, "Complete", "Task approved by Admin.", true);
@@ -248,10 +261,11 @@ export default function AdminDashboard() {
     setIsAddingProject(true);
   };
 
-  const stats = {
+  const adminStats = {
     totalInterns: interns.length,
-    activeTasks: tasks.filter(t => t.status === "Pending").length,
+    activeTasks: tasks.filter(t => t.status !== "Complete").length,
     completedTasks: tasks.filter(t => t.status === "Complete").length,
+    monthlyPerformance: tasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length,
     blockers: tasks.filter(t => t.status === "Need Credentials" || t.status === "Need Meeting").length,
     pendingHolidays: leaves.filter(l => l.status === "Pending").length,
     priorityDistribution: {
@@ -266,17 +280,16 @@ export default function AdminDashboard() {
   };
 
   const statCards = [
-    { icon: Users, label: "Team Members", val: stats.totalInterns, color: "blue", desc: "On the team" },
-    { icon: Clock, label: "Open Tasks", val: stats.activeTasks, color: "orange", desc: "In progress" },
-    { icon: AlertCircle, label: "Needs Attention", val: stats.blockers, color: "red", desc: "Action needed" },
-    { icon: Calendar, label: "Time Off Requests", val: stats.pendingHolidays, color: "purple", desc: "Awaiting approval" },
-    { icon: CheckCircle2, label: "Completed Work", val: stats.completedTasks, color: "green", desc: "Done" }
+    { icon: Users, label: "Team Members", val: adminStats.totalInterns, color: "blue", desc: "On the team" },
+    { icon: Clock, label: "Active Operations", val: adminStats.activeTasks, color: "orange", desc: "Currently running" },
+    { icon: AlertCircle, label: "Needs Attention", val: adminStats.blockers, color: "red", desc: "Action needed" },
+    { icon: Trophy, label: "Monthly Performance", val: adminStats.monthlyPerformance, color: "yellow", desc: "Resets monthly" },
+    { icon: CheckCircle2, label: "All-Time Units", val: adminStats.completedTasks, color: "green", desc: "Archived" }
   ];
 
   const taskBuckets = {
     pending: tasks.filter((task) => task.status === "Pending"),
-    working: tasks.filter((task) => ["In Progress", "Need Credentials", "Need Meeting"].includes(task.status)),
-    complete: tasks.filter((task) => task.status === "Complete")
+    working: tasks.filter((task) => ["In Progress", "Need Credentials", "Need Meeting", "Blocked"].includes(task.status)),
   };
 
   const openTaskModalForIntern = (internId) => {
@@ -463,6 +476,7 @@ export default function AdminDashboard() {
           { id: "holidays", icon: Calendar },
           { id: "portfolio", icon: Briefcase },
           { id: "brands", icon: Shield },
+          { id: "hiring", icon: UserPlus },
           { id: "overview", icon: TrendingUp }
         ].map((tab) => (
           <button
@@ -482,9 +496,10 @@ export default function AdminDashboard() {
             <AnimatePresence mode="popLayout">
               {interns.map((intern) => {
                 const iTasks = tasks.filter(t => t.internId?._id === intern._id);
-                const completedTasks = iTasks.filter(t => t.status === "Complete").length;
-                const rate = Math.round((completedTasks / (iTasks.length || 1)) * 100);
-                const pendingTasks = iTasks.filter(t => t.status === "Pending").length;
+                const completedMonthly = iTasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length;
+                const totalMonthly = iTasks.filter(t => isCurrentMonth(t.createdAt)).length || 1;
+                const rate = Math.round((completedMonthly / totalMonthly) * 100);
+                const pendingTasks = iTasks.filter(t => t.status !== "Complete").length;
 
                 return (
                   <motion.div layout initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} key={intern._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-5 rounded-2xl relative group overflow-hidden hover:border-[#F05E23]/20 transition-all">
@@ -508,8 +523,8 @@ export default function AdminDashboard() {
                     <div className="space-y-3">
                       <div className="bg-slate-50 dark:bg-white/5 rounded-lg p-3">
                         <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-[0.55rem] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tight">Progress</span>
-                          <span className="text-[#F05E23] font-black text-xs">{rate}%</span>
+                          <span className="text-[0.55rem] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tight">Performance (Monthly)</span>
+                          <span className="#F05E23 font-black text-xs">{rate}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${rate}%` }} className="h-full bg-[#F05E23]" />
@@ -518,12 +533,12 @@ export default function AdminDashboard() {
 
                       <div className="grid grid-cols-2 gap-2">
                         <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
-                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Total</span>
-                          <span className="text-base font-black text-slate-900 dark:text-white">{iTasks.length}</span>
+                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Active</span>
+                          <span className="text-base font-black text-slate-900 dark:text-white">{pendingTasks}</span>
                         </div>
                         <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
-                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Done</span>
-                          <span className="text-base font-black text-green-600 dark:text-green-400">{completedTasks}</span>
+                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Score</span>
+                          <span className="text-base font-black text-green-600 dark:text-green-400">{completedMonthly}</span>
                         </div>
                       </div>
 
@@ -533,7 +548,7 @@ export default function AdminDashboard() {
                           <button onClick={() => openTaskModalForIntern(intern._id)} className="text-[0.5rem] font-black uppercase tracking-tight text-[#F05E23] hover:opacity-70 transition-all">+ Add</button>
                         </div>
                         <div className="space-y-1.5 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/20 scrollbar-track-transparent">
-                          {iTasks.length > 0 ? iTasks.slice(0, 5).map((task) => (
+                          {iTasks.filter(t => t.status !== "Complete").length > 0 ? iTasks.filter(t => t.status !== "Complete").slice(0, 5).map((task) => (
                             <button key={task._id} onClick={() => setChatTaskId(task._id)} className="w-full flex items-start justify-between gap-2 rounded-lg bg-slate-50 dark:bg-white/3 px-2.5 py-1.5 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-left group/task">
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover/task:text-[#F05E23]">{task.title}</p>
@@ -563,7 +578,6 @@ export default function AdminDashboard() {
             {[
               { key: "pending", title: "Pending", description: "Tasks waiting to be started", accent: "orange" },
               { key: "working", title: "Working", description: "Tasks in progress or blocked", accent: "blue" },
-              { key: "complete", title: "Complete", description: "Finished tasks ready to review", accent: "green" }
             ].map((column) => (
               <div key={column.key} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-5 shadow-sm min-h-120">
                 <div className="flex items-start justify-between gap-4 mb-5">
@@ -646,411 +660,90 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "brands" && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="text-3xl font-black uppercase tracking-tighter">Brand <span className="text-[#F05E23]">Sync</span> Matrix</h3>
-              <button onClick={() => setIsAddingClient(true)} className="px-8 py-4 bg-[#F05E23] text-white rounded-2xl text-[0.7rem] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-[#F05E23]/20">
-                <UserPlus className="w-4 h-4" /> Add Client
+          <div className="space-y-8">
+            <div className="flex justify-between items-end mb-12">
+              <div>
+                <h3 className="text-4xl font-black uppercase tracking-tighter italic leading-none">Brand <span className="text-[#F05E23]">Sync</span> Matrix</h3>
+                <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-[0.3em] mt-3 border-l-2 border-[#F05E23] pl-3">Active project surveillance active</p>
+              </div>
+              <button 
+                onClick={() => setIsAddingClient(true)} 
+                className="group relative overflow-hidden bg-black text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#F05E23] to-[#d04a1a] opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="relative flex items-center gap-3">
+                  <UserPlus className="w-4 h-4" /> Add New Unit
+                </span>
               </button>
             </div>
 
-            <div className="space-y-3">
-              {adminClientProjects.map((project) => (
-                !expandedBrand || expandedBrand !== project._id ? (
-                  <motion.button
-                    key={project._id}
-                    onClick={() => setExpandedBrand(project._id)}
-                    className="w-full text-left bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between hover:border-[#F05E23]/30 transition-all group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-[#F05E23]/10 flex items-center justify-center">
-                        <Briefcase className="w-5 h-5 text-[#F05E23]" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-black text-sm uppercase tracking-tight text-slate-900 dark:text-white group-hover:text-[#F05E23]">{project.projectName}</h4>
-                        <p className="text-[0.6rem] text-slate-500 dark:text-white/40 uppercase tracking-tight mt-0.5">Status: {project.status}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-[0.5rem] font-black uppercase px-3 py-1 rounded-full ${project.status === 'Active' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-500'
-                        }`}>{project.status}</span>
-                      <Plus className="w-4 h-4 text-slate-400 group-hover:text-[#F05E23] transition-colors" />
-                    </div>
-                  </motion.button>
-                ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {adminClientProjects.map((project) => {
+                const totalSteps = project.workflow?.length || 0;
+                const completedSteps = project.workflow?.filter(s => s.status === 'Complete').length || 0;
+                const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+                
+                return (
                   <motion.div
                     key={project._id}
-                    layout
-                    className="bg-white dark:bg-[#0D0D14] border border-black/5 dark:border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/5"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={() => router.push(`/admin/brands/${project._id}`)}
+                    className="w-full text-left bg-white border border-slate-100 rounded-[2rem] p-10 flex flex-col md:flex-row items-center justify-between hover:border-[#F05E23] hover:shadow-2xl hover:shadow-[#F05E23]/10 transition-all group cursor-pointer relative overflow-hidden"
                   >
-                    <button
-                      onClick={() => setExpandedBrand(null)}
-                      className="w-full text-left bg-white dark:bg-[#0D0D14] border-b border-black/5 dark:border-white/5 p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/2 transition-all"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-[#F05E23]/10 flex items-center justify-center">
-                          <Briefcase className="w-5 h-5 text-[#F05E23]" />
-                        </div>
-                        <div>
-                          <h4 className="font-black text-sm uppercase tracking-tight text-[#F05E23]">{project.projectName}</h4>
-                        </div>
-                      </div>
-                      <X className="w-4 h-4 text-slate-400" />
-                    </button>
-                    <div className="p-10 border-b border-black/5 dark:border-white/5 flex flex-col lg:flex-row justify-between gap-10">
-                      <div className="space-y-4 max-w-2xl">
-                        <span className="px-4 py-1.5 rounded-full bg-green-500/10 text-green-500 text-[9px] font-black uppercase flex items-center gap-2 w-fit">
-                          <Activity className="w-3 h-3 animate-pulse" /> {project.status}
-                        </span>
-                        <div className="flex justify-between items-start gap-4">
-                          <div>
-                            <h4 className="text-2xl font-black uppercase tracking-tighter italic">{project.projectName}</h4>
-                            <p className="text-xs text-slate-500 dark:text-white/40 mt-3 leading-relaxed">{project.description}</p>
-                            {project.googleDriveLink && (
-                              <a href={project.googleDriveLink} target="_blank" className="inline-flex items-center gap-2 mt-4 text-[0.6rem] font-black uppercase tracking-widest text-[#4285F4] hover:underline">
-                                <ExternalLink className="w-3.5 h-3.5" /> Drive Folder
-                              </a>
-                            )}
-                          </div>
-                          <div className="flex gap-2 shrink-0">
-                            <button
-                              onClick={() => {
-                                setSelectedCredentialProject(project);
-                                setCredentialForm(project.credentials || {
-                                  env: "",
-                                  gmail: { email: "", password: "" },
-                                  vercel: { email: "", password: "" },
-                                  github: "",
-                                  additional: ""
-                                });
-                                setIsEditingCredentials(true);
-                              }}
-                              className="p-3 bg-green-500/10 text-green-500 rounded-xl hover:bg-green-500 hover:text-white transition-all shrink-0"
-                              title="Access details"
-                            >
-                              <Shield className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                const url = `${window.location.origin}/brands/${project.publicId}`;
-                                navigator.clipboard.writeText(url);
-                                setStatusMsg({ type: "success", msg: "Share link copied." });
-                              }}
-                              className="p-3 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition-all shrink-0"
-                              title="Copy Share Link"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={async () => {
-                                setAnalyzingRisk(true);
-                                const res = await runAIRiskAnalysis(project._id);
-                                if (res.success) setAiRiskResult(res.riskAnalysis);
-                                setAnalyzingRisk(false);
-                              }}
-                              disabled={analyzingRisk}
-                              className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shrink-0"
-                              title="Predictive Risk Analysis"
-                            >
-                              <AlertCircle className={`w-4 h-4 ${analyzingRisk ? 'animate-pulse' : ''}`} />
-                            </button>
-                            <button
-                              onClick={async () => {
-                                const res = await generateAIStory(project._id);
-                                if (res.success) setStatusMsg({ type: 'success', msg: "Narrative Updated." });
-                              }}
-                              className="p-3 bg-orange-500/10 text-orange-500 rounded-xl hover:bg-orange-500 hover:text-white transition-all shrink-0"
-                              title="Regenerate AI Story"
-                            >
-                              <Zap className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm("Delete this client project?")) {
-                                  if (purgeClientProject) {
-                                    purgeClientProject(project._id);
-                                    setExpandedBrand(null);
-                                  }
-                                }
-                              }}
-                              className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shrink-0"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="lg:w-96 flex flex-col gap-4">
-                        <div className="flex items-center justify-between px-4">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-[#F05E23]">Direct Sync</span>
-                        </div>
-                        <div className="flex-1 bg-black/5 dark:bg-black/20 rounded-3xl p-6 h-32 overflow-y-auto space-y-4 scrollbar-hide text-[10px]">
-                          {project.discussions?.slice(-5).map((msg, i) => (
-                            <div key={i} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
-                              <span className="text-[7px] font-black uppercase opacity-30 mb-1">{msg.sender}</span>
-                              <p className={`p-3 rounded-2xl ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white/10 rounded-tl-none'}`}>
-                                {msg.content}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Message for the client..."
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && e.target.value.trim()) {
-                              updateClientProject(project._id, { message: e.target.value });
-                              e.target.value = "";
-                            }
-                          }}
-                          className="w-full bg-slate-50 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-[0.7rem] font-black uppercase tracking-widest focus:outline-none focus:border-[#F05E23]"
-                        />
+                    {/* Progress Background */}
+                    <div 
+                      className="absolute left-0 bottom-0 h-1 bg-[#F05E23]/20 transition-all duration-1000" 
+                      style={{ width: `${progress}%` }} 
+                    />
 
-                        <div className="mt-4 flex items-center justify-between px-4">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-blue-500">Mission Feed</span>
+                    <div className="flex items-center gap-10 flex-1">
+                      <div className="w-20 h-20 rounded-3xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-[#F05E23]/5 group-hover:border-[#F05E23]/20 transition-all relative">
+                        <Briefcase className="w-8 h-8 text-slate-300 group-hover:text-[#F05E23] transition-colors" />
+                        {project.feedbacks?.some(f => !f.isRead) && (
+                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full border-4 border-white animate-pulse" />
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-4">
+                          <h4 className="font-black text-2xl uppercase tracking-tighter text-slate-900 group-hover:text-[#F05E23] italic leading-none transition-colors">
+                            {project.projectName}
+                          </h4>
+                          <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full ${project.status === 'Active' ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                            {project.status === 'Active' ? 'Operational' : project.status}
+                          </span>
                         </div>
-                        <div className="flex-1 bg-black/5 dark:bg-black/20 rounded-3xl p-6 h-32 overflow-y-auto space-y-4 scrollbar-hide text-[10px]">
-                          {project.feeds?.slice(-5).map((feed, i) => (
-                            <div key={i} className="flex flex-col items-start border-l border-blue-500/30 pl-3 py-1">
-                              <span className="text-[7px] font-black uppercase opacity-30 mb-1">{feed.sender} • {new Date(feed.timestamp).toLocaleTimeString()}</span>
-                              <p className="text-slate-800 dark:text-white/80 italic font-bold">
-                                "{feed.content}"
-                              </p>
-                            </div>
-                          ))}
-                          {(!project.feeds || project.feeds.length === 0) && <p className="text-[8px] text-white/20 uppercase text-center py-4">No feed updates.</p>}
+                        <div className="flex items-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          <span className="flex items-center gap-2"><Globe className="w-3.5 h-3.5" /> {project.projectType || 'Standard Unit'}</span>
+                          <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> EST. {project.estCompletion || 'TBD'}</span>
                         </div>
-                        <input
-                          type="text"
-                          placeholder="Post update to mission feed..."
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && e.target.value.trim()) {
-                              sendAdminFeed(project._id, e.target.value);
-                              e.target.value = "";
-                            }
-                          }}
-                          className="w-full bg-slate-50 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-[0.7rem] font-black uppercase tracking-widest focus:outline-none focus:border-blue-500"
-                        />
                       </div>
                     </div>
-                    <div className="px-10 py-12 bg-slate-50 dark:bg-white/2 border-t border-black/5 dark:border-white/5 space-y-12">
-                      <div className="bg-white dark:bg-black/20 rounded-[3rem] p-10 border border-black/5 dark:border-white/5">
-                        <div className="flex items-center justify-between mb-8">
-                          <h3 className="text-xl font-black uppercase tracking-tight italic">Project <span className="text-[#F05E23]">Parameters</span></h3>
-                          <div className="flex gap-4">
-                              <button 
-                                  onClick={async () => {
-                                      if (confirm("Generate custom AI Roadmap based on features? This will overwrite the current plan.")) {
-                                          setIsGeneratingRoadmap(true);
-                                          await generateRoadmap(project._id);
-                                          setIsGeneratingRoadmap(false);
-                                          setStatusMsg({ type: "success", msg: "AI Roadmap Deployed." });
-                                      }
-                                  }}
-                                  disabled={isGeneratingRoadmap}
-                                  className="px-6 py-3 bg-[#F05E23] text-white rounded-2xl text-[0.6rem] font-black uppercase tracking-widest shadow-lg shadow-[#F05E23]/20 hover:scale-105 transition-all disabled:opacity-50"
-                              >
-                                  <Zap className={`w-4 h-4 inline-block mr-2 ${isGeneratingRoadmap ? 'animate-spin' : ''}`} /> {isGeneratingRoadmap ? 'Deploying...' : 'AI Roadmap'}
-                              </button>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                          <div className="space-y-2">
-                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">System Access Email</span>
-                            <input
-                              type="text"
-                              defaultValue={project.systemAccessEmail || "intern@sync.com"}
-                              onBlur={(e) => updateClientProject(project._id, { systemAccessEmail: e.target.value })}
-                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]/30 transition-all"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Initial Password</span>
-                            <input
-                              type="text"
-                              defaultValue={project.systemAccessPassword || "SyncIntern123"}
-                              onBlur={(e) => updateClientProject(project._id, { systemAccessPassword: e.target.value })}
-                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]/30 transition-all"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Project Type</span>
-                            <input
-                              type="text"
-                              defaultValue={project.projectType || "Custom Web App"}
-                              onBlur={(e) => updateClientProject(project._id, { projectType: e.target.value })}
-                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-[#F05E23] outline-none focus:border-[#F05E23]/30 transition-all uppercase italic"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Est. Completion</span>
-                            <input
-                              type="date"
-                              defaultValue={project.estimatedCompletionDate ? new Date(project.estimatedCompletionDate).toISOString().split('T')[0] : ""}
-                              onChange={(e) => updateClientProject(project._id, { estimatedCompletionDate: e.target.value })}
-                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]/30 transition-all"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Assigned Unit</span>
-                            <select
-                                value={typeof project.assignedIntern === 'object' ? project.assignedIntern?._id : (project.assignedIntern || "")}
-                                onChange={(e) => updateClientProject(project._id, { assignedIntern: e.target.value })}
-                                className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-2xl py-4 px-6 text-xs font-bold text-blue-500 outline-none focus:border-blue-500/30 transition-all appearance-none"
-                            >
-                                <option value="">Unassigned</option>
-                                {interns.map(intern => (
-                                    <option key={intern._id} value={intern._id}>{intern.name}</option>
-                                ))}
-                            </select>
-                          </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 pt-8 border-t border-black/5 dark:border-white/5">
-                          <div className="space-y-2">
-                            <span className="text-[0.6rem] font-black uppercase text-slate-400 pl-2">Standard Operating Procedure (SOP)</span>
-                            <textarea
-                              defaultValue={project.sop}
-                              rows={4}
-                              onBlur={(e) => updateClientProject(project._id, { sop: e.target.value })}
-                              placeholder="Enter custom SOP for this brand..."
-                              className="w-full bg-white dark:bg-black/20 border border-black/5 dark:border-white/10 rounded-3xl py-6 px-8 text-xs font-medium text-slate-700 dark:text-white/80 outline-none focus:border-[#F05E23]/30 transition-all resize-none scrollbar-hide"
-                            />
-                          </div>
-                        </div>
+                    <div className="flex items-center gap-12 mt-6 md:mt-0">
+                      <div className="text-right hidden sm:block">
+                        <span className="block text-[0.6rem] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Execution Level</span>
+                        <span className="text-xl font-black italic text-slate-900">{progress}%</span>
                       </div>
-
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between px-6 mb-6">
-                          <h4 className="text-xl font-black uppercase italic tracking-tight">Feature <span className="text-[#F05E23]">Roadmap</span></h4>
-                          <button 
-                              onClick={() => {
-                                  const newWF = [...project.workflow, { title: "New Step", description: "Step description...", status: "Pending" }];
-                                  updateClientProject(project._id, { workflow: newWF });
-                              }}
-                              className="p-3 bg-black text-white rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 text-[0.6rem] font-black uppercase tracking-widest px-6"
-                          >
-                              <Plus className="w-4 h-4" /> Add Step
-                          </button>
+                      
+                      {project.feedbacks?.some(f => !f.isRead) && (
+                        <div className="flex items-center gap-3 px-5 py-2.5 bg-amber-50 rounded-2xl border border-amber-100">
+                          <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                          <span className="text-[9px] font-black uppercase text-amber-600 tracking-widest">Priority Intel</span>
                         </div>
+                      )}
 
-                        <div className="overflow-hidden bg-white dark:bg-[#0D0D14] border border-black/5 dark:border-white/5 rounded-[3rem]">
-                          <table className="w-full text-left border-collapse">
-                            <thead>
-                              <tr className="bg-slate-50 dark:bg-white/5">
-                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5">Order</th>
-                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5">Step</th>
-                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5 text-center">Status</th>
-                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5">Assigned Unit</th>
-                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5">Notes</th>
-                                <th className="px-8 py-6 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 border-b border-black/5 dark:border-white/5"></th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                              {project.workflow.map((step, idx) => (
-                                <tr key={idx} className="group hover:bg-slate-50/50 dark:hover:bg-white/2 transition-colors">
-                                  <td className="px-8 py-8">
-                                    <span className="text-xs font-black italic opacity-20">{idx + 1}</span>
-                                  </td>
-                                  <td className="px-8 py-8 max-w-sm">
-                                    <input
-                                      type="text"
-                                      defaultValue={step.title}
-                                      onBlur={(e) => {
-                                        const newWF = [...project.workflow];
-                                        newWF[idx].title = e.target.value;
-                                        updateClientProject(project._id, { workflow: newWF });
-                                      }}
-                                      className="w-full bg-transparent text-sm font-black uppercase text-slate-900 dark:text-white outline-none focus:text-[#F05E23] transition-colors mb-2"
-                                    />
-                                    <textarea
-                                      defaultValue={step.description}
-                                      onBlur={(e) => {
-                                        const newWF = [...project.workflow];
-                                        newWF[idx].description = e.target.value;
-                                        updateClientProject(project._id, { workflow: newWF });
-                                      }}
-                                      rows={2}
-                                      className="w-full bg-transparent text-[0.65rem] text-slate-500 dark:text-white/40 font-medium leading-relaxed outline-none focus:text-slate-700 dark:focus:text-white transition-colors resize-none scrollbar-hide"
-                                    />
-                                  </td>
-                                  <td className="px-8 py-8">
-                                    <div className="flex items-center justify-center gap-2 bg-black/3 dark:bg-white/3 p-2 rounded-2xl border border-black/5 dark:border-white/5 w-fit mx-auto">
-                                      {["Pending", "In Progress", "Complete"].map((s) => (
-                                        <button
-                                          key={s}
-                                          onClick={() => {
-                                            const newWF = [...project.workflow];
-                                            newWF[idx].status = s;
-                                            updateClientProject(project._id, { workflow: newWF });
-                                          }}
-                                          className={`px-4 py-2 rounded-xl text-[0.5rem] font-black uppercase tracking-widest transition-all ${step.status === s ? (s === 'Complete' ? 'bg-green-500 text-white' : (s === 'In Progress' ? 'bg-[#F05E23] text-white' : 'bg-slate-400 text-white')) : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
-                                        >
-                                          {s}
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </td>
-                                  <td className="px-8 py-8">
-                                    <select
-                                      value={step.assignedIntern || ""}
-                                      onChange={(e) => {
-                                        const newWF = [...project.workflow];
-                                        newWF[idx].assignedIntern = e.target.value || null;
-                                        updateClientProject(project._id, { workflow: newWF });
-                                      }}
-                                      className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl py-2 px-4 text-[0.6rem] font-black uppercase tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-600 dark:text-white/60 w-full"
-                                    >
-                                      <option value="">Unassigned</option>
-                                      {interns.map(i => (
-                                        <option key={i._id} value={i._id}>{i.name}</option>
-                                      ))}
-                                    </select>
-                                  </td>
-                                  <td className="px-8 py-8 min-w-50">
-                                    <div className="relative group/input">
-                                      <textarea
-                                        defaultValue={step.adminNote}
-                                        onBlur={(e) => {
-                                          const newWF = [...project.workflow];
-                                          newWF[idx].adminNote = e.target.value;
-                                          updateClientProject(project._id, { workflow: newWF });
-                                        }}
-                                        rows={2}
-                                        placeholder="Add a note..."
-                                        className="w-full bg-black/5 dark:bg-white/3 border border-black/5 dark:border-white/5 rounded-2xl py-4 px-6 text-[0.65rem] text-slate-800 dark:text-white italic font-medium outline-none focus:border-[#F05E23]/30 transition-all resize-none scrollbar-hide"
-                                      />
-                                      <Activity className="absolute right-4 bottom-4 w-3.5 h-3.5 text-[#F05E23] opacity-30 group-focus-within/input:opacity-100 transition-opacity" />
-                                    </div>
-                                  </td>
-                                  <td className="px-8 py-8 text-right">
-                                    <button
-                                      onClick={() => {
-                                        if (confirm("Delete this step?")) {
-                                          const newWF = project.workflow.filter((_, i) => i !== idx);
-                                          updateClientProject(project._id, { workflow: newWF });
-                                        }
-                                      }}
-                                      className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                      <div className="w-14 h-14 rounded-full bg-slate-50 flex items-center justify-center text-slate-200 group-hover:bg-[#F05E23] group-hover:text-white transition-all shadow-sm">
+                        <ChevronRight className="w-7 h-7" />
                       </div>
                     </div>
                   </motion.div>
-                )
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
-
         {activeTab === "portfolio" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1166,6 +859,8 @@ export default function AdminDashboard() {
             ))}
           </div>
         )}
+
+        {activeTab === "hiring" && <AdminHiring />}
 
         {activeTab === "overview" && (
           <div className="flex flex-col gap-12">

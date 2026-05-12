@@ -76,6 +76,14 @@ const ClientProjectSchema = new mongoose.Schema({
     sender: { type: String, enum: ["admin", "client"] },
     content: { type: String, required: true },
     timestamp: { type: Date, default: Date.now }
+  }],
+
+  // Client Feedback & Ideas
+  feedbacks: [{
+    category: { type: String, enum: ["Idea", "Feedback", "Bug", "Question"], default: "Feedback" },
+    content: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now },
+    isRead: { type: Boolean, default: false }
   }]
 }, { timestamps: true });
 

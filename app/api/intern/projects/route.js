@@ -10,7 +10,13 @@ export async function GET(req) {
     }
 
     await dbConnect();
-    const projects = await ClientProject.find({ assignedIntern: decoded.id });
+    // Find projects where intern is assigned to project OR assigned to any step in workflow
+    const projects = await ClientProject.find({ 
+      $or: [
+        { assignedIntern: decoded.id },
+        { "workflow.assignedIntern": decoded.id }
+      ]
+    });
     return Response.json({ success: true, projects });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });

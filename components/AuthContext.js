@@ -594,6 +594,16 @@ export function AuthProvider({ children }) {
     return await res.json();
   };
 
+  const markFeedbackAsRead = async (id) => {
+    const res = await fetch(`/api/admin/client-projects/${id}/feedback/mark-read`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchAdminClientProjects(token);
+    return data;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
@@ -603,7 +613,7 @@ export function AuthProvider({ children }) {
       clientProject, adminClientProjects, internProjects, createClient, createClientProject, 
       updateClientProject, purgeClientProject, sendClientMessage, sendClientFeed, sendAdminFeed, sendDiscussion, updateClientInfo, generateRoadmap,
       generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions,
-      generateBrandIntel
+      generateBrandIntel, markFeedbackAsRead
     }}>
       {children}
     </AuthContext.Provider>

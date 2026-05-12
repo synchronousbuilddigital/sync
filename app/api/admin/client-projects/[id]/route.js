@@ -1,6 +1,23 @@
 import dbConnect from "@/lib/mongodb";
 import ClientProject from "@/models/ClientProject";
 import { verifyToken } from "@/lib/auth";
+import User from "@/models/User"; // Need for populate
+
+export async function GET(req, { params }) {
+  try {
+    const decoded = verifyToken(req);
+    if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
+
+    await dbConnect();
+    const { id } = await params;
+    const project = await ClientProject.findById(id).populate("assignedIntern", "name email");
+    if (!project) return Response.json({ success: false, message: "Project not found" }, { status: 404 });
+
+    return Response.json({ success: true, project });
+  } catch (err) {
+    return Response.json({ success: false, message: err.message }, { status: 500 });
+  }
+}
 
 export async function PATCH(req, { params }) {
   try {

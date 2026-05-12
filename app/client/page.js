@@ -14,6 +14,32 @@ export default function ClientDashboard() {
   const [message, setMessage] = useState("");
   const [feedMessage, setFeedMessage] = useState("");
   const [expandedStep, setExpandedStep] = useState(null);
+  const [feedback, setFeedback] = useState({ category: "Idea", content: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    if (!feedback.content) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/public/project/${clientProject.publicId}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(feedback)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFeedbackSuccess(true);
+        setFeedback({ ...feedback, content: "" });
+        setTimeout(() => setFeedbackSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
   
   // Edit Modals State
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -327,6 +353,61 @@ export default function ClientDashboard() {
                   </AnimatePresence>
                 </motion.div>
               ))}
+            </div>
+          </div>
+
+          {/* Strategic Intel Entry */}
+          <div className="space-y-8">
+            <div className="flex items-center gap-6">
+                <h3 className="text-3xl font-black uppercase tracking-tighter italic whitespace-nowrap">Strategic <span className="text-[#F05E23]">Intel Entry</span></h3>
+                <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+              <div className="lg:col-span-4 space-y-4">
+                {[
+                  { id: "Idea", label: "New Idea", color: "text-amber-500", bg: "bg-amber-500/10" },
+                  { id: "Feedback", label: "Feedback", color: "text-blue-500", bg: "bg-blue-500/10" },
+                  { id: "Bug", label: "Report Bug", color: "text-red-500", bg: "bg-red-500/10" },
+                  { id: "Question", label: "Question", color: "text-[#F05E23]", bg: "bg-[#F05E23]/10" }
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setFeedback({ ...feedback, category: cat.id })}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${feedback.category === cat.id ? 'bg-white/10 border-white/20' : 'bg-transparent border-transparent opacity-40 hover:opacity-100'}`}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
+                    <div className={`w-2 h-2 rounded-full ${cat.bg} ${cat.color} border border-current`} />
+                  </button>
+                ))}
+              </div>
+              <div className="lg:col-span-8">
+                <form onSubmit={handleFeedbackSubmit} className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 space-y-6 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05E23]/5 blur-[100px] pointer-events-none" />
+                  <div className="relative z-10 space-y-4">
+                    <label className="text-[9px] font-black uppercase tracking-[0.4em] text-[#F05E23]">{feedback.category} Chapter Entry</label>
+                    <textarea 
+                      required
+                      value={feedback.content}
+                      onChange={(e) => setFeedback({ ...feedback, content: e.target.value })}
+                      placeholder={`Sync your ${feedback.category.toLowerCase()} with the matrix...`}
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm text-white placeholder:text-white/10 resize-none italic"
+                      rows={4}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between relative z-10">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-white/20">
+                      {feedbackSuccess ? "Intelligence Synchronized ✓" : "Strategic Channel Active"}
+                    </span>
+                    <button 
+                      disabled={submitting || !feedback.content}
+                      className={`px-10 py-4 rounded-xl font-black uppercase text-[0.65rem] tracking-widest transition-all ${feedbackSuccess ? 'bg-green-500 text-white' : 'bg-[#F05E23] text-white hover:scale-105 active:scale-95 disabled:opacity-50 shadow-lg shadow-[#F05E23]/20'}`}
+                    >
+                      {submitting ? "Syncing..." : (feedbackSuccess ? "Transmitted" : "Transmit Intel")}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
 
