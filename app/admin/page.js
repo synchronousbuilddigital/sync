@@ -9,7 +9,7 @@ import {
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
   ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText,
-  Globe, ChevronRight
+  Globe, ChevronRight, Trophy
 } from "lucide-react";
 import AdminHiring from "../../components/AdminHiring";
 
