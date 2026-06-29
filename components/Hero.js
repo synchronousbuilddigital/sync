@@ -271,6 +271,8 @@ export default function Hero() {
     const [hoveredIdx, setHoveredIdx] = useState(-1);
     const [isEffortlessHovered, setIsEffortlessHovered] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [mobileActiveIdx, setMobileActiveIdx] = useState(-1);
+    const [mobileHoveredIdx, setMobileHoveredIdx] = useState(-1);
     const { sendMessage } = useChat();
 
     useEffect(() => {
@@ -418,44 +420,64 @@ export default function Hero() {
                     </div>
 
                     <div className="relative z-30 flex flex-col items-center w-full px-2 mt-0 sm:mt-0">
-                        {/* Mobile Service Cards Banner - Exact design matching phone view screenshot */}
+                        {/* Mobile Service Cards Banner */}
                         <div className="block lg:hidden w-full max-w-sm mx-auto mb-2 sm:mb-6 flex flex-col items-center">
                             <span className="text-[10px] xs:text-xs font-black tracking-[0.3em] uppercase text-[#F05E23] mb-1">
                                 BUILD DIGITAL
                             </span>
                             <div className="flex justify-center items-center gap-2 xs:gap-3 w-full px-1">
-                                {/* DESIGN CARD */}
-                                <motion.div 
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => sendMessage("Tell me more about your DESIGN services.")}
-                                    className="relative flex-1 h-36 xs:h-40 rounded-2xl p-3.5 flex flex-col justify-between items-start cursor-pointer shadow-[0_15px_30px_-5px_rgba(59,130,246,0.4)] border border-blue-400/40 bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] text-white -rotate-3 transition-transform"
-                                >
-                                    <div className="w-2 h-2 rounded-full bg-white/60 absolute top-2.5 right-2.5 shadow-sm"></div>
-                                    <Globe2 className="w-8 h-8 xs:w-10 xs:h-10 text-white drop-shadow" />
-                                    <span className="font-black text-xs xs:text-sm tracking-wider uppercase text-white drop-shadow-sm">DESIGN</span>
-                                </motion.div>
+                                {cardData.map((card, idx) => {
+                                    const cardGradients = [
+                                        "from-[#3B82F6] to-[#1D4ED8] border-blue-400/40 text-white -rotate-3",
+                                        "from-[#F05E23] to-[#C2410C] border-orange-400/40 text-white rotate-0",
+                                        "from-[#FCD34D] to-[#EAB308] border-yellow-300/40 text-slate-900 rotate-3"
+                                    ];
+                                    const shadowColors = [
+                                        "shadow-[0_15px_30px_-5px_rgba(59,130,246,0.4)]",
+                                        "shadow-[0_15px_30px_-5px_rgba(240,94,35,0.4)]",
+                                        "shadow-[0_15px_30px_-5px_rgba(252,211,77,0.4)]"
+                                    ];
 
-                                {/* MARKETING CARD */}
-                                <motion.div 
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => sendMessage("Tell me more about your MARKETING services.")}
-                                    className="relative flex-1 h-36 xs:h-40 rounded-2xl p-3.5 flex flex-col justify-between items-start cursor-pointer shadow-[0_15px_30px_-5px_rgba(240,94,35,0.4)] border border-orange-400/40 bg-gradient-to-br from-[#F05E23] to-[#C2410C] text-white rotate-0 transition-transform"
-                                >
-                                    <div className="w-2 h-2 rounded-full bg-white/60 absolute top-2.5 right-2.5 shadow-sm"></div>
-                                    <Zap className="w-8 h-8 xs:w-10 xs:h-10 text-white drop-shadow" />
-                                    <span className="font-black text-xs xs:text-sm tracking-wider uppercase text-white drop-shadow-sm truncate w-full">MARKETING</span>
-                                </motion.div>
+                                    const isCardActive = mobileActiveIdx === idx || mobileHoveredIdx === idx;
 
-                                {/* STRATEGY CARD */}
-                                <motion.div 
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => sendMessage("Tell me more about your STRATEGY services.")}
-                                    className="relative flex-1 h-36 xs:h-40 rounded-2xl p-3.5 flex flex-col justify-between items-start cursor-pointer shadow-[0_15px_30px_-5px_rgba(252,211,77,0.4)] border border-yellow-300/40 bg-gradient-to-br from-[#FCD34D] to-[#EAB308] text-slate-900 rotate-3 transition-transform"
-                                >
-                                    <div className="w-2 h-2 rounded-full bg-slate-900/40 absolute top-2.5 right-2.5 shadow-sm"></div>
-                                    <Target className="w-8 h-8 xs:w-10 xs:h-10 text-slate-900 drop-shadow" />
-                                    <span className="font-black text-xs xs:text-sm tracking-wider uppercase text-slate-900 drop-shadow-sm truncate w-full">STRATEGY</span>
-                                </motion.div>
+                                    return (
+                                        <motion.div 
+                                            key={card.title}
+                                            whileTap={{ scale: 0.95 }}
+                                            onHoverStart={() => setMobileHoveredIdx(idx)}
+                                            onHoverEnd={() => setMobileHoveredIdx(-1)}
+                                            onPointerEnter={() => setMobileHoveredIdx(idx)}
+                                            onPointerLeave={() => setMobileHoveredIdx(-1)}
+                                            onMouseEnter={() => setMobileHoveredIdx(idx)}
+                                            onMouseLeave={() => setMobileHoveredIdx(-1)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setMobileActiveIdx(mobileActiveIdx === idx ? -1 : idx);
+                                            }}
+                                            className={`relative flex-1 h-36 xs:h-40 rounded-2xl p-3.5 flex flex-col justify-between items-start cursor-pointer overflow-hidden transition-all duration-300 bg-gradient-to-br border group ${cardGradients[idx]} ${shadowColors[idx]}`}
+                                        >
+                                            <div className={`w-2 h-2 rounded-full absolute top-2.5 right-2.5 shadow-sm ${idx === 2 ? 'bg-slate-900/40' : 'bg-white/60'}`}></div>
+                                            <div className="drop-shadow">{card.icon}</div>
+                                            <span className={`font-black text-xs xs:text-sm tracking-wider uppercase drop-shadow-sm truncate w-full ${idx === 2 ? 'text-slate-900' : 'text-white'}`}>
+                                                {card.title}
+                                            </span>
+
+                                            {/* Desktop-Style Details Overlay on Touch/Hover */}
+                                            <div className={`absolute inset-0 bg-[#0A0A0F]/95 p-2.5 flex flex-col justify-center z-30 rounded-2xl border border-white/20 backdrop-blur-md transition-all duration-300 pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto ${isCardActive ? '!opacity-100 !pointer-events-auto' : ''}`}>
+                                                <div className="space-y-1.5 w-full">
+                                                    {card.services.map((service, sIdx) => (
+                                                        <div key={sIdx} className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#F05E23] shrink-0" />
+                                                            <span className="text-white font-black text-[8px] xs:text-[9.5px] uppercase tracking-wider font-mono truncate">
+                                                                {service}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
                             </div>
                         </div>
                         <div className="w-full flex flex-col items-center select-none">
