@@ -63,10 +63,13 @@ export default function Process() {
     const trackRef = useRef(null);
 
     useEffect(() => {
+        if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+
         gsap.registerPlugin(ScrollTrigger);
 
         let ctx = gsap.context(() => {
             const tracks = trackRef.current;
+            if (!tracks) return;
             // Increased distance for "mandatory" feel
             const scrollWidth = tracks.scrollWidth - window.innerWidth;
             const totalScrollDistance = scrollWidth + (window.innerHeight * 2);
@@ -112,7 +115,7 @@ export default function Process() {
             ref={sectionRef}
             className={`w-full relative overflow-visible selection:bg-[#F05E23]/20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
         >
-            <div ref={triggerRef} className="h-screen w-full relative overflow-hidden">
+            <div ref={triggerRef} className="min-h-0 lg:h-screen w-full relative overflow-hidden py-12 lg:py-0">
 
                 {/* Mandatory Progress Bar (Right Side) */}
                 <div className="absolute right-6 top-1/2 -translate-y-1/2 h-[30vh] w-1 rounded-full bg-white/5 z-50 overflow-hidden hidden lg:block">
@@ -137,7 +140,69 @@ export default function Process() {
                     />
                 </div>
 
-                <div className="h-full flex flex-col justify-center relative z-10">
+                {/* MOBILE VIEW: Infinite Right-to-Left Scroll Layout */}
+                <div className="block lg:hidden relative z-10 w-full px-6 flex flex-col justify-center">
+                    <div className="max-w-xl mb-8">
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            className={`inline-flex items-center gap-3 px-4 py-2 border rounded-full mb-4 ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'}`}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-[#F05E23] animate-pulse shadow-[0_0_8px_#F05E23]"></span>
+                            <span className={`text-[0.6rem] font-bold tracking-[0.4em] uppercase ${isDark ? 'text-white/60' : 'text-black/60'}`}>Our Process</span>
+                        </motion.div>
+                        <h2 className={`text-4xl font-bold tracking-tighter leading-[0.95] ${isDark ? 'text-white' : 'text-black'}`}>
+                            Growth <em className="not-italic text-[#F05E23]">Strategy</em>.
+                        </h2>
+                        <p className={`mt-4 text-sm font-light italic ${isDark ? 'text-white/40' : 'text-black/40'}`}>
+                            Find out how our simple steps help your business grow and reach more customers.
+                        </p>
+                    </div>
+
+                    {/* Infinite Marquee Track Loop */}
+                    <div className="w-full overflow-hidden py-4 -mx-6 px-6">
+                        <motion.div
+                            className="flex gap-5 w-max"
+                            animate={{ x: ["0%", "-50%"] }}
+                            transition={{
+                                x: {
+                                    repeat: Infinity,
+                                    repeatType: "loop",
+                                    duration: 45,
+                                    ease: "linear",
+                                },
+                            }}
+                        >
+                            {[...steps, ...steps].map((step, index) => (
+                                <div
+                                    key={index}
+                                    className={`w-[85vw] max-w-sm shrink-0 p-6 sm:p-8 rounded-[2.5rem] border transition-all ${isDark ? 'bg-white/[0.03] border-white/10' : 'bg-white border-black/10 shadow-xl'}`}
+                                >
+                                    <div className="flex items-center gap-5 mb-6">
+                                        <div className={`w-16 h-16 rounded-[1.8rem] border flex items-center justify-center text-[#F05E23] shrink-0 ${isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'}`}>
+                                            <div className="scale-110">{step.icon}</div>
+                                        </div>
+                                        <div>
+                                            <span className="text-[0.6rem] font-black text-[#F05E23] tracking-[0.3em] uppercase block mb-1">[{step.label}]</span>
+                                            <h3 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-black'}`}>
+                                                {step.title}
+                                            </h3>
+                                        </div>
+                                    </div>
+
+                                    <div className={`p-6 rounded-[1.8rem] border ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                                        <p className={`text-sm font-light leading-relaxed ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                                            {step.desc}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </motion.div>
+                    </div>
+                </div>
+
+                {/* DESKTOP VIEW: GSAP Interactive Pin & Scroll Layout */}
+                <div className="hidden lg:flex h-full flex-col justify-center relative z-10">
                     {/* Persistent Header */}
                     <div className="absolute top-16 left-6 md:top-28 md:left-12 max-w-xl pr-6 z-20">
                         <motion.div

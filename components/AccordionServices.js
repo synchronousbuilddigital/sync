@@ -106,7 +106,7 @@ export default function AccordionServices() {
     return (
         <section
             ref={sectionRef}
-            className={`relative w-full py-24 lg:py-32 transition-colors duration-500 overflow-hidden ${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF8] text-[#0F1729]'}`}
+            className={`relative w-full py-10 sm:py-24 lg:py-32 transition-colors duration-500 overflow-hidden ${isDark ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF8] text-[#0F1729]'}`}
             onMouseMove={handleMouseMove}
         >
             {/* Simple Grid Background - Reduced opacity on mobile */}

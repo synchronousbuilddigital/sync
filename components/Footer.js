@@ -80,44 +80,47 @@ export default function Footer() {
                         </div>
                     </div>
 
-                    {/* Organization Column */}
-                    <div className="col-span-1 lg:col-start-4">
-                        <h5 className={`text-[0.65rem] font-black uppercase tracking-[0.4em] mb-8 transition-colors duration-500 ${isDark ? 'text-white/60' : 'text-black'}`}>Organization</h5>
-                        <ul className="flex flex-col gap-5">
-                            {[
-                                { name: "Our Work", href: "/work" },
-                                { name: "Our Process", href: "/process" },
-                                { name: "About Us", href: "/about" },
-                                { name: "Hiring", href: "/hiring" },
-                                { name: "Contact", href: "/contact" }
-                            ].map((link, i) => (
-                                <li key={i}>
-                                    <Link href={link.href} className={`text-[0.8rem] font-black transition-all duration-300 flex items-center gap-2 group/item overflow-hidden ${isDark ? 'text-white/40 hover:text-[#F05E23]' : 'text-slate-600 hover:text-[#F05E23]'}`}>
-                                        <span className="tracking-tight hover:tracking-[0.1em] transition-all duration-300 uppercase">{link.name}</span>
-                                        <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-y-0 group-hover/item:translate-x-0 transition-all duration-300 transform" />
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    {/* Organization & Resources Columns - Side-by-side on mobile */}
+                    <div className="col-span-1 sm:col-span-2 md:col-span-2 lg:col-span-2 lg:col-start-4 grid grid-cols-2 gap-6 sm:gap-8">
+                        {/* Organization Column */}
+                        <div>
+                            <h5 className={`text-[0.65rem] font-black uppercase tracking-[0.4em] mb-6 sm:mb-8 transition-colors duration-500 ${isDark ? 'text-white/60' : 'text-black'}`}>Organization</h5>
+                            <ul className="flex flex-col gap-4 sm:gap-5">
+                                {[
+                                    { name: "Our Work", href: "/work" },
+                                    { name: "Our Process", href: "/process" },
+                                    { name: "About Us", href: "/about" },
+                                    { name: "Hiring", href: "/hiring" },
+                                    { name: "Contact", href: "/contact" }
+                                ].map((link, i) => (
+                                    <li key={i}>
+                                        <Link href={link.href} className={`text-[0.75rem] sm:text-[0.8rem] font-black transition-all duration-300 flex items-center gap-2 group/item overflow-hidden ${isDark ? 'text-white/40 hover:text-[#F05E23]' : 'text-slate-600 hover:text-[#F05E23]'}`}>
+                                            <span className="tracking-tight hover:tracking-[0.1em] transition-all duration-300 uppercase">{link.name}</span>
+                                            <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-y-0 group-hover/item:translate-x-0 transition-all duration-300 transform" />
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
 
-                    {/* Resources Column */}
-                    <div className="col-span-1">
-                        <h5 className={`text-[0.65rem] font-black uppercase tracking-[0.4em] mb-8 transition-colors duration-500 ${isDark ? 'text-white/60' : 'text-black'}`}>Resources</h5>
-                        <ul className="flex flex-col gap-5">
-                            {[
-                                { name: "Case Studies", href: "/work" },
-                                { name: "Security Protocols", href: "/security" },
-                                { name: "Privacy Policy", href: "/privacy" }
-                            ].map((link, i) => (
-                                <li key={i}>
-                                    <Link href={link.href} className={`text-[0.8rem] font-black transition-all duration-300 flex items-center gap-2 group/item overflow-hidden ${isDark ? 'text-white/40 hover:text-[#F05E23]' : 'text-slate-600 hover:text-[#F05E23]'}`}>
-                                        <span className="tracking-tight hover:tracking-[0.1em] transition-all duration-300 uppercase">{link.name}</span>
-                                        <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-y-0 group-hover/item:translate-x-0 transition-all duration-300 transform" />
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
+                        {/* Resources Column */}
+                        <div>
+                            <h5 className={`text-[0.65rem] font-black uppercase tracking-[0.4em] mb-6 sm:mb-8 transition-colors duration-500 ${isDark ? 'text-white/60' : 'text-black'}`}>Resources</h5>
+                            <ul className="flex flex-col gap-4 sm:gap-5">
+                                {[
+                                    { name: "Case Studies", href: "/work" },
+                                    { name: "Security Protocols", href: "/security" },
+                                    { name: "Privacy Policy", href: "/privacy" }
+                                ].map((link, i) => (
+                                    <li key={i}>
+                                        <Link href={link.href} className={`text-[0.75rem] sm:text-[0.8rem] font-black transition-all duration-300 flex items-center gap-2 group/item overflow-hidden ${isDark ? 'text-white/40 hover:text-[#F05E23]' : 'text-slate-600 hover:text-[#F05E23]'}`}>
+                                            <span className="tracking-tight hover:tracking-[0.1em] transition-all duration-300 uppercase">{link.name}</span>
+                                            <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-1 translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-y-0 group-hover/item:translate-x-0 transition-all duration-300 transform" />
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     </div>
 
                     {/* Socials Connection */}

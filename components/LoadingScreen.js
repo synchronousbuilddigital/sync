@@ -171,7 +171,7 @@ export default function LoadingScreen() {
             `}</style>
 
             <div 
-                className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center overflow-hidden transition-all duration-700 bg-gradient-animated ${isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center overflow-hidden transition-all duration-700 bg-[#0A0A0A] ${isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             >
                 {/* Premium Grid Background */}
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
@@ -187,7 +187,7 @@ export default function LoadingScreen() {
                 <div className="relative z-10 flex flex-col items-center justify-center gap-8 px-6">
                     
                     {/* Logo/Brand Section */}
-                    <div className="float-in flex flex-col items-center gap-4">
+                    <div className="float-in flex flex-col items-center gap-4 mb-4">
                         <div className="relative">
                             <div className="absolute -inset-6 bg-gradient-to-r from-orange-500/20 to-blue-500/20 rounded-2xl blur-2xl opacity-60"></div>
                             <div className="relative backdrop-blur-sm bg-white/5 border border-white/10 rounded-2xl px-8 py-4">
@@ -202,7 +202,7 @@ export default function LoadingScreen() {
                     </div>
 
                     {/* Service Modules - Advanced Row Layout */}
-                    <div className="relative mb-12 w-full max-w-6xl flex flex-nowrap justify-center items-center gap-3 md:gap-10 perspective overflow-visible px-4" style={{ perspective: '1200px' }}>
+                    <div className="relative mb-6 w-full max-w-6xl flex flex-nowrap justify-center items-center gap-3 md:gap-10 perspective overflow-visible px-4" style={{ perspective: '1200px' }}>
                         {modules.map((module, index) => {
                             const Icon = module.icon;
                             const isActive = activeModule === index;
@@ -231,7 +231,7 @@ export default function LoadingScreen() {
                                         transformStyle: 'preserve-3d',
                                         transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
                                     }}>
-                                        {/* Glow Background with stronger effect */}
+                                        {/* Glow Background */}
                                         <div 
                                             className={`absolute inset-0 rounded-2xl transition-all duration-500`}
                                             style={{ 
@@ -244,7 +244,7 @@ export default function LoadingScreen() {
 
                                         {/* Premium Card with Border */}
                                         <div 
-                                            className="relative w-full h-full rounded-2xl p-6 flex flex-col items-start justify-start transition-all duration-500 overflow-hidden group cursor-pointer"
+                                            className="relative w-full h-full rounded-2xl p-4 sm:p-6 flex flex-col items-start justify-start transition-all duration-500 overflow-hidden group cursor-pointer"
                                             style={{
                                                 background: `linear-gradient(135deg, ${module.color}cc 0%, ${module.color}88 100%)`,
                                                 border: `2px solid ${module.color}44`,
@@ -256,21 +256,11 @@ export default function LoadingScreen() {
                                                 transformStyle: 'preserve-3d'
                                             }}
                                         >
-                                            {/* Subtle shine effect */}
-                                            <div 
-                                                className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500"
-                                                style={{
-                                                    background: 'linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)',
-                                                    pointerEvents: 'none'
-                                                }}
-                                            ></div>
-
                                             {/* Icon */}
-                                            <div className="relative z-10 mb-3">
+                                            <div className="relative z-10 mb-2 sm:mb-3">
                                                 <Icon 
-                                                    className="w-10 h-10 transition-all duration-500 drop-shadow-lg"
+                                                    className="w-8 h-8 sm:w-10 sm:h-10 transition-all duration-500 drop-shadow-lg text-white"
                                                     style={{ 
-                                                        color: 'rgba(255, 255, 255, 0.95)',
                                                         filter: `drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))`,
                                                         transform: isActive ? 'scale(1.15) rotate(0deg)' : 'scale(1) rotate(-5deg)',
                                                         transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
@@ -279,23 +269,9 @@ export default function LoadingScreen() {
                                             </div>
 
                                             {/* Text Label */}
-                                            <p className="relative z-10 text-lg md:text-2xl font-black tracking-wider" style={{ 
-                                                color: 'rgba(255, 255, 255, 0.98)',
-                                                textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                                                transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                                                transform: isActive ? 'translateX(0)' : 'translateX(0)'
-                                            }}>
+                                            <p className="relative z-10 text-base sm:text-2xl font-black tracking-wider text-white">
                                                 {module.name}
                                             </p>
-
-                                            {/* Decorative accent line */}
-                                            <div 
-                                                className="absolute top-2 right-3 w-2 h-2 rounded-full opacity-60"
-                                                style={{ 
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                                                    boxShadow: `0 0 8px rgba(255, 255, 255, 0.4)`
-                                                }}
-                                            ></div>
                                         </div>
                                     </div>
                                 </div>

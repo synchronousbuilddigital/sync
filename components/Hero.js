@@ -346,7 +346,7 @@ export default function Hero() {
         <section
             ref={containerRef}
             onClick={() => setActiveIdx(-1)}
-            className={`relative w-full min-h-screen sm:min-h-[90vh] flex flex-col items-center justify-start sm:justify-center pt-8 sm:pt-32 pb-12 sm:pb-16 overflow-hidden group/hero transition-colors duration-500 ${!isDark ? 'bg-[#F9F9F9]' : 'bg-[#0A0A0A]'}`}
+            className={`relative w-full min-h-0 sm:min-h-[90vh] flex flex-col items-center justify-start sm:justify-center pt-2 sm:pt-32 pb-8 sm:pb-16 overflow-hidden group/hero transition-colors duration-500 ${!isDark ? 'bg-[#F9F9F9]' : 'bg-[#0A0A0A]'}`}
         >
             <motion.div
                 className="pointer-events-none fixed inset-0 z-50 opacity-0 group-hover/hero:opacity-100 transition-opacity duration-1000"
@@ -417,7 +417,47 @@ export default function Hero() {
                         </Magnetic>
                     </div>
 
-                    <div className="relative z-30 flex flex-col items-center w-full px-2 mt-8 sm:mt-0">
+                    <div className="relative z-30 flex flex-col items-center w-full px-2 mt-0 sm:mt-0">
+                        {/* Mobile Service Cards Banner - Exact design matching phone view screenshot */}
+                        <div className="block lg:hidden w-full max-w-sm mx-auto mb-2 sm:mb-6 flex flex-col items-center">
+                            <span className="text-[10px] xs:text-xs font-black tracking-[0.3em] uppercase text-[#F05E23] mb-1">
+                                BUILD DIGITAL
+                            </span>
+                            <div className="flex justify-center items-center gap-2 xs:gap-3 w-full px-1">
+                                {/* DESIGN CARD */}
+                                <motion.div 
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => sendMessage("Tell me more about your DESIGN services.")}
+                                    className="relative flex-1 h-36 xs:h-40 rounded-2xl p-3.5 flex flex-col justify-between items-start cursor-pointer shadow-[0_15px_30px_-5px_rgba(59,130,246,0.4)] border border-blue-400/40 bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] text-white -rotate-3 transition-transform"
+                                >
+                                    <div className="w-2 h-2 rounded-full bg-white/60 absolute top-2.5 right-2.5 shadow-sm"></div>
+                                    <Globe2 className="w-8 h-8 xs:w-10 xs:h-10 text-white drop-shadow" />
+                                    <span className="font-black text-xs xs:text-sm tracking-wider uppercase text-white drop-shadow-sm">DESIGN</span>
+                                </motion.div>
+
+                                {/* MARKETING CARD */}
+                                <motion.div 
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => sendMessage("Tell me more about your MARKETING services.")}
+                                    className="relative flex-1 h-36 xs:h-40 rounded-2xl p-3.5 flex flex-col justify-between items-start cursor-pointer shadow-[0_15px_30px_-5px_rgba(240,94,35,0.4)] border border-orange-400/40 bg-gradient-to-br from-[#F05E23] to-[#C2410C] text-white rotate-0 transition-transform"
+                                >
+                                    <div className="w-2 h-2 rounded-full bg-white/60 absolute top-2.5 right-2.5 shadow-sm"></div>
+                                    <Zap className="w-8 h-8 xs:w-10 xs:h-10 text-white drop-shadow" />
+                                    <span className="font-black text-xs xs:text-sm tracking-wider uppercase text-white drop-shadow-sm truncate w-full">MARKETING</span>
+                                </motion.div>
+
+                                {/* STRATEGY CARD */}
+                                <motion.div 
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => sendMessage("Tell me more about your STRATEGY services.")}
+                                    className="relative flex-1 h-36 xs:h-40 rounded-2xl p-3.5 flex flex-col justify-between items-start cursor-pointer shadow-[0_15px_30px_-5px_rgba(252,211,77,0.4)] border border-yellow-300/40 bg-gradient-to-br from-[#FCD34D] to-[#EAB308] text-slate-900 rotate-3 transition-transform"
+                                >
+                                    <div className="w-2 h-2 rounded-full bg-slate-900/40 absolute top-2.5 right-2.5 shadow-sm"></div>
+                                    <Target className="w-8 h-8 xs:w-10 xs:h-10 text-slate-900 drop-shadow" />
+                                    <span className="font-black text-xs xs:text-sm tracking-wider uppercase text-slate-900 drop-shadow-sm truncate w-full">STRATEGY</span>
+                                </motion.div>
+                            </div>
+                        </div>
                         <div className="w-full flex flex-col items-center select-none">
                             <motion.div
                                 initial={{ opacity: 0, y: 50 }}

@@ -54,7 +54,7 @@ const CardContent = ({ t, isDark }) => (
         <div className="absolute top-0 right-0 w-48 h-48 bg-[#F05E23]/5 rounded-full blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
         
         <div className="relative z-10">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-4 sm:mb-8">
                 <div className="flex gap-1">
                     {[...Array(t.rating)].map((_, s) => (
                         <Star key={s} className="w-3 h-3 fill-[#F05E23] text-[#F05E23]" />
@@ -63,25 +63,25 @@ const CardContent = ({ t, isDark }) => (
                 <div className={`text-[0.55rem] font-black tracking-[0.4em] uppercase transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>Verified Partner</div>
             </div>
 
-            <blockquote className={`text-[1.4rem] md:text-[1.8rem] font-semibold leading-[1.1] mb-8 tracking-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
-                <span className="text-[#F05E23]/30 mr-1 text-2xl">"</span>
+            <blockquote className={`text-base sm:text-2xl md:text-[1.8rem] font-semibold leading-snug sm:leading-[1.1] mb-4 sm:mb-8 tracking-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
+                <span className="text-[#F05E23]/30 mr-1 text-xl sm:text-2xl">"</span>
                 {t.quote.split('. ')[0]}.
-                <span className="text-[#F05E23]/30 ml-1 text-2xl">"</span>
-                <footer className={`mt-4 text-[0.85rem] font-medium leading-relaxed block italic opacity-80 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                <span className="text-[#F05E23]/30 ml-1 text-xl sm:text-2xl">"</span>
+                <footer className={`mt-2 sm:mt-4 text-xs sm:text-[0.85rem] font-medium leading-relaxed block italic opacity-80 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
                     {t.quote.split('. ').slice(1).join('. ')}
                 </footer>
             </blockquote>
         </div>
 
-        <div className={`flex items-center gap-5 pt-8 mt-auto border-t relative z-10 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-50'}`}>
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden shrink-0 transition-all duration-500 shadow-inner ${isDark ? 'bg-white/5 border border-white/10 group-hover:border-[#F05E23]/30' : 'bg-slate-50 border border-slate-100 group-hover:border-[#F05E23]/30'}`}>
-                <div className={`w-full h-full flex items-center justify-center font-bold text-sm tracking-tighter transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
+        <div className={`flex items-center gap-3 sm:gap-5 pt-4 sm:pt-8 mt-auto border-t relative z-10 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-50'}`}>
+            <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden shrink-0 transition-all duration-500 shadow-inner ${isDark ? 'bg-white/5 border border-white/10 group-hover:border-[#F05E23]/30' : 'bg-slate-50 border border-slate-100 group-hover:border-[#F05E23]/30'}`}>
+                <div className={`w-full h-full flex items-center justify-center font-bold text-xs sm:text-sm tracking-tighter transition-colors duration-500 ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
                     {t.author.split(' ').map(n => n[0]).join('')}
                 </div>
             </div>
             <div className="space-y-0.5">
-                <h4 className={`font-bold text-lg tracking-tight leading-none group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>{t.author}</h4>
-                <p className={`text-[0.55rem] font-black tracking-[0.4em] uppercase leading-none pt-1.5 flex items-center gap-2 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                <h4 className={`font-bold text-base sm:text-lg tracking-tight leading-none group-hover:text-[#F05E23] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>{t.author}</h4>
+                <p className={`text-[0.55rem] font-black tracking-[0.4em] uppercase leading-none pt-1 flex items-center gap-2 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
                     <span className="w-1 h-1 rounded-full bg-[#F05E23]/40"></span>
                     {t.role.split(',')[0]}
                 </p>
@@ -127,7 +127,7 @@ export default function Testimonials() {
         if (isPaused || isDragging || trackWidth === 0) return;
 
         let frameId;
-        const speed = 1.0;
+        const speed = 0.35;
 
         const animateScroll = () => {
             const currentX = x.get();
@@ -260,9 +260,9 @@ export default function Testimonials() {
                 <div className={`absolute inset-y-0 right-0 w-32 md:w-64 z-20 pointer-events-none transition-colors duration-700 bg-gradient-to-l ${isDark ? 'from-[#0A0A0A]' : 'from-[#F9F9F9]'} to-transparent`} />
 
                 {!hasMounted ? (
-                    <div className="flex gap-8 px-[10vw]">
+                    <div className="flex gap-4 sm:gap-8 px-[5vw] sm:px-[10vw]">
                         {displayTestimonials.map((t, i) => (
-                            <div key={i} className={`w-[85vw] sm:w-[400px] md:w-[500px] shrink-0 group relative p-10 md:p-12 rounded-[3.5rem] border transition-all duration-1000 flex flex-col justify-between min-h-[420px] select-none ${isDark ? 'bg-[#111] border-white/5 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-100/50 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.02)]'}`}>
+                            <div key={i} className={`w-[78vw] sm:w-[400px] md:w-[500px] shrink-0 group relative p-6 sm:p-10 md:p-12 rounded-3xl sm:rounded-[3.5rem] border transition-all duration-1000 flex flex-col justify-between min-h-[300px] sm:min-h-[420px] select-none ${isDark ? 'bg-[#111] border-white/5 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-100/50 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.02)]'}`}>
                                 <CardContent t={t} isDark={isDark} />
                             </div>
                         ))}
@@ -275,12 +275,12 @@ export default function Testimonials() {
                         dragConstraints={{ left: -trackWidth, right: 0 }}
                         onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
-                        className="flex gap-8 px-[10vw]"
+                        className="flex gap-4 sm:gap-8 px-[5vw] sm:px-[10vw]"
                     >
                         {displayTestimonials.map((t, i) => (
                             <div
                                 key={i}
-                                className={`w-[85vw] sm:w-[400px] md:w-[500px] shrink-0 group relative p-10 md:p-12 rounded-[3.5rem] border transition-all duration-1000 flex flex-col justify-between min-h-[420px] select-none ${isDark ? 'bg-[#111] border-white/5 hover:border-[#F05E23]/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-100/50 hover:border-[#F05E23]/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.02)]'}`}
+                                className={`w-[78vw] sm:w-[400px] md:w-[500px] shrink-0 group relative p-6 sm:p-10 md:p-12 rounded-3xl sm:rounded-[3.5rem] border transition-all duration-1000 flex flex-col justify-between min-h-[300px] sm:min-h-[420px] select-none ${isDark ? 'bg-[#111] border-white/5 hover:border-[#F05E23]/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-100/50 hover:border-[#F05E23]/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.02)]'}`}
                             >
                                 <CardContent t={t} isDark={isDark} />
                             </div>

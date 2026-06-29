@@ -98,6 +98,8 @@ export default function WorkShowcase() {
 
     const displayProjects = allProjectsData.filter(p => filter === "All" || p.type === filter);
 
+    const tabContainerRef = useRef(null);
+
     // Auto-scroll logic (continuous felt sliding)
     useEffect(() => {
         const interval = setInterval(() => {
@@ -105,6 +107,25 @@ export default function WorkShowcase() {
         }, 8000); 
         return () => clearInterval(interval);
     }, [displayProjects.length]);
+
+    // Auto-scroll active tab into view on mobile without pulling window scroll
+    useEffect(() => {
+        if (tabContainerRef.current) {
+            const container = tabContainerRef.current;
+            const activeTab = container.children[activeIndex];
+            if (activeTab) {
+                const containerWidth = container.offsetWidth;
+                const tabOffsetLeft = activeTab.offsetLeft;
+                const tabWidth = activeTab.offsetWidth;
+                const targetScrollLeft = tabOffsetLeft - (containerWidth / 2) + (tabWidth / 2);
+                
+                container.scrollTo({
+                    left: targetScrollLeft,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    }, [activeIndex]);
 
     return (
         <section 
@@ -170,7 +191,7 @@ export default function WorkShowcase() {
 
             {/* Project Navigation - Horizontal scroll on mobile */}
             <div className="w-full max-w-7xl px-6 relative z-20 mb-10 sm:mb-16">
-                <div className="flex items-center gap-6 sm:gap-12 overflow-x-auto pb-4 sm:justify-center no-scrollbar">
+                <div ref={tabContainerRef} className="flex items-center gap-6 sm:gap-12 overflow-x-auto pb-4 sm:justify-center no-scrollbar scroll-smooth">
                     {displayProjects.map((project, i) => (
                         <motion.button
                             key={i}

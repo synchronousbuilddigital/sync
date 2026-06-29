@@ -81,7 +81,7 @@ export default function Home() {
       />
 
       {/* Hero Section with Seamless Transition */}
-      <section className={`w-full pt-8 pb-0 relative overflow-visible transition-colors duration-500 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#F9F9F9]'}`}>
+      <section className={`w-full pt-0 pb-0 relative overflow-visible transition-colors duration-500 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#F9F9F9]'}`}>
         <Hero />
       </section>
 
