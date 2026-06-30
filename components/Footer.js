@@ -13,7 +13,7 @@ export default function Footer() {
     const pathname = usePathname();
     const currentYear = new Date().getFullYear();
 
-    const isDashboardRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/intern');
+  const isDashboardRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/intern') || pathname?.startsWith('/brand') || pathname?.startsWith('/client');
 
     if (isDashboardRoute) return null;
 

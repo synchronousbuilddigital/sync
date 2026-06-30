@@ -13,7 +13,7 @@ export async function PATCH(req, { params }) {
 
     await dbConnect();
     const { id } = await params;
-    const { internId, priority, dueDate, title, description, taskType } = await req.json();
+    const { internId, priority, dueDate, title, description, taskType, contentId } = await req.json();
 
     const updateData = {};
     if (internId) updateData.internId = internId;
@@ -22,6 +22,7 @@ export async function PATCH(req, { params }) {
     if (title) updateData.title = title;
     if (description) updateData.description = description;
     if (taskType) updateData.taskType = taskType;
+    if (contentId !== undefined) updateData.contentId = contentId.trim() === '' ? undefined : contentId.trim();
 
     const task = await Task.findByIdAndUpdate(id, updateData, { new: true });
 

@@ -22,25 +22,38 @@ export async function POST(req) {
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
     await dbConnect();
-    const { name, email, password } = await req.json();
+    const { name, email, password, department } = await req.json();
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return Response.json({ success: false, message: "Intern with this email already exists" }, { status: 400 });
+    let finalEmail = email ? email.toLowerCase().trim() : "";
+    if (!finalEmail || !finalEmail.endsWith("@synchronous.com")) {
+      const cleanName = (name || "user").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+      finalEmail = `${cleanName}@synchronous.com`;
     }
 
-    const defaultPassword = password || "SyncIntern123";
+    // Ensure uniqueness
+    let count = 1;
+    let checkEmail = finalEmail;
+    while (await User.findOne({ email: checkEmail })) {
+      const base = finalEmail.replace("@synchronous.com", "");
+      checkEmail = `${base}${count}@synchronous.com`;
+      count++;
+    }
+    finalEmail = checkEmail;
+
+    const emailPrefix = finalEmail.replace("@synchronous.com", "");
+    const defaultPassword = (!password || password === "password123" || /^[a-z0-9]+123$/i.test(password)) ? `${emailPrefix}123` : password;
 
     const intern = await User.create({
       name,
-      email,
+      email: finalEmail,
       password: defaultPassword,
       role: "intern",
+      department: department || "Tech",
       mustChangePassword: true,
     });
 
     try {
-      await sendOnboardingEmail(email, name, defaultPassword);
+      await sendOnboardingEmail(finalEmail, name, defaultPassword);
     } catch (mailErr) {
       console.error("Failed to send onboarding email:", mailErr);
     }

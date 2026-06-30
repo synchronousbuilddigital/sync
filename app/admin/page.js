@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthContext";
+import AdminSpreadsheet from "../../components/AdminSpreadsheet";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, CheckCircle2, Clock, Plus, Trash2,
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
   ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText,
-  Globe, ChevronRight, Trophy
+  Globe, ChevronRight, Trophy, Table
 } from "lucide-react";
 import AdminHiring from "../../components/AdminHiring";
 
@@ -20,11 +21,17 @@ export default function AdminDashboard() {
     addIntern, removeIntern, assignTask, updateTaskStatus, deleteTask, reassignTask,
     approveLeave, announceToAll, addProject, updateProject, deleteProject,
     adminClientProjects, createClient, createClientProject, updateClientProject,
-    purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed, 
-    markFeedbackAsRead, loading
+    purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed,
+    markFeedbackAsRead, loading, token,
+    companies, addCompany, updateCompany, deleteCompany,
+    brandManagers, removeBrandManager
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState("interns");
+  const [taskCompanyFilter, setTaskCompanyFilter] = useState("");
+  const [taskDepartmentFilter, setTaskDepartmentFilter] = useState("");
+  const [taskTeamMemberFilter, setTaskTeamMemberFilter] = useState("");
+  const [teamDepartmentFilter, setTeamDepartmentFilter] = useState("");
 
   // Client Management States
   const [isAddingClient, setIsAddingClient] = useState(false);
@@ -44,28 +51,124 @@ export default function AdminDashboard() {
   const [brandIntelLoading, setBrandIntelLoading] = useState(false);
   const [isAddingIntern, setIsAddingIntern] = useState(false);
   const [isAssigningTask, setIsAssigningTask] = useState(false);
+  const [isAddingPost, setIsAddingPost] = useState(false);
+  const [newPostData, setNewPostData] = useState({
+    company: "",
+    contentId: "",
+    scheduledDate: "",
+    day: "",
+    month: "",
+    postType: "",
+    postingTime: "",
+    finalLink: "",
+    status: "Pending",
+    postedLink: "",
+    clientRemarks: ""
+  });
+  const [isSubmittingPost, setIsSubmittingPost] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
 
   const [broadcastMsg, setBroadcastMsg] = useState("");
-  const [newIntern, setNewIntern] = useState({ name: "", email: "", password: "SyncIntern123" });
+  const [newIntern, setNewIntern] = useState({ name: "", email: "", password: "", department: "" });
   const [newTask, setNewTask] = useState({
     title: "",
+    contentId: "",
     description: "",
     internId: "",
     taskType: "General",
     priority: "Medium",
     dueDate: "",
     taskCount: 1,
-    clientProjectId: ""
+    clientProjectId: "",
+    marketingData: { topic: "", rawLink: "", platforms: [] }
   });
   const [projectForm, setProjectForm] = useState({
     title: "", index: "", category: "Verified Partner",
+    projectImage: "", clientLogo: "", status: "Active",
+    timeline: { start: "", end: "" },
     description: "", strategyDetail: "", happinessDetail: "",
     tags: "", impact: ""
   });
+  const [marketingSheetData, setMarketingSheetData] = useState([]);
+
+  const handleAddPost = async (e) => {
+    e.preventDefault();
+    setIsSubmittingPost(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/post-tracker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(newPostData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Post successfully tracked in Google Sheets!");
+        setIsAddingPost(false);
+        setNewPostData({ company: "", contentId: "", scheduledDate: "", day: "", month: "", postType: "", postingTime: "", finalLink: "", status: "Pending", postedLink: "", clientRemarks: "" });
+        // Instead of fetchData (which may not exist as a global func), just reload page for now to sync
+        window.location.reload();
+      } else {
+        toast.error(data.message || "Failed to add post");
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsSubmittingPost(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAssigningTask && !newTask.contentId) {
+      let maxId = 0;
+      (tasks || []).forEach(t => {
+        if (t.contentId && typeof t.contentId === 'string') {
+          const match = t.contentId.match(/^SYN(\d+)$/i);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxId) maxId = num;
+          }
+        }
+      });
+      if (maxId > 0) {
+        setNewTask(current => ({ ...current, contentId: `SYN${maxId + 1}` }));
+      } else {
+        setNewTask(current => ({ ...current, contentId: `SYN1` }));
+      }
+    }
+  }, [isAssigningTask]);
+
+  useEffect(() => {
+    if (user?.role === "admin") {
+      fetch("/api/admin/marketing-sheet", {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) setMarketingSheetData(data.data);
+        })
+        .catch(err => console.error("Error fetching marketing sheet:", err));
+    }
+  }, [user, token]);
+
   const [chatTaskId, setChatTaskId] = useState(null);
+  const [reviewingTask, setReviewingTask] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ reviewStatus: "Approved", reviewRemarks: "" });
+  const [selectedTaskColumn, setSelectedTaskColumn] = useState("all");
+
+  // Company / Dept / Task cascading dropdown state
+  const [selectedCompany, setSelectedCompany] = useState("");
+  const [selectedMainDept, setSelectedMainDept] = useState("");
+  const [selectedDept, setSelectedDept] = useState("");
+  const [selectedTaskType, setSelectedTaskType] = useState("");
+  const [addingCompanyName, setAddingCompanyName] = useState("");
+  const [addingDeptName, setAddingDeptName] = useState("");
+  const [addingTaskTypeName, setAddingTaskTypeName] = useState("");
+  const [showAddCompany, setShowAddCompany] = useState(false);
+  const [showAddDept, setShowAddDept] = useState(false);
+  const [showAddTaskType, setShowAddTaskType] = useState(false);
   const [selectedSteps, setSelectedSteps] = useState([]);
   const [customTasks, setCustomTasks] = useState([]);
   const [customTaskInput, setCustomTaskInput] = useState("");
@@ -82,6 +185,8 @@ export default function AdminDashboard() {
 
   // Credential Management States
   const [isEditingCredentials, setIsEditingCredentials] = useState(false);
+  const [isAddingBrandManager, setIsAddingBrandManager] = useState(false);
+  const [brandManagerForm, setBrandManagerForm] = useState({ name: "", email: "", password: "SyncClient123", companyId: "" });
   const [selectedCredentialProject, setSelectedCredentialProject] = useState(null);
   const [credentialForm, setCredentialForm] = useState({
     env: "",
@@ -97,11 +202,69 @@ export default function AdminDashboard() {
   const tabLabels = {
     interns: "Team",
     tasks: "Tasks",
+    sheet: "Spreadsheet",
     holidays: "Time Off",
     portfolio: "Projects",
     brands: "Clients",
     hiring: "Hiring",
     overview: "Overview"
+  };
+
+  const uniqueTaskCompanies = useMemo(() => {
+    const set = new Set();
+    companies.forEach(c => set.add(c.name));
+    return Array.from(set).sort();
+  }, [companies]);
+
+  const uniqueTaskDepartments = useMemo(() => {
+    const set = new Set();
+    companies.forEach(c => {
+      if (taskCompanyFilter && c.name !== taskCompanyFilter) return;
+      c.departments?.forEach(d => set.add(d.name));
+    });
+    return Array.from(set).sort();
+  }, [companies, taskCompanyFilter]);
+
+  const uniqueTaskTeamMembers = useMemo(() => {
+    const set = new Set();
+    interns.forEach(i => set.add(i.name));
+    return Array.from(set).sort();
+  }, [interns]);
+
+  const uniqueTeamDepartments = useMemo(() => {
+    const set = new Set(["Tech", "Digital Marketing"]);
+    interns.forEach(i => {
+      if (i.department) set.add(i.department);
+    });
+    return Array.from(set).sort();
+  }, [interns]);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (taskCompanyFilter && t.marketingData?.companyId?.name !== taskCompanyFilter) return false;
+      if (taskDepartmentFilter && t.marketingData?.departmentId?.name !== taskDepartmentFilter) return false;
+      if (taskTeamMemberFilter && t.internId?.name !== taskTeamMemberFilter) return false;
+      if (teamDepartmentFilter && (t.internId?.department || "Tech") !== teamDepartmentFilter) return false;
+      return true;
+    });
+  }, [tasks, taskCompanyFilter, taskDepartmentFilter, taskTeamMemberFilter, teamDepartmentFilter]);
+
+  const displayedInterns = useMemo(() => {
+    return interns.filter(i => {
+      if (taskTeamMemberFilter && i.name !== taskTeamMemberFilter) return false;
+      if (teamDepartmentFilter && (i.department || "Tech") !== teamDepartmentFilter) return false;
+      if (taskCompanyFilter || taskDepartmentFilter) {
+         const hasMatchingTask = filteredTasks.some(t => t.internId?._id === i._id);
+         if (!hasMatchingTask) return false;
+      }
+      return true;
+    });
+  }, [interns, taskTeamMemberFilter, teamDepartmentFilter, taskCompanyFilter, taskDepartmentFilter, filteredTasks]);
+
+  const taskBuckets = {
+    pending: filteredTasks.filter((task) => task.status === "Pending"),
+    working: filteredTasks.filter((task) => ["In Progress", "Need Credentials", "Need Meeting", "Blocked"].includes(task.status)),
+    complete: filteredTasks.filter((task) => task.status === "Complete"),
   };
 
   useEffect(() => {
@@ -155,6 +318,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const submitReview = async () => {
+    const updatedStatus = reviewForm.reviewStatus === "Approved" ? "Complete" : "In Progress";
+    const isApprv = reviewForm.reviewStatus === "Approved";
+    const note = reviewForm.reviewRemarks ? `Admin Feedback: ${reviewForm.reviewRemarks}` : "Task reviewed by Admin.";
+    const res = await updateTaskStatus(reviewingTask._id, updatedStatus, note, isApprv, {
+      reviewStatus: reviewForm.reviewStatus,
+      reviewRemarks: reviewForm.reviewRemarks
+    });
+    if (res.success) {
+      setStatusMsg({ type: "success", msg: "Review submitted successfully!" });
+      setReviewingTask(null);
+    }
+  };
+
   const handleSendChat = async (e) => {
     e.preventDefault();
     if (!chatMsg.trim() || !chatTask) return;
@@ -171,13 +348,37 @@ export default function AdminDashboard() {
 
   const handleAddIntern = async (e) => {
     e.preventDefault();
-    const res = await addIntern(newIntern.name, newIntern.email, newIntern.password);
+    const res = await addIntern(newIntern.name, newIntern.email, newIntern.password, newIntern.department);
     if (res.success) {
       setStatusMsg({ type: "success", msg: `Intern added!` });
       setIsAddingIntern(false);
-      setNewIntern({ name: "", email: "", password: "SyncIntern123" });
+      setNewIntern({ name: "", email: "", password: "", department: "" });
     } else {
       setStatusMsg({ type: "error", msg: res.message });
+    }
+  };
+
+  const handleAddBrandManager = async (e) => {
+    e.preventDefault();
+    if (!brandManagerForm.name || !brandManagerForm.email || !brandManagerForm.password || !brandManagerForm.companyId) {
+      return setStatusMsg({ type: "error", msg: "All fields are required." });
+    }
+    try {
+      const res = await fetch("/api/admin/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(brandManagerForm)
+      }).then(r => r.json());
+
+      if (res.success) {
+        setStatusMsg({ type: "success", msg: "Brand Manager created successfully!" });
+        setIsAddingBrandManager(false);
+        setBrandManagerForm({ name: "", email: "", password: "SyncClient123", companyId: "" });
+      } else {
+        setStatusMsg({ type: "error", msg: res.message });
+      }
+    } catch (err) {
+      setStatusMsg({ type: "error", msg: "Failed to create Brand Manager" });
     }
   };
 
@@ -189,13 +390,38 @@ export default function AdminDashboard() {
     if (allTaskTitles.length === 0) return setStatusMsg({ type: "error", msg: "No tasks selected." });
 
     let createdCount = 0;
+    
+    let currentContentIdStr = newTask.contentId || "";
+    let currentContentIdBase = "";
+    let currentContentIdNum = null;
+    
+    if (currentContentIdStr) {
+      const match = currentContentIdStr.match(/^([a-zA-Z]+)(\d+)$/);
+      if (match) {
+        currentContentIdBase = match[1];
+        currentContentIdNum = parseInt(match[2], 10);
+      }
+    }
+
     for (const title of allTaskTitles) {
+      let finalContentId = currentContentIdStr;
+      if (currentContentIdNum !== null) {
+        finalContentId = `${currentContentIdBase}${currentContentIdNum}`;
+        currentContentIdNum++;
+      }
+
       const res = await assignTask({
         ...newTask,
+        contentId: finalContentId,
+        marketingData: {
+          ...newTask.marketingData,
+          companyId: selectedCompany || null,
+          departmentId: selectedDept || null,
+        },
         title,
         description: `Operational task for project step: ${title}`,
         estimatedHours: 2, // Standard estimation
-        dueDate: new Date().toISOString()
+        dueDate: newTask.dueDate ? new Date(newTask.dueDate).toISOString() : new Date().toISOString()
       });
       if (res.success) createdCount++;
     }
@@ -205,7 +431,7 @@ export default function AdminDashboard() {
       setIsAssigningTask(false);
       setSelectedSteps([]);
       setCustomTasks([]);
-      setNewTask({ ...newTask, title: "", description: "", clientProjectId: "" });
+      setNewTask({ ...newTask, title: "", contentId: "", description: "", clientProjectId: "", marketingData: { topic: "", rawLink: "", platforms: [] } });
     }
   };
 
@@ -234,6 +460,10 @@ export default function AdminDashboard() {
       res = await updateProject(editingProject._id, payload);
     } else {
       res = await addProject(payload);
+      if (res.success && payload.title) {
+        // Also add the project title to the companies list
+        await addCompany(payload.title);
+      }
     }
 
     if (res.success) {
@@ -262,36 +492,30 @@ export default function AdminDashboard() {
   };
 
   const adminStats = {
-    totalInterns: interns.length,
-    activeTasks: tasks.filter(t => t.status !== "Complete").length,
-    completedTasks: tasks.filter(t => t.status === "Complete").length,
-    monthlyPerformance: tasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length,
-    blockers: tasks.filter(t => t.status === "Need Credentials" || t.status === "Need Meeting").length,
+    totalInterns: displayedInterns.length,
+    activeTasks: filteredTasks.filter(t => t.status !== "Complete").length,
+    completedTasks: filteredTasks.filter(t => t.status === "Complete").length,
+    monthlyPerformance: filteredTasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length,
+    blockers: filteredTasks.filter(t => t.status === "Need Credentials" || t.status === "Need Meeting").length,
     pendingHolidays: leaves.filter(l => l.status === "Pending").length,
     priorityDistribution: {
-      High: tasks.filter(t => t.priority === "High").length,
-      Medium: tasks.filter(t => (t.priority === "Medium" || !t.priority)).length,
-      Low: tasks.filter(t => t.priority === "Low").length,
+      High: filteredTasks.filter(t => t.priority === "High").length,
+      Medium: filteredTasks.filter(t => (t.priority === "Medium" || !t.priority)).length,
+      Low: filteredTasks.filter(t => t.priority === "Low").length,
     },
-    topBottleneck: interns.map(i => {
-      const pending = tasks.filter(t => t.internId?._id === i._id && t.status !== "Complete").length;
+    topBottleneck: displayedInterns.map(i => {
+      const pending = filteredTasks.filter(t => t.internId?._id === i._id && t.status !== "Complete").length;
       return { name: i.name, count: pending };
     }).sort((a, b) => b.count - a.count)[0] || { name: "N/A", count: 0 }
   };
 
   const statCards = [
     { icon: Users, label: "Team Members", val: adminStats.totalInterns, color: "blue", desc: "On the team" },
-    { icon: Clock, label: "Active Operations", val: adminStats.activeTasks, color: "orange", desc: "Currently running" },
+    { icon: Clock, label: "Pending Tasks", val: filteredTasks.filter(t => t.status === "Pending").length, color: "purple", desc: "To be started" },
     { icon: AlertCircle, label: "Needs Attention", val: adminStats.blockers, color: "red", desc: "Action needed" },
     { icon: Trophy, label: "Monthly Performance", val: adminStats.monthlyPerformance, color: "yellow", desc: "Resets monthly" },
-    { icon: CheckCircle2, label: "All-Time Units", val: adminStats.completedTasks, color: "green", desc: "Archived" }
+    { icon: CheckCircle2, label: "Completed Tasks", val: adminStats.completedTasks, color: "green", desc: "Archived" }
   ];
-
-  const taskBuckets = {
-    pending: tasks.filter((task) => task.status === "Pending"),
-    working: tasks.filter((task) => ["In Progress", "Need Credentials", "Need Meeting", "Blocked"].includes(task.status)),
-  };
-
   const openTaskModalForIntern = (internId) => {
     setSelectedInternForTask(internId);
     setNewTask((current) => ({ ...current, internId }));
@@ -421,11 +645,11 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3 relative z-10">
-          <button onClick={() => setIsBroadcasting(true)} className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 transition-all border border-black/5 dark:border-white/5 active:scale-95">
+        <div className="flex flex-wrap gap-2 sm:gap-3 relative z-10 w-full md:w-auto">
+          <button onClick={() => setIsBroadcasting(true)} className="flex-1 sm:flex-initial justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white px-5 sm:px-8 py-3.5 sm:py-5 rounded-[1.2rem] sm:rounded-[1.5rem] font-black uppercase tracking-widest text-[0.55rem] sm:text-[0.6rem] flex items-center gap-2 sm:gap-3 transition-all border border-black/5 dark:border-white/5 active:scale-95">
             <Send className="w-3.5 h-3.5 text-[#F05E23]" /> Send Update
           </button>
-          <button onClick={() => { setEditingProject(null); setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "", impact: "" }); setIsAddingProject(true); }} className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 transition-all border border-black/5 dark:border-white/5 active:scale-95">
+          <button onClick={() => { setEditingProject(null); setProjectForm({ title: "", index: "", category: "Verified Partner", description: "", strategyDetail: "", happinessDetail: "", tags: "", impact: "" }); setIsAddingProject(true); }} className="flex-1 sm:flex-initial justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-white px-5 sm:px-8 py-3.5 sm:py-5 rounded-[1.2rem] sm:rounded-[1.5rem] font-black uppercase tracking-widest text-[0.55rem] sm:text-[0.6rem] flex items-center gap-2 sm:gap-3 transition-all border border-black/5 dark:border-white/5 active:scale-95">
             <Plus className="w-3.5 h-3.5 text-[#F05E23]" /> Add Project
           </button>
           <button onClick={() => {
@@ -440,39 +664,48 @@ export default function AdminDashboard() {
               }
             });
             setIsAddingClient(true);
-          }} className="px-8 py-5 bg-[#F05E23] text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 hover:shadow-[0_0_30px_rgba(240,94,35,0.3)] transition-all active:scale-95">
+          }} className="flex-1 sm:flex-initial justify-center px-5 sm:px-8 py-3.5 sm:py-5 bg-[#F05E23] text-white rounded-[1.2rem] sm:rounded-[1.5rem] font-black uppercase tracking-widest text-[0.55rem] sm:text-[0.6rem] flex items-center gap-2 sm:gap-3 hover:shadow-[0_0_30px_rgba(240,94,35,0.3)] transition-all active:scale-95">
             <UserPlus className="w-3.5 h-3.5" /> Add Client
           </button>
-          <button onClick={() => setIsAddingIntern(true)} className="bg-black dark:bg-white text-white dark:text-black px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 transition-all hover:opacity-90 active:scale-95">
+          <button onClick={() => setIsAddingIntern(true)} className="flex-1 sm:flex-initial justify-center bg-black dark:bg-white text-white dark:text-black px-5 sm:px-8 py-3.5 sm:py-5 rounded-[1.2rem] sm:rounded-[1.5rem] font-black uppercase tracking-widest text-[0.55rem] sm:text-[0.6rem] flex items-center gap-2 sm:gap-3 transition-all hover:opacity-90 active:scale-95">
             <UserPlus className="w-3.5 h-3.5" /> Add Team Member
           </button>
-          <button onClick={() => setIsAssigningTask(true)} className="bg-slate-900/5 dark:bg-white/5 text-slate-800 dark:text-white px-8 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[0.6rem] flex items-center gap-3 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95">
+          <button onClick={() => setIsAddingBrandManager(true)} className="flex-1 sm:flex-initial justify-center px-5 sm:px-8 py-3.5 sm:py-5 bg-[#F05E23] text-white rounded-[1.2rem] sm:rounded-[1.5rem] font-black uppercase tracking-widest text-[0.55rem] sm:text-[0.6rem] flex items-center gap-2 sm:gap-3 hover:shadow-[0_0_30px_rgba(240,94,35,0.3)] transition-all active:scale-95">
+            <UserPlus className="w-3.5 h-3.5" /> Add Brand Manager
+          </button>
+          <button onClick={() => setIsAssigningTask(true)} className="flex-1 sm:flex-initial justify-center bg-slate-900/5 dark:bg-white/5 text-slate-800 dark:text-white px-5 sm:px-8 py-3.5 sm:py-5 rounded-[1.2rem] sm:rounded-[1.5rem] font-black uppercase tracking-widest text-[0.55rem] sm:text-[0.6rem] flex items-center gap-2 sm:gap-3 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95">
             <Plus className="w-3.5 h-3.5" /> Create Task
+          </button>
+          <button onClick={() => setIsAddingPost(true)} className="flex-1 sm:flex-initial justify-center px-5 sm:px-8 py-3.5 sm:py-5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-[1.2rem] sm:rounded-[1.5rem] font-black uppercase tracking-widest text-[0.55rem] sm:text-[0.6rem] flex items-center gap-2 sm:gap-3 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all active:scale-95">
+            <Plus className="w-3.5 h-3.5" /> Track Post
           </button>
         </div>
       </div>
 
       {/* Stats Quick View */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6 mb-12 sm:mb-16">
         {statCards.map((stat, i) => (
-          <motion.div key={i} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.1 }} className="bg-white dark:bg-white/3 border border-black/5 dark:border-white/5 p-8 rounded-[2.5rem] shadow-sm hover:border-[#F05E23]/20 transition-all group relative overflow-hidden backdrop-blur-sm">
+          <motion.div key={i} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.1 }} className="bg-white dark:bg-white/3 border border-black/5 dark:border-white/5 p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] shadow-sm hover:border-[#F05E23]/20 transition-all group relative overflow-hidden backdrop-blur-sm flex flex-col justify-between">
             <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500/[0.025] rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700`} />
-            <div className="flex items-center justify-between mb-6 relative z-10">
-              <div className={`p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 group-hover:border-[#F05E23]/20 transition-all`}>
-                <stat.icon className={`w-5 h-5 text-${stat.color === 'orange' ? '[#F05E23]' : stat.color + '-500'}`} />
+            <div className="flex items-center justify-between mb-4 sm:mb-6 relative z-10">
+              <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 group-hover:border-[#F05E23]/20 transition-all`}>
+                <stat.icon className={`w-4 sm:w-5 h-4 sm:h-5 text-${stat.color === 'orange' ? '[#F05E23]' : stat.color + '-500'}`} />
               </div>
-              <span className="text-[0.55rem] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-white/20">{stat.label}</span>
+              <span className="text-[0.5rem] sm:text-[0.55rem] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-slate-400 dark:text-white/20">{stat.label}</span>
             </div>
-            <div className="text-5xl font-black mb-2 relative z-10 tracking-tighter italic text-slate-900 dark:text-white">{stat.val}</div>
-            <p className="text-[0.55rem] font-bold text-slate-400 dark:text-white/10 uppercase tracking-widest relative z-10">{stat.desc}</p>
+            <div>
+              <div className="text-3xl sm:text-5xl font-black mb-1 sm:mb-2 relative z-10 tracking-tighter italic text-slate-900 dark:text-white">{stat.val}</div>
+              <p className="text-[0.5rem] sm:text-[0.55rem] font-bold text-slate-400 dark:text-white/10 uppercase tracking-widest relative z-10">{stat.desc}</p>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="flex gap-2 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-2 sm:gap-3 mb-10 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         {[
           { id: "interns", icon: Users },
           { id: "tasks", icon: ClipboardList },
+          { id: "sheet", icon: Table },
           { id: "holidays", icon: Calendar },
           { id: "portfolio", icon: Briefcase },
           { id: "brands", icon: Shield },
@@ -482,181 +715,369 @@ export default function AdminDashboard() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[0.65rem] transition-all relative flex items-center gap-3 ${activeTab === tab.id ? "bg-[#F05E23] text-white shadow-lg shadow-[#F05E23]/30" : "bg-white dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-white border border-black/5 dark:border-white/10"}`}
+            className={`px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-[0.6rem] sm:text-[0.65rem] transition-all relative flex items-center gap-2 sm:gap-3 shrink-0 ${activeTab === tab.id ? "bg-[#F05E23] text-white shadow-lg shadow-[#F05E23]/30" : "bg-white dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-white border border-black/5 dark:border-white/10"}`}
           >
-            <tab.icon className="w-4 h-4" />
+            <tab.icon className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
             {tabLabels[tab.id]}
           </button>
         ))}
       </div>
 
+
+      {(activeTab === "interns" || activeTab === "tasks") && (
+        <div className="flex flex-wrap items-center gap-4 mb-8">
+          <select
+            value={taskCompanyFilter}
+            onChange={(e) => setTaskCompanyFilter(e.target.value)}
+            className="px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
+          >
+            <option value="">All Companies</option>
+            {uniqueTaskCompanies.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select
+            value={taskDepartmentFilter}
+            onChange={(e) => setTaskDepartmentFilter(e.target.value)}
+            className="px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
+          >
+            <option value="">All Departments</option>
+            {uniqueTaskDepartments.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <select
+            value={teamDepartmentFilter}
+            onChange={(e) => setTeamDepartmentFilter(e.target.value)}
+            className="px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
+          >
+            <option value="">All Team Departments</option>
+            {uniqueTeamDepartments.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <select
+            value={taskTeamMemberFilter}
+            onChange={(e) => setTaskTeamMemberFilter(e.target.value)}
+            className="px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
+          >
+            <option value="">All Team Members</option>
+            {uniqueTaskTeamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          {(taskCompanyFilter || taskDepartmentFilter || taskTeamMemberFilter || teamDepartmentFilter) && (
+             <button 
+               onClick={() => { setTaskCompanyFilter(""); setTaskDepartmentFilter(""); setTaskTeamMemberFilter(""); setTeamDepartmentFilter(""); }}
+               className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-white underline underline-offset-2 ml-2"
+             >
+               Clear Filters
+             </button>
+          )}
+        </div>
+      )}
+
       <div className="min-h-100">
         {activeTab === "interns" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <AnimatePresence mode="popLayout">
-              {interns.map((intern) => {
-                const iTasks = tasks.filter(t => t.internId?._id === intern._id);
-                const completedMonthly = iTasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length;
-                const totalMonthly = iTasks.filter(t => isCurrentMonth(t.createdAt)).length || 1;
-                const rate = Math.round((completedMonthly / totalMonthly) * 100);
-                const pendingTasks = iTasks.filter(t => t.status !== "Complete").length;
+          <div className="space-y-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <AnimatePresence mode="popLayout">
+                {displayedInterns.map((intern) => {
+                  const iTasks = filteredTasks.filter(t => t.internId?._id === intern._id);
+                  const completedMonthly = iTasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length;
+                  const totalMonthly = iTasks.filter(t => isCurrentMonth(t.createdAt)).length || 1;
+                  const rate = Math.round((completedMonthly / totalMonthly) * 100);
+                  const pendingTasks = iTasks.filter(t => t.status !== "Complete").length;
 
-                return (
-                  <motion.div layout initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} key={intern._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-5 rounded-2xl relative group overflow-hidden hover:border-[#F05E23]/20 transition-all">
-                    <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
-                      <button onClick={() => openTaskModalForIntern(intern._id)} className="p-2 bg-[#F05E23]/10 text-[#F05E23] rounded-lg hover:bg-[#F05E23] hover:text-white transition-all" title="Assign task">
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => removeIntern(intern._id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
-                    </div>
-
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#F05E23] to-[#FF8C61] flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
-                        {intern.name?.[0]}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-black text-sm truncate text-slate-900 dark:text-white">{intern.name}</h3>
-                        <p className="text-[0.6rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight truncate">{intern.email}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="bg-slate-50 dark:bg-white/5 rounded-lg p-3">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-[0.55rem] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tight">Performance (Monthly)</span>
-                          <span className="#F05E23 font-black text-xs">{rate}%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
-                          <motion.div initial={{ width: 0 }} animate={{ width: `${rate}%` }} className="h-full bg-[#F05E23]" />
-                        </div>
+                  return (
+                    <motion.div layout initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} key={intern._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-5 rounded-2xl relative group overflow-hidden hover:border-[#F05E23]/20 transition-all">
+                      <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => openTaskModalForIntern(intern._id)} className="p-2 bg-[#F05E23]/10 text-[#F05E23] rounded-lg hover:bg-[#F05E23] hover:text-white transition-all" title="Assign task">
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => removeIntern(intern._id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
-                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Active</span>
-                          <span className="text-base font-black text-slate-900 dark:text-white">{pendingTasks}</span>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#F05E23] to-[#FF8C61] flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
+                          {intern.name?.[0]}
                         </div>
-                        <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
-                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Score</span>
-                          <span className="text-base font-black text-green-600 dark:text-green-400">{completedMonthly}</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[0.55rem] font-black uppercase tracking-tight text-slate-500 dark:text-slate-400">Recent tasks</span>
-                          <button onClick={() => openTaskModalForIntern(intern._id)} className="text-[0.5rem] font-black uppercase tracking-tight text-[#F05E23] hover:opacity-70 transition-all">+ Add</button>
-                        </div>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/20 scrollbar-track-transparent">
-                          {iTasks.filter(t => t.status !== "Complete").length > 0 ? iTasks.filter(t => t.status !== "Complete").slice(0, 5).map((task) => (
-                            <button key={task._id} onClick={() => setChatTaskId(task._id)} className="w-full flex items-start justify-between gap-2 rounded-lg bg-slate-50 dark:bg-white/3 px-2.5 py-1.5 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-left group/task">
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover/task:text-[#F05E23]">{task.title}</p>
-                                <span className={`text-[0.45rem] font-black uppercase tracking-tight border px-1 py-0.5 rounded inline-block mt-0.5 ${getTaskTypeClasses(task.taskType || "General")}`}>
-                                  {task.taskType || "General"}
-                                </span>
-                              </div>
-                              <span className="text-[0.45rem] font-black uppercase text-slate-500 dark:text-slate-400 shrink-0">{getTaskProgress(task)}</span>
-                            </button>
-                          )) : (
-                            <div className="rounded-lg border border-dashed border-slate-300 dark:border-white/10 px-3 py-3 text-[0.6rem] text-slate-400 text-center">
-                              No tasks assigned
-                            </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-black text-sm truncate text-slate-900 dark:text-white">{intern.name}</h3>
+                          <p className="text-[0.6rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight truncate">{intern.email}</p>
+                          {intern.department && (
+                            <span className="inline-block mt-1 text-[0.55rem] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                              {intern.department}
+                            </span>
                           )}
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+
+                      <div className="space-y-3">
+                        <div className="bg-slate-50 dark:bg-white/5 rounded-lg p-3">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-[0.55rem] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tight">Performance (Monthly)</span>
+                            <span className="#F05E23 font-black text-xs">{rate}%</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${rate}%` }} className="h-full bg-[#F05E23]" />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
+                            <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Active</span>
+                            <span className="text-base font-black text-slate-900 dark:text-white">{pendingTasks}</span>
+                          </div>
+                          <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
+                            <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Score</span>
+                            <span className="text-base font-black text-green-600 dark:text-green-400">{completedMonthly}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[0.55rem] font-black uppercase tracking-tight text-slate-500 dark:text-slate-400">Recent tasks</span>
+                            <button onClick={() => openTaskModalForIntern(intern._id)} className="text-[0.5rem] font-black uppercase tracking-tight text-[#F05E23] hover:opacity-70 transition-all">+ Add</button>
+                          </div>
+                          <div className="space-y-1.5 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/20 scrollbar-track-transparent">
+                            {iTasks.length > 0 ? [...iTasks].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).map((task) => (
+                              <button key={task._id} onClick={() => setChatTaskId(task._id)} className={`w-full flex items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 transition-all text-left group/task ${task.status === 'Complete' ? 'bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20' : 'bg-slate-50 dark:bg-white/3 hover:bg-slate-100 dark:hover:bg-white/5'}`}>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover/task:text-[#F05E23]">
+                                    {task.title} {task.contentId && <span className="opacity-60 font-normal">({task.contentId})</span>}
+                                  </p>
+                                  <span className={`text-[0.45rem] font-black uppercase tracking-tight border px-1 py-0.5 rounded inline-block mt-0.5 ${getTaskTypeClasses(task.taskType || "General")}`}>
+                                    {task.taskType || "General"}
+                                  </span>
+                                </div>
+                                <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                                  <span className="text-[0.45rem] font-black uppercase text-slate-500 dark:text-slate-400">{getTaskProgress(task)}</span>
+                                  {task.createdAt && <span className="text-[0.4rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{new Date(task.createdAt).toLocaleDateString()}</span>}
+                                </div>
+                              </button>
+                            )) : (
+                              <div className="rounded-lg border border-dashed border-slate-300 dark:border-white/10 px-3 py-3 text-[0.6rem] text-slate-400 text-center">
+                                No tasks assigned
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+
+            {/* Brand Managers Section */}
+            {!teamDepartmentFilter && !taskTeamMemberFilter && (
+            <div>
+              <div className="flex items-center gap-4 mb-6">
+                <h2 className="text-xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Brand <span className="text-blue-500">Managers</span></h2>
+                <div className="h-[2px] flex-1 bg-gradient-to-r from-slate-200 dark:from-white/10 to-transparent" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <AnimatePresence mode="popLayout">
+                  {brandManagers?.map((manager) => (
+                    <motion.div layout initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} key={manager._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-5 rounded-2xl relative group overflow-hidden hover:border-blue-500/20 transition-all">
+                      <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => removeBrandManager(manager._id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
+                          {manager.name?.[0]}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-black text-sm truncate text-slate-900 dark:text-white">{manager.name}</h3>
+                          <p className="text-[0.6rem] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight truncate">{manager.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
+                          <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Assigned Brand / Company</span>
+                          <span className="text-sm font-black text-slate-900 dark:text-white">{manager.companyId?.name || "Unassigned"}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+            )}
           </div>
         )}
 
         {activeTab === "tasks" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {[
-              { key: "pending", title: "Pending", description: "Tasks waiting to be started", accent: "orange" },
-              { key: "working", title: "Working", description: "Tasks in progress or blocked", accent: "blue" },
-            ].map((column) => (
-              <div key={column.key} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-5 shadow-sm min-h-120">
-                <div className="flex items-start justify-between gap-4 mb-5">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-black uppercase tracking-tighter text-slate-900 dark:text-white">{column.title}</h3>
-                    <p className="text-[0.55rem] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mt-1">{column.description}</p>
-                  </div>
-                  <span className={`px-3 py-1.5 rounded-lg text-[0.5rem] font-black uppercase tracking-widest whitespace-nowrap shrink-0 ${column.accent === 'orange' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : column.accent === 'blue' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-green-500/10 text-green-600 dark:text-green-400'}`}>
-                    {taskBuckets[column.key].length}
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  <AnimatePresence mode="popLayout">
-                    {taskBuckets[column.key].map((task) => {
-                      const isBlocked = ["Need Credentials", "Need Meeting", "Blocked"].includes(task.status);
-                      return (
-                        <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} key={task._id} className="rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/3 p-3.5 shadow-sm hover:border-[#F05E23]/20 hover:shadow-md transition-all group">
-                          <div className="flex items-start justify-between gap-2 mb-2.5">
-                            <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-xs tracking-tight truncate text-slate-900 dark:text-white">{task.title}</h4>
-                              <p className="text-[0.6rem] uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">{task.internId?.name || "Unassigned"}</p>
-                            </div>
-                            <button onClick={() => deleteTask(task._id)} className="p-1.5 rounded-lg bg-red-500/0 text-red-500 hover:bg-red-500/10 transition-all shrink-0 opacity-0 group-hover:opacity-100">
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-
-                          {task.note && (
-                            <p className="text-[0.6rem] text-slate-500 dark:text-slate-400 italic mb-2 line-clamp-1 border-l-2 border-[#F05E23]/30 pl-2">
-                              &quot;{task.note}&quot;
-                            </p>
-                          )}
-
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            <span className={`text-[0.45rem] font-black px-1.5 py-1 rounded-md uppercase tracking-widest border ${isBlocked ? 'border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5' : column.key === 'complete' ? 'border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/5' : column.key === 'working' ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5' : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/5'}`}>
-                              {isBlocked ? 'Blocked' : task.status}
-                            </span>
-                            <span className={`text-[0.45rem] font-black px-1.5 py-1 rounded-md uppercase tracking-widest border ${task.priority === 'High' ? 'border-red-500/30 text-red-600 dark:text-red-400 bg-red-500/5' : 'border-slate-400/30 text-slate-600 dark:text-slate-300 bg-slate-500/5'}`}>
-                              {task.priority || 'Medium'}
-                            </span>
-                            <span className={`text-[0.45rem] font-black px-1.5 py-1 rounded-md uppercase tracking-widest border ${getTaskTypeClasses(task.taskType || "General")}`}>
-                              {task.taskType || "General"}
-                            </span>
-                          </div>
-
-                          <div className="flex gap-1.5 flex-wrap">
-                            {column.key !== 'complete' && task.status !== 'Complete' && (
-                              <button onClick={() => updateTaskStatus(task._id, 'Complete', 'Marked complete.', true)} className="flex-1 min-w-[50px] bg-green-500 hover:bg-green-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm shadow-green-500/20">
-                                Done
-                              </button>
-                            )}
-                            {column.key !== 'working' && task.status !== 'Complete' && (
-                              <button onClick={() => updateTaskStatus(task._id, 'In Progress', 'Moved to working.', true)} className="flex-1 min-w-[50px] bg-blue-500 hover:bg-blue-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm shadow-blue-500/20">
-                                Start
-                              </button>
-                            )}
-                            {task.status === 'Complete' && !task.isApproved && (
-                              <button onClick={() => handleApproveTask(task._id)} className="flex-1 min-w-[50px] bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm">
-                                Review
-                              </button>
-                            )}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                  {taskBuckets[column.key].length === 0 && (
-                    <div className="rounded-xl border border-dashed border-slate-300 dark:border-white/10 px-4 py-8 text-center">
-                      <div className="text-slate-400 dark:text-slate-500 mb-2">
-                        <Clock className="w-6 h-6 mx-auto opacity-40" />
-                      </div>
-                      <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">No tasks in this column.</p>
-                    </div>
-                  )}
-                </div>
+          <div className="space-y-4">
+            <div className="flex justify-center mb-6">
+              <div className="flex gap-2 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl overflow-x-auto w-full md:w-auto">
+                {[
+                  { id: "all", label: "All Columns" },
+                  { id: "pending", label: "Pending" },
+                  { id: "working", label: "Working" },
+                  { id: "complete", label: "Completed" }
+                ].map(col => (
+                  <button
+                    key={col.id}
+                    onClick={() => setSelectedTaskColumn(col.id)}
+                    className={`px-6 py-2.5 rounded-xl text-[0.6rem] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedTaskColumn === col.id ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:bg-slate-200/50 dark:hover:bg-white/5'}`}
+                  >
+                    {col.label}
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div className={`grid grid-cols-1 ${selectedTaskColumn === "all" ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-4`}>
+              {[
+                { key: "pending", title: "Pending", description: "Tasks waiting to be started", accent: "orange" },
+                { key: "working", title: "Working", description: "Tasks in progress or blocked", accent: "blue" },
+                { key: "complete", title: "Completed", description: "Tasks finished by interns", accent: "green" },
+              ].filter(c => selectedTaskColumn === "all" || selectedTaskColumn === c.key).map((column) => (
+                <div key={column.key} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-5 shadow-sm min-h-120">
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-black uppercase tracking-tighter text-slate-900 dark:text-white">{column.title}</h3>
+                      <p className="text-[0.55rem] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mt-1">{column.description}</p>
+                    </div>
+                    <span className={`px-3 py-1.5 rounded-lg text-[0.5rem] font-black uppercase tracking-widest whitespace-nowrap shrink-0 ${column.accent === 'orange' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : column.accent === 'blue' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-green-500/10 text-green-600 dark:text-green-400'}`}>
+                      {taskBuckets[column.key].length}
+                    </span>
+                  </div>
+
+                  <div className={selectedTaskColumn === "all" ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"}>
+                    <AnimatePresence mode="popLayout">
+                      {taskBuckets[column.key].map((task) => {
+                        const isBlocked = ["Need Credentials", "Need Meeting", "Blocked"].includes(task.status);
+                        return (
+                          <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} key={task._id} className="rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/3 p-3.5 shadow-sm hover:border-[#F05E23]/20 hover:shadow-md transition-all group">
+                            <div className="flex items-start justify-between gap-2 mb-2.5">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-black text-xs tracking-tight truncate text-slate-900 dark:text-white">{task.title}</h4>
+                                <p className="text-[0.6rem] uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">{task.internId?.name || "Unassigned"}</p>
+                              </div>
+                              <button onClick={() => deleteTask(task._id)} className="p-1.5 rounded-lg bg-red-500/0 text-red-500 hover:bg-red-500/10 transition-all shrink-0 opacity-0 group-hover:opacity-100">
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+
+                            {task.marketingData && (
+                              <div className="mb-2 p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5 shadow-sm">
+                                {task.marketingData.topic && (
+                                  <p className={`text-[0.65rem] font-bold text-slate-700 dark:text-slate-300 line-clamp-1 italic ${task.internId?.department === 'Tech' ? 'text-blue-500' : 'text-[#F05E23]'}`}>
+                                    {task.marketingData.topic}
+                                  </p>
+                                )}
+                                {task.marketingData.rawLink && (
+                                  <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase text-blue-500 hover:text-blue-600 hover:underline flex items-center gap-1">
+                                    <ExternalLink className="w-2.5 h-2.5" /> Raw Asset
+                                  </a>
+                                )}
+                                {task.marketingData.editedLink && (
+                                  <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase text-purple-500 hover:text-purple-600 hover:underline flex items-center gap-1">
+                                    <ExternalLink className="w-2.5 h-2.5" /> Final Output
+                                  </a>
+                                )}
+                                {task.internId?.department === 'Digital Marketing' && task.marketingData.platforms && task.marketingData.platforms.length > 0 && (
+                                  <div className="flex gap-1 pt-1 flex-wrap">
+                                    {task.marketingData.platforms.map(p => (
+                                      <span key={p} className="text-[0.4rem] font-black uppercase tracking-widest px-1.5 py-0.5 bg-[#F05E23]/10 text-[#F05E23] rounded">{p}</span>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="flex justify-between items-center pt-1 mt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                  {task.marketingData.postTracker && (
+                                    <div className="flex flex-col w-full gap-1 mb-1">
+                                      <div className="flex justify-between items-center text-[0.45rem] font-black uppercase tracking-widest text-slate-500">
+                                        <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData.postTracker.scheduledDate || "TBA"}</span></span>
+                                        <span>Status: <span className={task.marketingData.postTracker.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.postTracker.status || "Pending"}</span></span>
+                                      </div>
+                                      <div className="flex justify-between items-center text-[0.45rem] font-black uppercase tracking-widest text-slate-500">
+                                        <span>Type: {task.marketingData.postTracker.postType || "-"}</span>
+                                        {task.marketingData.postTracker.postedLink && task.marketingData.postTracker.postedLink.trim() !== "" && (
+                                          <a href={task.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">View Post</a>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex justify-between items-center pt-1 mt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                  {task.marketingData.editorStatus && (
+                                    <div className="text-[0.45rem] font-black uppercase tracking-widest text-slate-500">
+                                      Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                    </div>
+                                  )}
+                                  {task.marketingData.reviewStatus && (
+                                    <div className="text-[0.45rem] font-black uppercase tracking-widest text-slate-500">
+                                      Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {task.note && (
+                              <p className="text-[0.6rem] text-slate-500 dark:text-slate-400 italic mb-2 line-clamp-1 border-l-2 border-[#F05E23]/30 pl-2">
+                                &quot;{task.note}&quot;
+                              </p>
+                            )}
+
+                            <div className="flex justify-between items-start mb-3">
+                              <span className={`text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 rounded border ${task.priority === 'High' ? 'border-red-500/20 text-red-500 bg-red-500/5' : 'border-amber-500/20 text-amber-500 bg-amber-500/5'}`}>
+                                {task.priority || "Medium"}
+                              </span>
+                              {task.createdAt && <span className="text-[0.5rem] font-bold uppercase tracking-widest text-slate-400">{new Date(task.createdAt).toLocaleDateString()}</span>}
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              <span className={`text-[0.45rem] font-black px-1.5 py-1 rounded-md uppercase tracking-widest border ${isBlocked ? 'border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5' : column.key === 'complete' ? 'border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/5' : column.key === 'working' ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5' : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/5'}`}>
+                                {isBlocked ? 'Blocked' : task.status}
+                              </span>
+                              <span className={`text-[0.45rem] font-black px-1.5 py-1 rounded-md uppercase tracking-widest border ${getTaskTypeClasses(task.taskType || "General")}`}>
+                                {task.taskType || "General"}
+                              </span>
+                            </div>
+
+                            <div className="flex gap-1.5 flex-wrap">
+                              {column.key !== 'complete' && task.status !== 'Complete' && (
+                                <button onClick={() => updateTaskStatus(task._id, 'Complete', 'Marked complete.', true)} className="flex-1 min-w-[50px] bg-green-500 hover:bg-green-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm shadow-green-500/20">
+                                  Done
+                                </button>
+                              )}
+                              {column.key !== 'working' && task.status !== 'Complete' && (
+                                <button onClick={() => updateTaskStatus(task._id, 'In Progress', 'Moved to working.', true)} className="flex-1 min-w-[50px] bg-blue-500 hover:bg-blue-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm shadow-blue-500/20">
+                                  Start
+                                </button>
+                              )}
+                              {task.status === 'Complete' && !task.isApproved && (
+                                <button onClick={() => {
+                                  if (task.marketingData && task.marketingData.topic) {
+                                    setReviewingTask(task);
+                                    setReviewForm({ reviewStatus: task.marketingData.reviewStatus || "Approved", reviewRemarks: task.marketingData.reviewRemarks || "" });
+                                  } else {
+                                    handleApproveTask(task._id);
+                                  }
+                                }} className="flex-1 min-w-[50px] bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm">
+                                  Review
+                                </button>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                    {taskBuckets[column.key].length === 0 && (
+                      <div className="rounded-xl border border-dashed border-slate-300 dark:border-white/10 px-4 py-8 text-center">
+                        <div className="text-slate-400 dark:text-slate-500 mb-2">
+                          <Clock className="w-6 h-6 mx-auto opacity-40" />
+                        </div>
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">No tasks in this column.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        )}
+
+        {activeTab === "sheet" && (
+          <AdminSpreadsheet tasks={tasks} companies={companies} interns={interns} />
         )}
 
         {activeTab === "brands" && (
@@ -666,8 +1087,8 @@ export default function AdminDashboard() {
                 <h3 className="text-4xl font-black uppercase tracking-tighter italic leading-none">Brand <span className="text-[#F05E23]">Sync</span> Matrix</h3>
                 <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-[0.3em] mt-3 border-l-2 border-[#F05E23] pl-3">Active project surveillance active</p>
               </div>
-              <button 
-                onClick={() => setIsAddingClient(true)} 
+              <button
+                onClick={() => setIsAddingClient(true)}
                 className="group relative overflow-hidden bg-black text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[#F05E23] to-[#d04a1a] opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -682,7 +1103,7 @@ export default function AdminDashboard() {
                 const totalSteps = project.workflow?.length || 0;
                 const completedSteps = project.workflow?.filter(s => s.status === 'Complete').length || 0;
                 const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-                
+
                 return (
                   <motion.div
                     key={project._id}
@@ -692,9 +1113,9 @@ export default function AdminDashboard() {
                     className="w-full text-left bg-white border border-slate-100 rounded-[2rem] p-10 flex flex-col md:flex-row items-center justify-between hover:border-[#F05E23] hover:shadow-2xl hover:shadow-[#F05E23]/10 transition-all group cursor-pointer relative overflow-hidden"
                   >
                     {/* Progress Background */}
-                    <div 
-                      className="absolute left-0 bottom-0 h-1 bg-[#F05E23]/20 transition-all duration-1000" 
-                      style={{ width: `${progress}%` }} 
+                    <div
+                      className="absolute left-0 bottom-0 h-1 bg-[#F05E23]/20 transition-all duration-1000"
+                      style={{ width: `${progress}%` }}
                     />
 
                     <div className="flex items-center gap-10 flex-1">
@@ -704,7 +1125,7 @@ export default function AdminDashboard() {
                           <div className="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full border-4 border-white animate-pulse" />
                         )}
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="flex items-center gap-4">
                           <h4 className="font-black text-2xl uppercase tracking-tighter text-slate-900 group-hover:text-[#F05E23] italic leading-none transition-colors">
@@ -726,7 +1147,7 @@ export default function AdminDashboard() {
                         <span className="block text-[0.6rem] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Execution Level</span>
                         <span className="text-xl font-black italic text-slate-900">{progress}%</span>
                       </div>
-                      
+
                       {project.feedbacks?.some(f => !f.isRead) && (
                         <div className="flex items-center gap-3 px-5 py-2.5 bg-amber-50 rounded-2xl border border-amber-100">
                           <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
@@ -1175,7 +1596,7 @@ export default function AdminDashboard() {
               className="bg-white border border-slate-200 w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px] -mr-32 -mt-32" />
-              
+
               <div className="flex items-center justify-between mb-12">
                 <h2 className="text-4xl font-black uppercase tracking-tighter italic text-slate-900">Provision <span className="text-[#F05E23]">Brand</span></h2>
                 <div className="flex gap-2">
@@ -1196,7 +1617,26 @@ export default function AdminDashboard() {
                       <input
                         type={input.type}
                         value={clientForm[input.id] || ""}
-                        onChange={e => setClientForm({ ...clientForm, [input.id]: e.target.value })}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const newForm = { ...clientForm, [input.id]: val };
+                          
+                          if (input.id === 'name') {
+                            const cleanName = val.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            if (cleanName) {
+                              const currentEmail = clientForm.email || '';
+                              const prefix = currentEmail.includes('@') ? currentEmail.split('@')[0] : (currentEmail || 'admin');
+                              newForm.email = prefix + '@' + cleanName + '.com';
+                            } else {
+                              const currentEmail = clientForm.email || '';
+                              if (currentEmail.includes('@')) {
+                                newForm.email = currentEmail.split('@')[0];
+                              }
+                            }
+                          }
+                          
+                          setClientForm(newForm);
+                        }}
                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-300"
                         placeholder={input.placeholder}
                       />
@@ -1213,7 +1653,7 @@ export default function AdminDashboard() {
                     />
                     <div className="absolute inset-y-0 left-0 w-1 bg-[#F05E23] scale-y-0 group-focus-within:scale-y-50 transition-transform rounded-r-full" />
                   </div>
-                  
+
                   <div className="flex gap-4 pt-10">
                     <button
                       onClick={() => {
@@ -1235,7 +1675,7 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-6">
                   <span className="text-[10px] font-black uppercase text-[#F05E23] tracking-[0.3em] mb-2 block">Step 02: Strategic Matrix</span>
-                  
+
                   <div className="space-y-4">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Technical Description</label>
                     <textarea
@@ -1260,74 +1700,74 @@ export default function AdminDashboard() {
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between pl-2 mb-3">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Requirements</label>
-                          <button 
-                            type="button"
-                            onClick={() => setClientForm({ ...clientForm, requirements: [...(clientForm.requirements || []), { content: "" }] })}
-                            className="text-[8px] font-black uppercase text-[#F05E23] flex items-center gap-1 hover:opacity-70"
-                          >
-                            <Plus className="w-3 h-3" /> Add
-                          </button>
-                        </div>
-                        <div className="space-y-2">
-                            {(clientForm.requirements || []).map((req, i) => (
-                                <div key={i} className="flex gap-2">
-                                  <input
-                                      type="text"
-                                      value={req.content}
-                                      onChange={e => {
-                                          const newReqs = [...clientForm.requirements];
-                                          newReqs[i].content = e.target.value;
-                                          setClientForm({ ...clientForm, requirements: newReqs });
-                                      }}
-                                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[0.6rem] font-bold outline-none focus:border-[#F05E23]/30"
-                                  />
-                                  <button 
-                                    type="button"
-                                    onClick={() => setClientForm({ ...clientForm, requirements: clientForm.requirements.filter((_, idx) => idx !== i) })}
-                                    className="p-3 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-all"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                            ))}
-                        </div>
+                      <div className="flex items-center justify-between pl-2 mb-3">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Requirements</label>
+                        <button
+                          type="button"
+                          onClick={() => setClientForm({ ...clientForm, requirements: [...(clientForm.requirements || []), { content: "" }] })}
+                          className="text-[8px] font-black uppercase text-[#F05E23] flex items-center gap-1 hover:opacity-70"
+                        >
+                          <Plus className="w-3 h-3" /> Add
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {(clientForm.requirements || []).map((req, i) => (
+                          <div key={i} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={req.content}
+                              onChange={e => {
+                                const newReqs = [...clientForm.requirements];
+                                newReqs[i].content = e.target.value;
+                                setClientForm({ ...clientForm, requirements: newReqs });
+                              }}
+                              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[0.6rem] font-bold outline-none focus:border-[#F05E23]/30"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setClientForm({ ...clientForm, requirements: clientForm.requirements.filter((_, idx) => idx !== i) })}
+                              className="p-3 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between pl-2 mb-3">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Core Features</label>
-                          <button 
-                            type="button"
-                            onClick={() => setClientForm({ ...clientForm, aiFeatures: [...(clientForm.aiFeatures || []), { title: "", description: "" }] })}
-                            className="text-[8px] font-black uppercase text-[#F05E23] flex items-center gap-1 hover:opacity-70"
-                          >
-                            <Plus className="w-3 h-3" /> Add
-                          </button>
-                        </div>
-                        <div className="space-y-2">
-                            {(clientForm.aiFeatures || []).map((feat, i) => (
-                                <div key={i} className="flex gap-2">
-                                  <input
-                                      type="text"
-                                      value={feat.title}
-                                      onChange={e => {
-                                          const newFeats = [...clientForm.aiFeatures];
-                                          newFeats[i].title = e.target.value;
-                                          setClientForm({ ...clientForm, aiFeatures: newFeats });
-                                      }}
-                                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[0.6rem] font-bold outline-none focus:border-[#F05E23]/30"
-                                  />
-                                  <button 
-                                    type="button"
-                                    onClick={() => setClientForm({ ...clientForm, aiFeatures: clientForm.aiFeatures.filter((_, idx) => idx !== i) })}
-                                    className="p-3 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-all"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                            ))}
-                        </div>
+                      <div className="flex items-center justify-between pl-2 mb-3">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Core Features</label>
+                        <button
+                          type="button"
+                          onClick={() => setClientForm({ ...clientForm, aiFeatures: [...(clientForm.aiFeatures || []), { title: "", description: "" }] })}
+                          className="text-[8px] font-black uppercase text-[#F05E23] flex items-center gap-1 hover:opacity-70"
+                        >
+                          <Plus className="w-3 h-3" /> Add
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {(clientForm.aiFeatures || []).map((feat, i) => (
+                          <div key={i} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={feat.title}
+                              onChange={e => {
+                                const newFeats = [...clientForm.aiFeatures];
+                                newFeats[i].title = e.target.value;
+                                setClientForm({ ...clientForm, aiFeatures: newFeats });
+                              }}
+                              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[0.6rem] font-bold outline-none focus:border-[#F05E23]/30"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setClientForm({ ...clientForm, aiFeatures: clientForm.aiFeatures.filter((_, idx) => idx !== i) })}
+                              className="p-3 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -1499,19 +1939,86 @@ export default function AdminDashboard() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-[60px]" />
               <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900">Onboarding</h2>
               <form onSubmit={handleAddIntern} className="space-y-5">
+                 <div className="relative group">
+                   <input type="text" required value={newIntern.name} onChange={e => {
+                     const val = e.target.value;
+                     const cleanAll = val.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+                     let autoEmail = cleanAll ? `${cleanAll}@synchronous.com` : "";
+                     if (autoEmail) {
+                       let count = 1;
+                       let checkEmail = autoEmail;
+                       while (interns && interns.some(i => i.email && i.email.toLowerCase() === checkEmail)) {
+                         checkEmail = `${cleanAll}${count}@synchronous.com`;
+                         count++;
+                       }
+                       autoEmail = checkEmail;
+                     }
+                     const emailPrefix = autoEmail ? autoEmail.replace("@synchronous.com", "") : "";
+                     const autoPass = emailPrefix ? `${emailPrefix}123` : "";
+                     setNewIntern({ ...newIntern, name: val, email: autoEmail, password: autoPass });
+ }} placeholder="Full Identity (e.g. Jayant Kumar)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                 </div>
+                 <div className="relative group">
+                   <input type="email" required value={newIntern.email} onChange={e => setNewIntern({ ...newIntern, email: e.target.value })} placeholder="Official Email (@synchronous.com)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                 </div>
                 <div className="relative group">
-                  <input type="text" required value={newIntern.name} onChange={e => setNewIntern({ ...newIntern, name: e.target.value })} placeholder="Full Identity" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
-                </div>
+                   <input type="text" required value={newIntern.password} onChange={e => setNewIntern({ ...newIntern, password: e.target.value })} placeholder="Initial Password (e.g. jayant123)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                 </div>
                 <div className="relative group">
-                  <input type="email" required value={newIntern.email} onChange={e => setNewIntern({ ...newIntern, email: e.target.value })} placeholder="System Access Email" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
-                </div>
-                <div className="relative group">
-                  <input type="text" required value={newIntern.password} onChange={e => setNewIntern({ ...newIntern, password: e.target.value })} placeholder="Initial Password" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+ <select required value={newIntern.department} onChange={e => setNewIntern({ ...newIntern, department: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer">
+                    <option value="" disabled>Select Main Department</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Digital Marketing">Digital Marketing</option>
+                  </select>
                 </div>
                 <div className="flex gap-4 pt-8">
                   <button type="button" onClick={() => setIsAddingIntern(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] border border-slate-200 text-slate-400 hover:bg-slate-50 transition-all">Cancel</button>
                   <button type="submit" className="flex-1 bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:bg-slate-800 transition-all active:scale-95">Verify & Deploy</button>
                 </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {isAddingPost && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-[#1E1E1E] rounded-3xl p-8 max-w-xl w-full max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/5 shadow-2xl">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h3 className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Track <span className="text-[#F05E23]">Post</span></h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Append directly to Google Sheets</p>
+                </div>
+                <button onClick={() => setIsAddingPost(false)} className="p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-2xl transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <form onSubmit={handleAddPost} className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Company Name</label>
+                    <input type="text" value={newPostData.company} onChange={(e) => setNewPostData({...newPostData, company: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" placeholder="e.g. Intelexa Ai" required />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Content ID</label>
+                    <input type="text" value={newPostData.contentId} onChange={(e) => setNewPostData({...newPostData, contentId: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" placeholder="e.g. INT-1206-SP" required />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Scheduled Date</label>
+                    <input type="date" value={newPostData.scheduledDate} onChange={(e) => setNewPostData({...newPostData, scheduledDate: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" required />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Post Type</label>
+                    <input type="text" value={newPostData.postType} onChange={(e) => setNewPostData({...newPostData, postType: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" placeholder="e.g. Static Post, Reel" required />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Posting Time</label>
+                    <input type="text" value={newPostData.postingTime} onChange={(e) => setNewPostData({...newPostData, postingTime: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" placeholder="e.g. 5:00 PM" />
+                  </div>
+
+                </div>
+                <button disabled={isSubmittingPost} type="submit" className="w-full py-5 bg-[#F05E23] text-white rounded-2xl font-black uppercase tracking-widest text-[0.7rem] hover:shadow-[0_0_40px_rgba(240,94,35,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isSubmittingPost ? "Saving to Google Sheets..." : "Add to Post Tracker"}
+                </button>
               </form>
             </motion.div>
           </div>
@@ -1576,6 +2083,149 @@ export default function AdminDashboard() {
                       </select>
                     </div>
 
+
+                    {/* ── CASCADING: Company → Department → Task Type ── */}
+                    {newTask.internId && (() => {
+                      const selectedInternObj = interns.find(i => i._id === newTask.internId);
+                      const isTech = selectedInternObj?.department === 'Tech';
+                      const textAccentColor = isTech ? 'text-blue-500' : 'text-[#F05E23]';
+                      const bgAccentColor = isTech ? 'bg-blue-500' : 'bg-[#F05E23]';
+                      const hoverAccentColor = isTech ? 'hover:bg-blue-600' : 'hover:bg-[#d9531e]';
+                      const focusBorderColor = isTech ? 'focus:border-blue-500/30' : 'focus:border-[#F05E23]/30';
+
+                      return (
+                        <div className="space-y-4 pt-4 border-t border-slate-100">
+                          <label className={`text-[10px] font-black uppercase tracking-widest pl-2 ${textAccentColor}`}>Company</label>
+
+                          {/* Company Dropdown */}
+                          <div className="flex gap-2 items-center">
+                            <select
+                              value={selectedCompany}
+                              onChange={e => { setSelectedCompany(e.target.value); setSelectedMainDept(""); setSelectedDept(""); setSelectedTaskType(""); }}
+                              className={`flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 outline-none ${focusBorderColor} font-black uppercase text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer`}
+                            >
+                              <option value="">Select Company...</option>
+                              {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                            </select>
+                            <button type="button" onClick={() => setShowAddCompany(!showAddCompany)} className={`p-3 text-white rounded-xl transition-all ${bgAccentColor} ${hoverAccentColor}`}>
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                          {showAddCompany && (
+                            <div className="flex gap-2">
+ <input value={addingCompanyName} onChange={e => setAddingCompanyName(e.target.value)} placeholder="New company name..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-5 outline-none text-xs font-bold " />
+                              <button type="button" onClick={async () => {
+                                if (!addingCompanyName.trim()) return;
+                                await addCompany(addingCompanyName.trim());
+                                setAddingCompanyName(""); setShowAddCompany(false);
+                              }} className="px-6 bg-green-500 text-white rounded-xl text-xs font-black uppercase hover:bg-green-600 transition-all">Add</button>
+                            </div>
+                          )}
+
+                          {/* Main Department Dropdown */}
+                          {selectedCompany && (
+                            <>
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block pt-2">Main Department</label>
+                              <select
+                                value={selectedMainDept}
+                                onChange={e => { setSelectedMainDept(e.target.value); setSelectedDept(""); setSelectedTaskType(""); }}
+                                className={`w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 outline-none ${focusBorderColor} font-black uppercase text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer`}
+                              >
+                                <option value="">Select Main Department...</option>
+                                <option value="Tech">Tech</option>
+                                <option value="Digital Marketing">Digital Marketing</option>
+                              </select>
+                            </>
+                          )}
+
+                          {/* Sub-Department Dropdown */}
+                          {selectedMainDept && (
+                            <>
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block pt-2">Sub Department</label>
+                              <div className="flex gap-2 items-center">
+                                <select
+                                  value={selectedDept}
+                                  onChange={e => { setSelectedDept(e.target.value); setSelectedTaskType(""); }}
+                                  className={`flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 outline-none ${focusBorderColor} font-black uppercase text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer`}
+                                >
+                                  <option value="">Select Sub Department...</option>
+                                  {(companies.find(c => c._id === selectedCompany)?.departments || []).filter(d => (d.mainDepartment || "Digital Marketing") === selectedMainDept).map(d => (
+                                    <option key={d._id} value={d._id}>{d.name}</option>
+                                  ))}
+                                </select>
+                                <button type="button" onClick={() => setShowAddDept(!showAddDept)} className={`p-3 text-white rounded-xl transition-all ${bgAccentColor} ${hoverAccentColor}`}>
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
+                              {showAddDept && (
+                                <div className="flex gap-2">
+ <input value={addingDeptName} onChange={e => setAddingDeptName(e.target.value)} placeholder="New department name..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-5 outline-none text-xs font-bold " />
+                                  <button type="button" onClick={async () => {
+                                    if (!addingDeptName.trim()) return;
+                                    await updateCompany(selectedCompany, { addDepartment: addingDeptName.trim(), mainDepartment: selectedMainDept });
+                                    setAddingDeptName(""); setShowAddDept(false);
+                                  }} className="px-6 bg-green-500 text-white rounded-xl text-xs font-black uppercase hover:bg-green-600 transition-all">Add</button>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {/* Task Type Dropdown */}
+                          {selectedDept && (
+                            <>
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block pt-2">Task Type</label>
+                              <div className="flex gap-2 items-center">
+                                <select
+                                  value={selectedTaskType}
+                                  onChange={e => {
+                                    setSelectedTaskType(e.target.value);
+                                    const selectedComp = companies.find(c => c._id === selectedCompany);
+                                    const dept = selectedComp?.departments.find(d => d._id === selectedDept);
+                                    const taskType = dept?.taskTypes.find(t => t._id === e.target.value);
+                                    if (taskType) {
+                                      setNewTask({ ...newTask, title: taskType.name, marketingData: { ...newTask.marketingData, topic: taskType.name } });
+                                    }
+                                  }}
+                                  className={`flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 outline-none ${focusBorderColor} font-black uppercase text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer`}
+                                >
+                                  <option value="">Select Task Type...</option>
+                                  {(companies.find(c => c._id === selectedCompany)?.departments.find(d => d._id === selectedDept)?.taskTypes || []).map(t => (
+                                    <option key={t._id} value={t._id}>{t.name}</option>
+                                  ))}
+                                </select>
+                                <button type="button" onClick={() => setShowAddTaskType(!showAddTaskType)} className={`p-3 text-white rounded-xl transition-all ${bgAccentColor} ${hoverAccentColor}`}>
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
+                              {showAddTaskType && (
+                                <div className="flex gap-2">
+ <input value={addingTaskTypeName} onChange={e => setAddingTaskTypeName(e.target.value)} placeholder="New task type..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-5 outline-none text-xs font-bold " />
+                                  <button type="button" onClick={async () => {
+                                    if (!addingTaskTypeName.trim()) return;
+                                    await updateCompany(selectedCompany, { addTaskType: addingTaskTypeName.trim(), departmentId: selectedDept });
+                                    setAddingTaskTypeName(""); setShowAddTaskType(false);
+                                  }} className="px-6 bg-green-500 text-white rounded-xl text-xs font-black uppercase hover:bg-green-600 transition-all">Add</button>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {/* Raw Link input (for marketing tasks) */}
+                          {selectedTaskType && !isTech && (
+                            <input
+                              type="url"
+                              value={newTask.marketingData.rawLink}
+                              onChange={e => setNewTask({ ...newTask, marketingData: { ...newTask.marketingData, rawLink: e.target.value } })}
+                              placeholder="Raw Asset Link (Drive/Canva) – optional"
+                              className={`w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 outline-none ${focusBorderColor} font-black uppercase text-[0.65rem] tracking-widest text-slate-800`}
+                            />
+                          )}
+                        </div>
+                      );
+                    })()}
+
+
+
                     <div className="space-y-3">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Link Project Scope</label>
                       <select
@@ -1621,6 +2271,13 @@ export default function AdminDashboard() {
                       <div className="flex gap-3">
                         <input
                           type="text"
+                          value={newTask.contentId || ''}
+                          onChange={e => setNewTask({ ...newTask, contentId: e.target.value })}
+                          placeholder="SYN1 (Optional)"
+                          className="w-1/3 bg-slate-50 border border-slate-200 rounded-2xl py-5 px-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800"
+                        />
+                        <input
+                          type="text"
                           value={customTaskInput}
                           onChange={e => setCustomTaskInput(e.target.value)}
                           placeholder="Enter task title..."
@@ -1652,7 +2309,16 @@ export default function AdminDashboard() {
 
                     <div className="space-y-4">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 italic">Assignment Metadata</label>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <span className="text-[8px] font-black uppercase text-slate-300 pl-2 tracking-widest">Deadline Date</span>
+                          <input
+                            type="date"
+                            value={newTask.dueDate || ''}
+                            onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-[0.65rem] font-black uppercase outline-none focus:border-[#F05E23]/30 text-slate-800"
+                          />
+                        </div>
                         <div className="space-y-2">
                           <span className="text-[8px] font-black uppercase text-slate-300 pl-2 tracking-widest">Priority</span>
                           <select
@@ -1692,23 +2358,36 @@ export default function AdminDashboard() {
             </motion.div>
           </div>
         )}
-
-        {chatTask && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
+        {chatTaskId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[80vh]">
               <div className="p-8 bg-[#F05E23] text-white flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-white/20 rounded-2xl"><MessageSquare className="w-6 h-6" /></div>
                   <div>
                     <h2 className="text-xl font-black uppercase tracking-tight">Mission <span className="opacity-60">Log</span></h2>
-                    <p className="text-[0.6rem] font-black uppercase tracking-widest opacity-60">Active Channel: {chatTask.title}</p>
+                    <p className="text-[0.6rem] font-black uppercase tracking-widest opacity-60">Active Channel: {chatTask?.title}</p>
+                    {chatTask?.marketingData && (
+                      <div className="flex gap-4 mt-2 bg-black/20 px-3 py-1.5 rounded-lg w-max">
+                        {chatTask.marketingData.rawLink && (
+                          <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" /> Raw Asset
+                          </a>
+                        )}
+                        {chatTask.marketingData.editedLink && (
+                          <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" /> Edited Output
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all"><PlusCircle className="w-6 h-6 rotate-45" /></button>
               </div>
 
               <div className="grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50">
-                {(chatTask.discussion || []).map((msg, idx) => (
+                {(chatTask?.discussion || []).map((msg, idx) => (
                   <div key={idx} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
                     <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-2 px-2">{msg.sender === 'admin' ? 'YOU' : 'INTERN'} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     <div className={`max-w-[80%] p-5 rounded-3xl font-bold text-sm shadow-sm ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white border border-slate-200 rounded-tl-none text-slate-700'}`}>
@@ -1716,7 +2395,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
-                {(chatTask.discussion || []).length === 0 && (
+                {(chatTask?.discussion || []).length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
                     <MessageSquare className="w-16 h-16 mb-4" />
                     <p className="font-black uppercase tracking-widest text-xs">Awaiting operational dialogue.</p>
@@ -1734,6 +2413,32 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {reviewingTask && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-white dark:bg-[#0A0A0E] rounded-[3rem] p-12 shadow-2xl border border-white/10">
+              <button onClick={() => setReviewingTask(null)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"><X className="w-5 h-5 text-slate-500" /></button>
+              <div className="mb-10">
+                <Shield className="w-12 h-12 text-[#F05E23] mb-6" />
+                <h2 className="text-4xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Review <span className="text-[#F05E23]">Task</span></h2>
+              </div>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Review Status</label>
+ <select value={reviewForm.reviewStatus} onChange={e => setReviewForm({ ...reviewForm, reviewStatus: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white">
+                    <option value="Approved">Approved</option>
+                    <option value="Changes Required">Changes Required</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Review Remarks</label>
+ <textarea rows="3" value={reviewForm.reviewRemarks} onChange={e => setReviewForm({ ...reviewForm, reviewRemarks: e.target.value })} placeholder="Any feedback..." className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white resize-none"></textarea>
+                </div>
+                <button onClick={() => submitReview()} className="w-full bg-[#F05E23] text-white py-6 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] transition-all hover:bg-[#d9531e] shadow-xl">Submit Review</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {isAddingProject && (
           <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div
@@ -1746,13 +2451,13 @@ export default function AdminDashboard() {
               <form onSubmit={handleProjectSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="relative group">
-                    <input type="text" required value={projectForm.title} onChange={e => setProjectForm({ ...projectForm, title: e.target.value })} placeholder="Project Title" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+ <input type="text" required value={projectForm.title} onChange={e => setProjectForm({ ...projectForm, title: e.target.value })} placeholder="Project Title" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
                   </div>
                   <div className="relative group">
-                    <input type="text" value={projectForm.index} onChange={e => setProjectForm({ ...projectForm, index: e.target.value })} placeholder="Sequence Index (e.g. 01)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+ <input type="text" value={projectForm.index} onChange={e => setProjectForm({ ...projectForm, index: e.target.value })} placeholder="Sequence Index (e.g. 01)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
                   </div>
                   <div className="relative group">
-                    <input type="text" value={projectForm.category} onChange={e => setProjectForm({ ...projectForm, category: e.target.value })} placeholder="Sync Category" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.65rem] tracking-widest text-[#F05E23] placeholder:text-[#F05E23]/20" />
+ <input type="text" value={projectForm.category} onChange={e => setProjectForm({ ...projectForm, category: e.target.value })} placeholder="Sync Category" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-[#F05E23] placeholder:text-[#F05E23]/20" />
                   </div>
                 </div>
                 <div className="relative group">
@@ -1760,10 +2465,10 @@ export default function AdminDashboard() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="relative group">
-                    <input type="text" value={projectForm.tags} onChange={e => setProjectForm({ ...projectForm, tags: e.target.value })} placeholder="Technological Stack (comma separated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.6rem] tracking-widest text-slate-500 placeholder:text-slate-300" />
+ <input type="text" value={projectForm.tags} onChange={e => setProjectForm({ ...projectForm, tags: e.target.value })} placeholder="Technological Stack (comma separated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.6rem] tracking-widest text-slate-500 placeholder:text-slate-300" />
                   </div>
                   <div className="relative group">
-                    <input type="text" value={projectForm.impact} onChange={e => setProjectForm({ ...projectForm, impact: e.target.value })} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-green-500/30 transition-all font-black uppercase text-[0.6rem] tracking-widest text-green-600 placeholder:text-green-600/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
+ <input type="text" value={projectForm.impact} onChange={e => setProjectForm({ ...projectForm, impact: e.target.value })} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-green-500/30 transition-all font-black text-[0.6rem] tracking-widest text-green-600 placeholder:text-green-600/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
                   </div>
                 </div>
                 <div className="flex gap-4 pt-10">
@@ -1911,6 +2616,90 @@ export default function AdminDashboard() {
                   className="flex-1 bg-green-500 text-white py-5 rounded-3xl font-black uppercase text-[0.65rem] tracking-[0.2em] shadow-[0_0_40px_rgba(34,197,94,0.2)] hover:shadow-[0_0_50px_rgba(34,197,94,0.4)] transition-all active:scale-95"
                 >
                   Finalize & Encrypt
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {isAddingBrandManager && (
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-lg rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
+            >
+              <div className="flex items-center justify-between mb-12">
+                <h2 className="text-4xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Add <span className="text-[#F05E23]">Manager</span></h2>
+              </div>
+
+              <div className="space-y-4">
+                <div className="relative">
+                  <select
+                    value={brandManagerForm.companyId}
+                    onChange={e => {
+                      const selectedCompId = e.target.value;
+                      const newForm = { ...brandManagerForm, companyId: selectedCompId };
+                      if (selectedCompId) {
+                        const comp = companies.find(c => c._id === selectedCompId);
+                        if (comp) {
+                          const cleanName = comp.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                          const currentEmail = brandManagerForm.email || '';
+                          const prefix = currentEmail.includes('@') ? currentEmail.split('@')[0] : currentEmail;
+                          newForm.email = prefix + '@' + cleanName + '.com';
+                        }
+                      } else {
+                        const currentEmail = brandManagerForm.email || '';
+                        if (currentEmail.includes('@')) {
+                          newForm.email = currentEmail.split('@')[0];
+                        }
+                      }
+                      setBrandManagerForm(newForm);
+                    }}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-4 px-6 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all appearance-none dark:text-white"
+                  >
+                    <option value="">-- Select Company --</option>
+                    {companies.map(c => (
+                      <option key={c._id} value={c._id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Manager Name"
+                  value={brandManagerForm.name}
+                  onChange={e => setBrandManagerForm({ ...brandManagerForm, name: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-4 px-6 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all dark:text-white"
+                />
+                <input
+                  type="email"
+                  placeholder="Manager Email"
+                  value={brandManagerForm.email}
+                  onChange={e => setBrandManagerForm({ ...brandManagerForm, email: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-4 px-6 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all dark:text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Password"
+                  value={brandManagerForm.password}
+                  onChange={e => setBrandManagerForm({ ...brandManagerForm, password: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-4 px-6 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all dark:text-white"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-10">
+                <button
+                  onClick={handleAddBrandManager}
+                  className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:opacity-90 transition-all"
+                >
+                  Create
+                </button>
+                <button
+                  onClick={() => setIsAddingBrandManager(false)}
+                  className="flex-1 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 py-4 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                >
+                  Cancel
                 </button>
               </div>
             </motion.div>

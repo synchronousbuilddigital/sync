@@ -10,14 +10,19 @@ import {
    Layout, ShieldCheck, ChevronDown, Plus, Zap,
    Shield, Globe, Terminal, ExternalLink, Key,
    Cpu as CpuIcon, Trophy, BookOpen, Newspaper, Box, 
-   Sparkles, Target, Compass, HardDrive, Timer
+   Sparkles, Target, Compass, HardDrive, Timer, X
 } from "lucide-react";
 
 export default function InternDashboard() {
    const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading } = useAuth();
    const [selectedTaskId, setSelectedTaskId] = useState(null);
+   const [updatePostData, setUpdatePostData] = useState({ contentId: "", finalLink: "", postedLink: "", status: "", clientRemarks: "" });
+   const [isUpdatingPost, setIsUpdatingPost] = useState(false);
+   const [isSubmittingPostUpdate, setIsSubmittingPostUpdate] = useState(false);
+
    const [chatTaskId, setChatTaskId] = useState(null);
    const [note, setNote] = useState("");
+   const [marketingForm, setMarketingForm] = useState({ editedLink: "", rawLink: "", editorStatus: "" });
    const [chatMsg, setChatMsg] = useState("");
    const [submitting, setSubmitting] = useState(false);
    const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -26,10 +31,38 @@ export default function InternDashboard() {
    const [aiSuggestion, setAiSuggestion] = useState("");
    const [resolving, setResolving] = useState(false);
    const [activeTool, setActiveTool] = useState(null);
+   const [taskFilter, setTaskFilter] = useState("All");
+   const [viewMode, setViewMode] = useState("cards");
    const { getAIBlockerSuggestion } = useAuth();
+
+   const handleUpdatePost = async (e) => {
+      e.preventDefault();
+      setIsSubmittingPostUpdate(true);
+      try {
+         const res = await fetch("/api/intern/post-tracker", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatePostData)
+         });
+         
+         if (res.ok) {
+            setIsUpdatingPost(false);
+            window.location.reload();
+         } else {
+            const data = await res.json();
+            alert(data.error || "Failed to update post");
+         }
+      } catch (error) {
+         console.error("Error updating post:", error);
+         alert("An error occurred");
+      } finally {
+         setIsSubmittingPostUpdate(false);
+      }
+   };
 
    const selectedTask = tasks.find(t => t._id === selectedTaskId);
    const chatTask = tasks.find(t => t._id === chatTaskId);
+   const myTasks = tasks.filter(t => t.internId?._id === user?._id || t.internId === user?._id);
 
    if (loading) return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
@@ -52,7 +85,7 @@ export default function InternDashboard() {
 
    const handleUpdateTask = async (taskId, status) => {
       setSubmitting(true);
-      await updateTaskStatus(taskId, status, note);
+      await updateTaskStatus(taskId, status, note, undefined, user.department === 'Digital Marketing' ? marketingForm : undefined);
       setSelectedTaskId(null);
       setNote("");
       setSubmitting(false);
@@ -91,8 +124,8 @@ export default function InternDashboard() {
    };
 
    const stats = {
-      pending: tasks.filter(t => t.status !== "Complete").length,
-      completedMonthly: tasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length,
+      pending: myTasks.filter(t => t.status !== "Complete").length,
+      completedMonthly: myTasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length,
    };
 
    return (
@@ -109,25 +142,32 @@ export default function InternDashboard() {
                <h1 className="text-5xl sm:text-7xl font-black tracking-tighter uppercase mb-4 leading-[0.8] italic">
                   Hello, <span className="text-[#F05E23]">{user.name.split(' ')[0]}</span>
                </h1>
-               <p className="text-slate-500 dark:text-white/40 font-bold uppercase tracking-[0.4em] text-[0.6rem]">Bringing ideas to life together.</p>
+               <p className="text-slate-500 dark:text-white/40 font-bold uppercase tracking-[0.4em] text-[0.6rem] mb-6">Bringing ideas to life together.</p>
+               <div className="relative inline-block group cursor-default">
+                 <div className="absolute -inset-1 bg-gradient-to-r from-[#F05E23] via-amber-500 to-[#F05E23] rounded-full blur-md opacity-75 group-hover:opacity-100 transition duration-500 animate-pulse" />
+                 <span className="relative flex items-center gap-2 px-6 py-2.5 rounded-full text-[0.7rem] font-black uppercase tracking-[0.25em] bg-gradient-to-r from-[#F05E23] to-[#FF7A45] text-white shadow-xl shadow-[#F05E23]/30 border border-white/20 whitespace-nowrap">
+                   <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                   {user?.department || "Tech"} Unit
+                 </span>
+               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 w-full md:w-auto">
-               <button onClick={() => setIsLeaveModalOpen(true)} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] px-8 py-6 flex items-center gap-4 shadow-sm hover:scale-105 transition-all text-[#F05E23] font-black uppercase text-[0.65rem] tracking-widest">
-                  <Calendar className="w-5 h-5" /> Request Leave
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 w-full md:w-auto">
+               <button onClick={() => setIsLeaveModalOpen(true)} className="col-span-2 sm:col-span-1 justify-center bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl sm:rounded-[2rem] px-6 sm:px-8 py-4 sm:py-6 flex items-center gap-3 sm:gap-4 shadow-sm hover:scale-105 transition-all text-[#F05E23] font-black uppercase text-[0.6rem] sm:text-[0.65rem] tracking-widest">
+                  <Calendar className="w-4 sm:w-5 h-4 sm:h-5" /> Request Leave
                </button>
-               <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-6 flex items-center gap-6 shadow-sm min-w-[160px]">
-                  <div className="p-4 bg-orange-500/10 rounded-2xl"><Clock className="w-6 h-6 text-orange-500" /></div>
+               <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 flex items-center gap-3 sm:gap-6 shadow-sm">
+                  <div className="p-3 sm:p-4 bg-orange-500/10 rounded-xl sm:rounded-2xl"><Clock className="w-5 sm:w-6 h-5 sm:h-6 text-orange-500" /></div>
                   <div>
-                     <span className="block text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-1">Active</span>
-                     <span className="font-black text-2xl leading-none">{stats.pending}</span>
+                     <span className="block text-[0.5rem] sm:text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-1">Active</span>
+                     <span className="font-black text-xl sm:text-2xl leading-none">{stats.pending}</span>
                   </div>
                </div>
-               <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-6 flex items-center gap-6 shadow-sm min-w-[160px]">
-                  <div className="p-4 bg-green-500/10 rounded-2xl"><CheckCircle2 className="w-6 h-6 text-green-500" /></div>
+               <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 flex items-center gap-3 sm:gap-6 shadow-sm">
+                  <div className="p-3 sm:p-4 bg-green-500/10 rounded-xl sm:rounded-2xl"><CheckCircle2 className="w-5 sm:w-6 h-5 sm:h-6 text-green-500" /></div>
                   <div>
-                     <span className="block text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-1">Monthly Score</span>
-                     <span className="font-black text-2xl leading-none">{stats.completedMonthly}</span>
+                     <span className="block text-[0.5rem] sm:text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-1">Monthly Score</span>
+                     <span className="font-black text-xl sm:text-2xl leading-none">{stats.completedMonthly}</span>
                   </div>
                </div>
             </div>
@@ -135,10 +175,47 @@ export default function InternDashboard() {
 
          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             {/* Primary Hub (Left) */}
-            <div className="lg:col-span-8 space-y-16">
+            <div className={`space-y-16 transition-all duration-500 ${viewMode === "spreadsheet" ? "lg:col-span-12" : "lg:col-span-8"}`}>
 
+               {/* Task Filters */}
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full pb-2">
+                 <div className="flex gap-2 overflow-x-auto scrollbar-hide w-full sm:w-auto pb-1">
+                  {["All", "Pending", "In Progress", "Completed", "Post Tracker"].map(filter => (
+                     <button 
+                        key={filter} 
+                        onClick={() => setTaskFilter(filter)}
+                        className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[0.6rem] sm:text-[0.65rem] font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0 ${
+                           taskFilter === filter 
+                           ? 'bg-[#F05E23] text-white shadow-lg shadow-[#F05E23]/30' 
+                           : 'bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 text-slate-500 hover:border-[#F05E23]/30 hover:text-slate-800 dark:hover:text-white'
+                        }`}
+                     >
+                        {filter}
+                     </button>
+                  ))}
+                 </div>
+                 <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
+                   <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
+                     <button 
+                     onClick={() => setViewMode("cards")}
+                     className={`p-2 rounded-lg transition-all ${viewMode === "cards" ? "bg-[#F05E23] text-white shadow-md" : "text-slate-400 hover:text-white"}`}
+                   >
+                     <Layout className="w-4 h-4" />
+                   </button>
+                   <button 
+                     onClick={() => setViewMode("spreadsheet")}
+                     className={`p-2 rounded-lg transition-all ${viewMode === "spreadsheet" ? "bg-[#F05E23] text-white shadow-md" : "text-slate-400 hover:text-white"}`}
+                   >
+                     <ListTodo className="w-4 h-4" />
+                   </button>
+                 </div>
+               </div>
+             </div>
+
+               {viewMode === "cards" && (<>
                {/* Active Projects */}
-               {internProjects.length === 0 && tasks.filter(t => !t.clientProjectId).length === 0 ? (
+               {(taskFilter === "All" || taskFilter === "In Progress" || taskFilter === "Pending") && (
+                  internProjects.length === 0 && myTasks.filter(t => !t.clientProjectId).length === 0 ? (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-24 text-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-[4rem] bg-white/5">
                      <Activity className="w-16 h-16 text-slate-300 mx-auto mb-6 opacity-20" />
                      <p className="text-slate-400 font-black uppercase tracking-widest text-[0.65rem]">No active projects assigned at this time.</p>
@@ -146,7 +223,7 @@ export default function InternDashboard() {
                ) : (
                   <div className="space-y-16">
                      {internProjects.map((project) => {
-                        const projectTasks = tasks.filter(t => t.clientProjectId?._id === project._id || t.clientProjectId === project._id);
+                        const projectTasks = myTasks.filter(t => t.clientProjectId?._id === project._id || t.clientProjectId === project._id);
                         return (
                            <motion.section
                               key={project._id}
@@ -239,17 +316,67 @@ export default function InternDashboard() {
                                           projectTasks.filter(t => t.status !== 'Complete').map((task) => (
                                              <div key={task._id} className={`p-8 bg-slate-50 dark:bg-white/[0.03] border border-black/5 dark:border-white/10 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${task.status === 'Complete' ? 'opacity-40 grayscale' : ''}`}>
                                                 <div className="space-y-2">
-                                                   <div className="flex items-center gap-3">
-                                                      <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
-                                                         {task.priority}
+                                                   <div className="flex items-center gap-3 flex-wrap">
+                                                      <div className="flex justify-between items-start mb-6">
+                                                         <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                                            {task.priority}
+                                                         </div>
+                                                         {task.createdAt && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-4">Created: {new Date(task.createdAt).toLocaleDateString()}</span>}
                                                       </div>
-                                                      <span className="text-[8px] font-black uppercase text-slate-400 italic">{task.taskType}</span>
+                                                      {task.contentId && (
+                                                         <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23]">
+                                                            {task.contentId}
+                                                         </div>
+                                                      )}
+                                                      {task.marketingData?.companyId?.name && (
+                                                         <div className="text-[7px] font-black uppercase tracking-widest text-slate-500">
+                                                            {task.marketingData.companyId.name}
+                                                         </div>
+                                                      )}
                                                    </div>
                                                    <h4 className="text-xl font-black uppercase tracking-tighter italic leading-none">{task.title}</h4>
-                                                   <p className="text-[11px] text-slate-500 font-bold italic">"{task.description}"</p>
+                                                   <p className="text-[11px] text-slate-500 font-bold italic">&quot;{task.description}&quot;</p>
+                                                   {task.marketingData && (
+                                                      <div className="mt-4 p-3 bg-white/5 border border-white/10 rounded-xl space-y-2 w-full max-w-sm">
+                                                         {task.marketingData.topic && (
+                                                            <p className="text-[0.65rem] font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
+                                                         )}
+                                                         {task.marketingData.rawLink && (
+                                                            <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.6rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
+                                                               <ExternalLink className="w-3 h-3" /> Raw Asset
+                                                            </a>
+                                                         )}
+                                                         {task.marketingData.editedLink && (
+                                                            <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.6rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
+                                                               <ExternalLink className="w-3 h-3" /> Edited Output
+                                                            </a>
+                                                         )}
+                                                         {task.marketingData.platforms && task.marketingData.platforms.length > 0 && (
+                                                            <div className="flex gap-2 pt-1 flex-wrap">
+                                                               {task.marketingData.platforms.map(p => (
+                                                                  <span key={p} className="text-[0.5rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
+                                                               ))}
+                                                            </div>
+                                                         )}
+                                                         {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
+                                                            <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/10">
+                                                               {task.marketingData.editorStatus && (
+                                                                  <div className="text-[0.5rem] font-black uppercase tracking-widest text-slate-500">
+                                                                     Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                                                  </div>
+                                                               )}
+                                                               {task.marketingData.reviewStatus && (
+                                                                  <div className="text-[0.5rem] font-black uppercase tracking-widest text-slate-500">
+                                                                     Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                                  </div>
+                                                               )}
+                                                            </div>
+                                                         )}
+                                                      </div>
+                                                   )}
                                                 </div>
                                                 <div className="flex items-center gap-4">
-                                                   <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); }} className="text-[8px] font-black uppercase text-blue-500 hover:scale-110 transition-transform">Update</button>
+                                                   <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[8px] font-black uppercase text-blue-500 hover:scale-110 transition-transform">Update</button>
                                                    <button onClick={() => setChatTaskId(task._id)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all">
                                                       <MessageSquare className="w-4 h-4 text-slate-400" />
                                                    </button>
@@ -288,27 +415,98 @@ export default function InternDashboard() {
                         );
                      })}
                   </div>
-               )}
+               ))}
 
-               {/* General Operations */}
-                     {tasks.filter(t => !t.clientProjectId && t.status !== 'Complete').length > 0 && (
+               {/* Pending Tasks */}
+                     {(taskFilter === "All" || taskFilter === "Pending") && myTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).length > 0 && (
                         <section className="space-y-10 pt-10">
                            <div className="flex items-center gap-6">
-                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">General <span className="text-[#F05E23]">Tasks</span></h2>
+                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">Pending <span className="text-red-500">Tasks</span></h2>
                               <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {tasks.filter(t => !t.clientProjectId && t.status !== 'Complete').map((task) => (
+                              {myTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).map((task) => (
                                  <div key={task._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10">
                                     <div className="flex justify-between items-start mb-6">
-                                       <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
-                                          {task.priority}
+                                       <div className="flex items-center gap-2">
+                                          <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                             {task.priority}
+                                          </div>
+                                          {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                             <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                                {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                             </div>
+                                          )}
                                        </div>
                                     </div>
                                     <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
-                                    <p className="text-xs text-slate-500 font-bold italic mb-8">"{task.description}"</p>
+                                    <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
+                                    {task.marketingData && (
+                                       <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+                                          {task.marketingData.topic && (
+                                             <p className="text-xs font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
+                                          )}
+                                          {task.marketingData.rawLink && (
+                                             <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" /> Access Raw Asset
+                                             </a>
+                                          )}
+                                          {task.marketingData.editedLink && (
+                                             <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" /> Edited Output
+                                             </a>
+                                          )}
+                                          {task.marketingData.platforms && task.marketingData.platforms.length > 0 && (
+                                             <div className="flex gap-2 pt-1 flex-wrap">
+                                                {task.marketingData.platforms.map(p => (
+                                                   <span key={p} className="text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
+                                                ))}
+                                             </div>
+                                          )}
+                                          {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
+                                             <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10">
+                                                {task.marketingData.editorStatus && (
+                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                      Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                                   </div>
+                                                )}
+                                                {task.marketingData.reviewStatus && (
+                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                      Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                   </div>
+                                                )}
+                                             </div>
+                                          )}
+                                          {task.contentId && (
+                                             <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
+                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span>
+                                                   <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
+                                                   {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
+                                                      <a href={task.marketingData?.postTracker?.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
+                                                   )}
+                                                   <button onClick={() => {
+                                                      setUpdatePostData({
+                                                         contentId: task.contentId,
+                                                         finalLink: task.marketingData?.postTracker?.finalLink || "",
+                                                         postedLink: task.marketingData?.postTracker?.postedLink || "",
+                                                         status: task.marketingData?.postTracker?.status || "Pending",
+                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || ""
+                                                      });
+                                                      setIsUpdatingPost(true);
+                                                   }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
+                                                      Update Live Post
+                                                   </button>
+                                                </div>
+                                             </div>
+                                          )}
+                                       </div>
+                                    )}
                                     <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
-                                       <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
+                                       <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
                                        <button onClick={() => setChatTaskId(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2">
                                           <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
                                        </button>
@@ -318,10 +516,367 @@ export default function InternDashboard() {
                            </div>
                         </section>
                      )}
+
+               {/* In Progress Tasks */}
+                     {(taskFilter === "All" || taskFilter === "In Progress") && myTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').length > 0 && (
+                        <section className="space-y-10 pt-10">
+                           <div className="flex items-center gap-6">
+                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">In-Progress <span className="text-[#F05E23]">Tasks</span></h2>
+                              <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                           </div>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              {myTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').map((task) => (
+                                 <div key={task._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10">
+                                    <div className="flex justify-between items-start mb-6">
+                                       <div className="flex items-center gap-2">
+                                          <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                             {task.priority}
+                                          </div>
+                                          {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                             <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                                {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                             </div>
+                                          )}
+                                       </div>
+                                    </div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
+                                    <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
+                                    {task.marketingData && (
+                                       <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+                                          {task.marketingData.topic && (
+                                             <p className="text-xs font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
+                                          )}
+                                          {task.marketingData.rawLink && (
+                                             <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" /> Access Raw Asset
+                                             </a>
+                                          )}
+                                          {task.marketingData.editedLink && (
+                                             <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" /> Edited Output
+                                             </a>
+                                          )}
+                                          {task.marketingData.platforms && task.marketingData.platforms.length > 0 && (
+                                             <div className="flex gap-2 pt-1 flex-wrap">
+                                                {task.marketingData.platforms.map(p => (
+                                                   <span key={p} className="text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
+                                                ))}
+                                             </div>
+                                          )}
+                                          {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
+                                             <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10">
+                                                {task.marketingData.editorStatus && (
+                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                      Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                                   </div>
+                                                )}
+                                                {task.marketingData.reviewStatus && (
+                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                      Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                   </div>
+                                                )}
+                                             </div>
+                                          )}
+                                          {task.contentId && (
+                                             <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
+                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span>
+                                                   <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
+                                                   {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
+                                                      <a href={task.marketingData?.postTracker?.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
+                                                   )}
+                                                   <button onClick={() => {
+                                                      setUpdatePostData({
+                                                         contentId: task.contentId,
+                                                         finalLink: task.marketingData?.postTracker?.finalLink || "",
+                                                         postedLink: task.marketingData?.postTracker?.postedLink || "",
+                                                         status: task.marketingData?.postTracker?.status || "Pending",
+                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || ""
+                                                      });
+                                                      setIsUpdatingPost(true);
+                                                   }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
+                                                      Update Live Post
+                                                   </button>
+                                                </div>
+                                             </div>
+                                          )}
+                                       </div>
+                                    )}
+                                    <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
+                                       <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
+                                       <button onClick={() => setChatTaskId(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2">
+                                          <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
+                                       </button>
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
+                        </section>
+                     )}
+
+                     {(taskFilter === "Post Tracker") && myTasks.filter(t => t.contentId).length > 0 && (
+                        <div className="space-y-6 pt-10 border-t border-white/5">
+                           <div className="flex items-center gap-4 mb-8">
+                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">Post <span className="text-[#F05E23]">Tracker</span></h2>
+                              <div className="h-px bg-white/10 flex-1" />
+                              <span className="text-[0.6rem] font-black uppercase tracking-widest text-slate-500">{myTasks.filter(t => t.contentId).length} Tasks</span>
+                           </div>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                              {myTasks.filter(t => t.contentId).map((task) => (
+                                 <div key={task._id} className="group bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 hover:border-[#F05E23]/30 transition-all shadow-sm relative overflow-hidden flex flex-col min-h-[320px]">
+                                    <div className="flex-1">
+                                       <div className="flex justify-between items-start mb-6">
+                                          <div className="flex items-center gap-2">
+                                             <span className="text-[0.55rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border bg-[#F05E23]/10 border-[#F05E23]/20 text-[#F05E23]">
+                                                {task.priority}
+                                             </span>
+                                             {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                                <div className="text-[0.55rem] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                                   {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                                </div>
+                                             )}
+                                          </div>
+                                       </div>
+                                       
+                                       <div className="flex justify-between items-start mb-2 gap-2">
+                                          <h4 className="text-2xl font-black uppercase tracking-tighter italic leading-none">
+                                             <span>{task.title}</span>
+                                          </h4>
+                                          {task.contentId && (
+                                             <span className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] px-2 py-1 bg-[#F05E23]/10 rounded-md border border-[#F05E23]/20 shrink-0">
+                                                {task.contentId}
+                                             </span>
+                                          )}
+                                       </div>
+                                       
+                                       <p className="text-[0.65rem] text-slate-500 font-bold uppercase tracking-widest leading-relaxed mb-4 line-clamp-2">
+                                          "{task.description}"
+                                       </p>
+
+                                       {task.marketingData?.platforms?.length > 0 && (
+                                          <div className="flex flex-wrap gap-1 mb-6">
+                                             {task.marketingData.platforms.map((platform, idx) => (
+                                                <span key={idx} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border bg-blue-500/10 border-blue-500/20 text-blue-400">
+                                                   {platform}
+                                                </span>
+                                             ))}
+                                          </div>
+                                       )}
+
+                                       {task.contentId && (
+                                          <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
+                                             <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span>
+                                                <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
+                                             </div>
+                                             <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
+                                                {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
+                                                   <a href={task.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
+                                                )}
+                                                <button onClick={() => {
+                                                   setUpdatePostData({
+                                                      contentId: task.contentId,
+                                                      finalLink: task.marketingData?.postTracker?.finalLink || "",
+                                                      postedLink: task.marketingData?.postTracker?.postedLink || "",
+                                                      status: task.marketingData?.postTracker?.status || "Pending",
+                                                      clientRemarks: task.marketingData?.postTracker?.clientRemarks || ""
+                                                   });
+                                                   setIsUpdatingPost(true);
+                                                }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
+                                                   Update Live Post
+                                                </button>
+                                             </div>
+                                          </div>
+                                       )}
+                                    </div>
+
+                                    <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
+                                       <button onClick={() => setSelectedTaskId(task._id)} className="text-[9px] font-black uppercase text-[#F05E23] hover:text-[#F05E23]/80 transition-colors tracking-widest">
+                                          Update
+                                       </button>
+                                       <button onClick={() => setChatTaskId(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors">
+                                          <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
+                                       </button>
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                     )}
+
+                     {(taskFilter === "All" || taskFilter === "Completed") && myTasks.filter(t => t.status === 'Complete').length > 0 && (
+                        <section className="space-y-10 pt-10">
+                           <div className="flex items-center gap-6">
+                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">Task <span className="text-green-500">History</span></h2>
+                              <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                           </div>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              {myTasks.filter(t => t.status === 'Complete').map((task) => (
+                                 <div key={task._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+                                    <div className="flex justify-between items-start mb-6">
+                                       <div className="flex items-center gap-2">
+                                          <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                             {task.priority}
+                                          </div>
+                                          {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                             <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                                {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                             </div>
+                                          )}
+                                       </div>
+                                       <span className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-green-500/30 text-green-500 bg-green-500/10">Complete</span>
+                                    </div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
+                                    <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
+                                    {task.marketingData && (
+                                       <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+                                          {task.marketingData.topic && (
+                                             <p className="text-xs font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
+                                          )}
+                                          {task.marketingData.rawLink && (
+                                             <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" /> Raw Asset
+                                             </a>
+                                          )}
+                                          {task.marketingData.editedLink && (
+                                             <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" /> Final Output
+                                             </a>
+                                          )}
+                                          {task.marketingData.reviewRemarks && (
+                                             <p className="text-[0.6rem] font-bold text-slate-400 italic">Admin Feedback: <span className="text-white">{task.marketingData.reviewRemarks}</span></p>
+                                          )}
+                                          {task.marketingData.reviewStatus && (
+                                             <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10">
+                                                <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                </div>
+                                             </div>
+                                          )}
+                                       </div>
+                                    )}
+                                    <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
+                                       <button onClick={() => setChatTaskId(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors">
+                                          <MessageSquare className="w-4 h-4" /> View Chat ({task.discussion?.length || 0})
+                                       </button>
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
+                        </section>
+                     )}
+               </>)}
+
+               {viewMode === "spreadsheet" && (
+                  <div className="bg-white dark:bg-[#111] border border-slate-200 dark:border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden">
+                     <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse whitespace-nowrap">
+                           <thead>
+                              <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-900 text-white dark:bg-black/60">
+                                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-200 dark:text-slate-400">Task Title</th>
+                                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-200 dark:text-slate-400">Department</th>
+                                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-200 dark:text-slate-400">Status</th>
+                                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-200 dark:text-slate-400">Project</th>
+                                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-200 dark:text-slate-400">Platforms</th>
+                                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-200 dark:text-slate-400">Post Tracking</th>
+                                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-200 dark:text-slate-400">Action</th>
+                              </tr>
+                           </thead>
+                           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                              {myTasks.filter(t => taskFilter === "All" || 
+                                 (taskFilter === "Pending" && (t.status === "Pending" || t.status === "Need Credentials" || t.status === "Need Meeting")) ||
+                                 (taskFilter === "In Progress" && t.status === "In Progress") ||
+                                 (taskFilter === "Completed" && t.status === "Complete") ||
+                                 (taskFilter === "Post Tracker" && t.contentId)
+                              ).map((task) => (
+                                 <tr key={task._id} className="group hover:bg-slate-50 dark:hover:bg-white/5 bg-white dark:bg-transparent transition-colors">
+                                    <td className="px-8 py-6">
+                                       <div className="flex items-center gap-3">
+                                          {task.contentId && <span className="text-[9px] font-black uppercase tracking-widest text-[#F05E23] px-2 py-1 bg-[#F05E23]/10 rounded-md border border-[#F05E23]/20 shrink-0">{task.contentId}</span>}
+                                          <span className="text-sm font-black text-slate-900 dark:text-white group-hover:text-[#F05E23] transition-colors">{task.title}</span>
+                                       </div>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                       <span className="text-xs font-black text-slate-700 dark:text-slate-300">
+                                          {task.marketingData?.departmentId?.name || task.marketingData?.postTracker?.postType || "-"}
+                                       </span>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                       <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border ${task.status === 'Complete' ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400 font-black' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-400 font-black'}`}>
+                                          {task.status}
+                                       </span>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                       <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                                          {task.clientProjectId?.projectName || "-"}
+                                       </span>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                       {task.marketingData?.platforms?.length > 0 ? (
+                                          <div className="flex flex-wrap gap-1">
+                                             {task.marketingData.platforms.map((p, idx) => (
+                                                <span key={idx} className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border bg-blue-500/10 border-blue-500/20 text-blue-400">
+                                                   {p}
+                                                </span>
+                                             ))}
+                                          </div>
+                                       ) : (
+                                          <span className="text-xs font-bold text-slate-500">-</span>
+                                       )}
+                                    </td>
+                                     <td className="px-8 py-6">
+                                       {task.contentId ? (
+                                          <div className="flex flex-col gap-1">
+                                             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Sch: <span className="text-[#F05E23] font-black">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span>
+                                             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Stat: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-600 dark:text-green-500 font-black' : 'text-amber-600 dark:text-amber-500 font-black'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
+                                          </div>
+                                       ) : (
+                                          <span className="text-xs font-bold text-slate-500">-</span>
+                                       )}
+                                    </td>
+                                    <td className="px-8 py-6">
+                                       <div className="flex gap-2">
+                                          <button onClick={() => setSelectedTaskId(task._id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">
+                                             Details
+                                          </button>
+                                          {task.contentId && (
+                                             <button onClick={() => {
+                                                setUpdatePostData({
+                                                   contentId: task.contentId,
+                                                   finalLink: task.marketingData?.postTracker?.finalLink || "",
+                                                   postedLink: task.marketingData?.postTracker?.postedLink || "",
+                                                   status: task.marketingData?.postTracker?.status || "Pending",
+                                                   clientRemarks: task.marketingData?.postTracker?.clientRemarks || ""
+                                                });
+                                                setIsUpdatingPost(true);
+                                             }} className="px-4 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/40 border border-blue-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                                                Update
+                                             </button>
+                                          )}
+                                       </div>
+                                    </td>
+                                 </tr>
+                              ))}
+                              {myTasks.length === 0 && (
+                                 <tr>
+                                    <td colSpan="6" className="px-8 py-16 text-center">
+                                       <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No tasks found.</p>
+                                    </td>
+                                 </tr>
+                              )}
+                           </tbody>
+                        </table>
+                     </div>
+                  </div>
+               )}
             </div>
- 
+
             {/* Side Panel (Right) */}
-            <div className="lg:col-span-4 space-y-8">
+            <div className={`space-y-8 transition-all duration-500 ${viewMode === "spreadsheet" ? "hidden" : "lg:col-span-4"}`}>
                {/* Dashboard Tools */}
                <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 shadow-sm">
                   <h3 className="text-xl font-black uppercase tracking-widest flex items-center gap-4 mb-8 italic">
@@ -438,6 +993,21 @@ export default function InternDashboard() {
                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mb-12">Updating details for "{selectedTask.title}"</p>
 
                      <div className="space-y-12">
+                        {(selectedTask.marketingData || user.department !== 'Digital Marketing' || true) && (
+                           <div className="space-y-4">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Asset Links & Updates</label>
+ <input type="url" value={marketingForm.rawLink} onChange={e => setMarketingForm({ ...marketingForm, rawLink: e.target.value })} placeholder="Raw Asset Link (Drive)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
+ <input type="url" value={marketingForm.editedLink} onChange={e => setMarketingForm({ ...marketingForm, editedLink: e.target.value })} placeholder="Final Output Link (Drive/Canva)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
+                              {user.department === 'Digital Marketing' && (
+ <select value={marketingForm.editorStatus} onChange={e => setMarketingForm({ ...marketingForm, editorStatus: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white appearance-none cursor-pointer">
+                                    <option value="">Select Editor Remarks...</option>
+                                    <option value="Editing in process">Editing in process</option>
+                                    <option value="1st Edit Completed">1st Edit Completed</option>
+                                    <option value="Completed">Completed</option>
+                                 </select>
+                              )}
+                           </div>
+                        )}
                         <div className="space-y-4">
                            <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Choose Status</label>
                            <div className="grid grid-cols-2 gap-4">
@@ -466,6 +1036,20 @@ export default function InternDashboard() {
                            <div>
                               <h2 className="text-2xl font-black uppercase tracking-tighter italic">Project <span className="opacity-60">Chat</span></h2>
                               <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Updating: {chatTask.title}</p>
+                              {chatTask.marketingData && (
+                                <div className="flex gap-4 mt-2 bg-black/20 px-3 py-1.5 rounded-lg w-max">
+                                  {chatTask.marketingData.rawLink && (
+                                    <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
+                                      <ExternalLink className="w-3 h-3" /> Raw Asset
+                                    </a>
+                                  )}
+                                  {chatTask.marketingData.editedLink && (
+                                    <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
+                                      <ExternalLink className="w-3 h-3" /> Edited Output
+                                    </a>
+                                  )}
+                                </div>
+                              )}
                            </div>
                         </div>
                         <button onClick={() => setChatTaskId(null)} className="p-3 hover:bg-white/20 rounded-2xl transition-all"><Plus className="w-8 h-8 rotate-45" /></button>
@@ -527,6 +1111,46 @@ export default function InternDashboard() {
                </motion.div>
             )}
          </AnimatePresence>
+
+         {isUpdatingPost && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1a1a1a] rounded-3xl p-8 max-w-xl w-full border border-white/10 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#F05E23]/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                  <div className="flex justify-between items-center mb-8 relative z-10">
+                     <div>
+                        <h3 className="text-2xl font-black uppercase tracking-tighter italic text-white">Update <span className="text-[#F05E23]">Post</span></h3>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Sync changes to Google Sheets</p>
+                     </div>
+                     <button onClick={() => setIsUpdatingPost(false)} className="p-3 hover:bg-white/5 rounded-2xl transition-colors text-white">
+                        <X className="w-5 h-5" />
+                     </button>
+                  </div>
+                  <form onSubmit={handleUpdatePost} className="space-y-6 relative z-10">
+                     <div className="grid grid-cols-1 gap-6">
+                        <div>
+                           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Final Output Link</label>
+                           <input type="url" value={updatePostData.finalLink} onChange={(e) => setUpdatePostData({...updatePostData, finalLink: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" placeholder="Drive/Dropbox link" />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Live Posted Link</label>
+                           <input type="url" value={updatePostData.postedLink} onChange={(e) => setUpdatePostData({...updatePostData, postedLink: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" placeholder="Insta/FB link" />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Status</label>
+                           <select value={updatePostData.status} onChange={(e) => setUpdatePostData({...updatePostData, status: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all">
+                              <option value="Pending">Pending</option>
+                              <option value="Posted">Posted</option>
+                              <option value="Client Review">Client Review</option>
+                           </select>
+                        </div>
+                     </div>
+                     <button disabled={isSubmittingPostUpdate} type="submit" className="w-full py-5 bg-gradient-to-r from-[#F05E23] to-[#FF7B47] text-white rounded-2xl font-black uppercase tracking-widest text-[0.7rem] hover:shadow-[0_0_40px_rgba(240,94,35,0.4)] transition-all disabled:opacity-50">
+                        {isSubmittingPostUpdate ? "Updating Sheet..." : "Update Post Tracker"}
+                     </button>
+                  </form>
+               </motion.div>
+            </div>
+         )}
       </div>
    );
 }

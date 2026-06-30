@@ -2,8 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { Sparkles, Zap, Target, Globe2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function LoadingScreen() {
+    const pathname = usePathname();
+    // Don't show the branded splash screen on internal dashboard/tool pages
+    const dashboardPaths = ['/intern', '/admin', '/brand', '/client', '/change-password', '/login'];
+    if (dashboardPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
+
     const [isVisible, setIsVisible] = useState(true);
     const [isFading, setIsFading] = useState(false);
     const [progress, setProgress] = useState(0);

@@ -11,11 +11,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [interns, setInterns] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [taskStore, setTaskStore] = useState({ role: null, ownerId: null });
+  const [companyName, setCompanyName] = useState("");
   const [leaves, setLeaves] = useState([]); // Holiday/Leave records
   const [projects, setProjects] = useState([]); // Portfolio projects
   const [clientProject, setClientProject] = useState(null); // High-level Brand workflow
   const [adminClientProjects, setAdminClientProjects] = useState([]); // All brands (for admin)
   const [internProjects, setInternProjects] = useState([]); // Projects assigned to intern
+  const [companies, setCompanies] = useState([]); // Client companies for task assignment
+  const [brandManagers, setBrandManagers] = useState([]); // Brand managers list
   const router = useRouter();
 
   const parseJsonResponse = async (res, fallbackMessage) => {
@@ -45,14 +49,23 @@ export function AuthProvider({ children }) {
 
   const fetchTasks = useCallback(async (role, authToken) => {
     try {
-      const endpoint = role === "admin" ? "/api/admin/tasks" : "/api/intern/tasks";
+      const endpoint = role === "admin" ? "/api/admin/tasks" : (role === "brand_manager" ? "/api/client/tasks" : "/api/intern/tasks");
       const res = await fetch(endpoint, {
         headers: { "Authorization": `Bearer ${authToken}` }
       });
       const data = await res.json();
-      if (data.success) setTasks(data.tasks);
+      if (data.success) {
+        setTasks(data.tasks);
+        setTaskStore({ role, ownerId: role === "brand_manager" ? "brand_manager" : role });
+        if (data.companyName) setCompanyName(data.companyName);
+      } else {
+        setTasks([]);
+        setTaskStore({ role: null, ownerId: null });
+        setCompanyName("");
+      }
     } catch (e) {
       console.error("Failed to fetch tasks", e);
+      setTasks([]);
     }
   }, []);
 
@@ -114,16 +127,52 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const createClient = async (name, email, password) => {
+  const fetchCompanies = useCallback(async (authToken) => {
+    try {
+      const res = await fetch("/api/admin/companies", {
+        headers: { "Authorization": `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      if (data.success) setCompanies(data.companies);
+    } catch (e) {
+      console.error("Failed to fetch companies", e);
+    }
+  }, []);
+
+  const fetchBrandManagers = useCallback(async (authToken) => {
+    try {
+      const res = await fetch("/api/admin/clients", {
+        headers: { "Authorization": `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      if (data.success) setBrandManagers(data.clients);
+    } catch (e) {
+      console.error("Failed to fetch brand managers", e);
+    }
+  }, []);
+
+  const createClient = async (name, email, password, companyId) => {
     const res = await fetch("/api/admin/clients", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ name, email, password, companyId })
     });
-    return await res.json();
+    const data = await res.json();
+    if (data.success) fetchBrandManagers(token);
+    return data;
+  };
+
+  const removeBrandManager = async (id) => {
+    const res = await fetch(`/api/admin/clients/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchBrandManagers(token);
+    return data;
   };
 
   const createClientProject = async (projectData) => {
@@ -232,6 +281,8 @@ export function AuthProvider({ children }) {
       if (parsedUser.role === "admin") {
         fetchInterns(storedToken);
         fetchAdminClientProjects(storedToken);
+        fetchCompanies(storedToken);
+        fetchBrandManagers(storedToken);
       }
       if (parsedUser.role === "intern") {
         fetchInternProjects(storedToken);
@@ -246,6 +297,8 @@ export function AuthProvider({ children }) {
         if (parsedUser.role === "admin") {
           fetchInterns(storedToken);
           fetchAdminClientProjects(storedToken);
+          fetchCompanies(storedToken);
+          fetchBrandManagers(storedToken);
         }
         if (parsedUser.role === "intern") {
           fetchInternProjects(storedToken);
@@ -257,7 +310,7 @@ export function AuthProvider({ children }) {
       return () => clearInterval(pollInterval);
     }
     setLoading(false);
-  }, [fetchInterns, fetchTasks, fetchLeaves]);
+  }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers]);
 
   const login = async (email, password) => {
     try {
@@ -277,11 +330,15 @@ export function AuthProvider({ children }) {
         if (data.user.mustChangePassword) {
           router.push("/change-password");
         } else {
-          router.push(data.user.role === "admin" ? "/admin" : (data.user.role === "client" ? "/client" : "/intern"));
+          router.push(data.user.role === "admin" ? "/admin" : (data.user.role === "client" ? "/client" : (data.user.role === "brand_manager" ? "/brand" : "/intern")));
         }
         
         fetchTasks(data.user.role, data.token);
-        if (data.user.role === "admin") fetchInterns(data.token);
+        if (data.user.role === "admin") {
+          fetchInterns(data.token);
+          fetchCompanies(data.token);
+          fetchBrandManagers(data.token);
+        }
         
         return { success: true };
       } else {
@@ -293,8 +350,18 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    setUser(null);
     setToken(null);
+    setUser(null);
+    setInterns([]);
+    setTasks([]);
+    setTaskStore({ role: null, ownerId: null });
+    setCompanyName("");
+    setLeaves([]);
+    setClientProject(null);
+    setAdminClientProjects([]);
+    setInternProjects([]);
+    setCompanies([]);
+    setBrandManagers([]);
     localStorage.removeItem("sync_user");
     localStorage.removeItem("sync_token");
     router.push("/login");
@@ -314,19 +381,19 @@ export function AuthProvider({ children }) {
       const updatedUser = { ...user, mustChangePassword: false };
       setUser(updatedUser);
       localStorage.setItem("sync_user", JSON.stringify(updatedUser));
-      router.push(user.role === "admin" ? "/admin" : (user.role === "client" ? "/client" : "/intern"));
+      router.push(updatedUser.role === "admin" ? "/admin" : (updatedUser.role === "client" ? "/client" : (updatedUser.role === "brand_manager" ? "/brand" : "/intern")));
     }
     return data;
   };
 
-  const addIntern = async (name, email, password) => {
+  const addIntern = async (name, email, password, department = "Tech") => {
     const res = await fetch("/api/admin/interns", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ name, email, password, department })
     });
     const data = await res.json();
     if (data.success) fetchInterns(token);
@@ -360,14 +427,14 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const updateTaskStatus = async (taskId, status, note = "", isApproved = undefined) => {
+  const updateTaskStatus = async (taskId, status, note = "", isApproved = undefined, marketingData = undefined) => {
     const res = await fetch(`/api/intern/tasks/${taskId}`, {
       method: "PATCH",
       headers: { 
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ status, note, isApproved })
+      body: JSON.stringify({ status, note, isApproved, marketingData })
     });
     const data = await res.json();
     if (data.success) fetchTasks(user.role, token);
@@ -452,6 +519,38 @@ export function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (data.success) fetchTasks("admin", token);
+    return data;
+  };
+
+  const addCompany = async (name) => {
+    const res = await fetch("/api/admin/companies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (data.success) fetchCompanies(token);
+    return data;
+  };
+
+  const updateCompany = async (id, updateData) => {
+    const res = await fetch(`/api/admin/companies/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify(updateData)
+    });
+    const data = await res.json();
+    if (data.success) fetchCompanies(token);
+    return data;
+  };
+
+  const deleteCompany = async (id) => {
+    const res = await fetch(`/api/admin/companies/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchCompanies(token);
     return data;
   };
 
@@ -604,16 +703,32 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const brandManagerReviewTask = async (taskId, reviewStatus, remarks) => {
+    const res = await fetch(`/api/client/tasks/${taskId}/review`, {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ brandManagerReviewStatus: reviewStatus, brandManagerRemarks: remarks })
+    });
+    const data = await res.json();
+    if (data.success) fetchTasks("brand_manager", token);
+    return data;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
-      interns, tasks, leaves, projects, addIntern, removeIntern, assignTask, 
+      interns, tasks, taskStore, fetchTasks, companyName, leaves, projects, addIntern, removeIntern, assignTask, 
       updateTaskStatus, deleteTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
       clientProject, adminClientProjects, internProjects, createClient, createClientProject, 
       updateClientProject, purgeClientProject, sendClientMessage, sendClientFeed, sendAdminFeed, sendDiscussion, updateClientInfo, generateRoadmap,
       generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions,
-      generateBrandIntel, markFeedbackAsRead
+      generateBrandIntel, markFeedbackAsRead, brandManagerReviewTask,
+      companies, addCompany, updateCompany, deleteCompany,
+      brandManagers, removeBrandManager
     }}>
       {children}
     </AuthContext.Provider>

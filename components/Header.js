@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, Zap } from "lucide-react";
+import { Menu, X, ArrowRight, Zap, Sun, Moon } from "lucide-react";
 import { useTheme } from './ThemeContext';
 import { useAuth } from "./AuthContext";
 
@@ -19,7 +19,7 @@ const navLinks = [
 ];
 
 export default function Header() {
-  const { isDark } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -79,7 +79,7 @@ export default function Header() {
             </NavLink>
           ))}
           {user && (
-            <NavLink href={user.role === 'admin' ? '/admin' : '/intern'} active={pathname === '/admin' || pathname === '/intern'} isDark={isDark} isScrolled={isScrolled}>
+            <NavLink href={user.role === 'admin' ? '/admin' : (user.role === 'client' ? '/client' : (user.role === 'brand_manager' ? '/brand' : '/intern'))} active={pathname === '/admin' || pathname === '/intern' || pathname === '/client' || pathname === '/brand'} isDark={isDark} isScrolled={isScrolled}>
               Dashboard
             </NavLink>
           )}
@@ -87,6 +87,21 @@ export default function Header() {
 
         {/* Action Button Section Area */}
         <div className="hidden md:flex items-center gap-2 lg:gap-4">
+          {/* Dark/Light Mode Toggle */}
+          <button
+            onClick={toggleTheme}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${
+              isDark
+                ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
+                : 'bg-black/5 border-black/5 text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
+            }`}
+          >
+            {isDark
+              ? <Sun className="w-4 h-4 transition-transform group-hover:rotate-45 duration-300" />
+              : <Moon className="w-4 h-4 transition-transform group-hover:-rotate-12 duration-300" />
+            }
+          </button>
           {!user ? (
             <Link
               href="/login"
@@ -115,12 +130,24 @@ export default function Header() {
         </div>
 
         {/* Mobile Menu Toggle Area */}
-        <button
-          className={`md:hidden relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark ? 'text-white bg-white/5' : 'text-[#111] bg-black/5'}`}
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? <X className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} /> : <Menu className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} />}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${
+              isDark
+                ? 'text-amber-400 bg-amber-400/10'
+                : 'text-slate-600 bg-black/5'
+            }`}
+          >
+            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+          <button
+            className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark ? 'text-white bg-white/5' : 'text-[#111] bg-black/5'}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} /> : <Menu className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} />}
+          </button>
+        </div>
       </motion.nav>
       </div>
 

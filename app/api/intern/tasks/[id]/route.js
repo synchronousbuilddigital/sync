@@ -13,7 +13,7 @@ export async function PATCH(req, { params }) {
 
     await dbConnect();
     const { id } = await params;
-    const { status, note, isApproved } = await req.json();
+    const { status, note, isApproved, marketingData } = await req.json();
 
     let query = { _id: id };
     if (decoded.role === "intern") {
@@ -22,6 +22,12 @@ export async function PATCH(req, { params }) {
 
     const updateData = { status, note };
     if (isApproved !== undefined) updateData.isApproved = isApproved;
+    if (marketingData !== undefined) {
+      // Use dot notation to avoid overwriting the whole object if partial
+      for (const [key, value] of Object.entries(marketingData)) {
+        updateData[`marketingData.${key}`] = value;
+      }
+    }
 
     if (status === "Need Meeting") {
       updateData.meetingLink = "https://meet.google.com/fvx-dgeh-dgb";

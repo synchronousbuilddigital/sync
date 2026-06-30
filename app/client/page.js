@@ -147,11 +147,11 @@ export default function ClientDashboard() {
             Mission: <span className="text-[#F05E23] drop-shadow-[0_0_20px_rgba(240,94,35,0.3)]">{clientProject.projectName}</span>
           </motion.h1>
         </div>
-        <div className="flex items-center gap-4">
-           <button onClick={() => setIsEditingInfo(true)} className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 font-black uppercase tracking-widest text-[0.65rem] hover:bg-[#F05E23] hover:text-white transition-all">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+           <button onClick={() => setIsEditingInfo(true)} className="flex-1 sm:flex-initial justify-center px-5 sm:px-6 py-3 rounded-xl bg-white/5 border border-white/10 font-black uppercase tracking-widest text-[0.6rem] sm:text-[0.65rem] hover:bg-[#F05E23] hover:text-white transition-all">
              Edit Project
            </button>
-           <button onClick={logout} className="px-6 py-3 rounded-xl border border-white/10 font-black uppercase tracking-widest text-[0.65rem] hover:bg-red-500/10 hover:border-red-500/50 transition-all text-white/60 hover:text-white">
+           <button onClick={logout} className="flex-1 sm:flex-initial justify-center px-5 sm:px-6 py-3 rounded-xl border border-white/10 font-black uppercase tracking-widest text-[0.6rem] sm:text-[0.65rem] hover:bg-red-500/10 hover:border-red-500/50 transition-all text-white/60 hover:text-white">
              Terminate Session
            </button>
         </div>
@@ -163,7 +163,7 @@ export default function ClientDashboard() {
           
           {/* Project Identity & Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-[2.5rem] p-10 relative overflow-hidden group">
+            <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 relative overflow-hidden group">
               <div className="relative z-10 space-y-6">
                 <div className="flex items-center justify-between">
                   <span className="px-4 py-1.5 rounded-full bg-[#F05E23]/20 text-[#F05E23] text-[9px] font-black uppercase tracking-widest border border-[#F05E23]/30">
@@ -536,11 +536,11 @@ export default function ClientDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Project Name</label>
-                    <input type="text" value={infoForm.projectName} onChange={e => setInfoForm({...infoForm, projectName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none font-black uppercase text-sm focus:border-[#F05E23] transition-all" />
+ <input type="text" value={infoForm.projectName} onChange={e => setInfoForm({...infoForm, projectName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none font-black text-sm focus:border-[#F05E23] transition-all" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Sync Category</label>
-                    <select value={infoForm.projectType} onChange={e => setInfoForm({...infoForm, projectType: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none font-black uppercase text-xs focus:border-[#F05E23] transition-all appearance-none">
+ <select value={infoForm.projectType} onChange={e => setInfoForm({...infoForm, projectType: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none font-black text-xs focus:border-[#F05E23] transition-all appearance-none">
                       {["Custom Web App", "SaaS Platform", "E-commerce", "AI Integration", "Brand Identity"].map(t => <option key={t} value={t} className="bg-black">{t}</option>)}
                     </select>
                   </div>
@@ -602,7 +602,7 @@ export default function ClientDashboard() {
                           const newFeats = [...infoForm.features];
                           newFeats[i].title = e.target.value;
                           setInfoForm({...infoForm, features: newFeats});
-                        }} placeholder="Feature title..." className="w-full bg-transparent border-b border-white/10 p-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-[#F05E23]" />
+ }} placeholder="Feature title..." className="w-full bg-transparent border-b border-white/10 p-2 text-[10px] font-black tracking-widest outline-none focus:border-[#F05E23]" />
                         <select value={feat.priority} onChange={e => {
                           const newFeats = [...infoForm.features];
                           newFeats[i].priority = e.target.value;

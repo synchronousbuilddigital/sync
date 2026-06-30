@@ -11,7 +11,7 @@ export default function CTA() {
     const pathname = usePathname();
     const [subValue, setSubValue] = useState("");
 
-    const isDashboardRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/intern');
+  const isDashboardRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/intern') || pathname?.startsWith('/brand') || pathname?.startsWith('/client');
 
     if (isDashboardRoute) return null;
 

@@ -4,13 +4,26 @@ import bcrypt from "bcryptjs";
 import { verifyToken } from "@/lib/auth";
 import { sendOnboardingEmail } from "@/lib/mail";
 
+export async function GET(req) {
+  try {
+    const decoded = verifyToken(req);
+    if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
+
+    await dbConnect();
+    const clients = await User.find({ role: "brand_manager" }).populate("companyId", "name");
+    return Response.json({ success: true, clients });
+  } catch (err) {
+    return Response.json({ success: false, message: err.message }, { status: 500 });
+  }
+}
+
 export async function POST(req) {
   try {
     const decoded = verifyToken(req);
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
     await dbConnect();
-    const { name, email, password } = await req.json();
+    const { name, email, password, companyId } = await req.json();
     
     // Find or create client user
     let client = await User.findOne({ email });
@@ -22,7 +35,8 @@ export async function POST(req) {
         name,
         email,
         password,
-        role: "client",
+        role: "brand_manager",
+        companyId,
         mustChangePassword: true
       });
       // Send the premium onboarding email only for new users
