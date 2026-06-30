@@ -1,5 +1,21 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { Search, ArrowUpDown, Download, ZoomIn, ZoomOut } from 'lucide-react';
+import { Search, ArrowUpDown, Download, ZoomIn, ZoomOut, Calendar, RotateCcw } from 'lucide-react';
+
+const parseFlexibleDate = (val) => {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  const str = String(val).trim();
+  let d = new Date(str);
+  if (!isNaN(d.getTime())) return d;
+  const parts = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (parts) {
+    let year = parseInt(parts[3], 10);
+    if (year < 100) year += 2000;
+    d = new Date(year, parseInt(parts[2], 10) - 1, parseInt(parts[1], 10));
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+};
 
 export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -7,9 +23,15 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
   const [companyFilter, setCompanyFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [teamMemberFilter, setTeamMemberFilter] = useState('');
+  
+  // Date & Month filters
+  const [monthFilter, setMonthFilter] = useState('');
+  const [dateFilterType, setDateFilterType] = useState('All');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Zoom & Pan state
-  const [zoom, setZoom] = useState(0.85);
+  const [zoom, setZoom] = useState(0.9);
   const containerRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -18,7 +40,8 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
   const [scrollTop, setScrollTop] = useState(0);
 
   const handleMouseDown = (e) => {
-    if (!containerRef.current) return;
+    // Only enable click-drag pan on middle click or when space is held, or keep simple pan
+    if (!containerRef.current || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
     setIsDragging(true);
     setStartX(e.pageX - containerRef.current.offsetLeft);
     setStartY(e.pageY - containerRef.current.offsetTop);
@@ -42,9 +65,12 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
   };
 
   const handleWheel = (e) => {
-    // Use two-finger scroll (deltaY) to zoom in and out
-    if (e.deltaY !== 0) {
-      setZoom(z => Math.max(0.3, Math.min(2, z - e.deltaY * 0.005)));
+    // Only zoom when holding Ctrl or Cmd key to prevent breaking normal vertical scrolling
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      if (e.deltaY !== 0) {
+        setZoom(z => Math.max(0.4, Math.min(2.0, Number((z - e.deltaY * 0.002).toFixed(2)))));
+      }
     }
   };
 
@@ -103,11 +129,58 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
       result = result.filter(t => t.internId?.name === teamMemberFilter);
     }
 
+    // Month & Date Range Filters
+    if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
+      result = result.filter(task => {
+        const dStr = task.dueDate || task.marketingData?.postTracker?.scheduledDate || task.createdAt;
+        const d = parseFlexibleDate(dStr);
+        const sheetMonth = task.marketingData?.postTracker?.month || "";
+
+        if (monthFilter !== "") {
+          const mIndex = parseInt(monthFilter, 10);
+          const monthsFull = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+          const monthsShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+          const targetFull = monthsFull[mIndex];
+          const targetShort = monthsShort[mIndex];
+          const targetNum = (mIndex + 1).toString();
+          const targetNumPad = targetNum.padStart(2, "0");
+
+          let monthMatched = false;
+          if (d && d.getMonth() === mIndex) monthMatched = true;
+          if (!monthMatched && sheetMonth) {
+            const sStr = String(sheetMonth).trim().toLowerCase();
+            if (sStr === targetFull || sStr === targetShort || sStr === targetNum || sStr === targetNumPad || sStr.includes(targetFull) || sStr.includes(targetShort)) {
+              monthMatched = true;
+            }
+          }
+          if (!monthMatched) return false;
+        }
+
+        if (dateFilterType !== "All" || fromDate || toDate) {
+          if (!d) return false;
+          const now = new Date();
+          if (dateFilterType === "Today" && d.toDateString() !== now.toDateString()) return false;
+          if (dateFilterType === "This Week") {
+            const firstDay = new Date(now);
+            firstDay.setHours(0, 0, 0, 0);
+            firstDay.setDate(now.getDate() - now.getDay());
+            const lastDay = new Date(firstDay);
+            lastDay.setDate(firstDay.getDate() + 6);
+            lastDay.setHours(23, 59, 59, 999);
+            if (d < firstDay || d > lastDay) return false;
+          }
+          if (dateFilterType === "This Month" && (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())) return false;
+          if (fromDate && new Date(fromDate + "T00:00:00") > d) return false;
+          if (toDate && new Date(toDate + "T23:59:59") < d) return false;
+        }
+        return true;
+      });
+    }
+
     result.sort((a, b) => {
       let aValue = a[sortConfig.key];
       let bValue = b[sortConfig.key];
 
-      // Handle nested properties
       if (sortConfig.key === 'internName') {
         aValue = a.internId?.name || '';
         bValue = b.internId?.name || '';
@@ -141,7 +214,7 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
     });
 
     return result;
-  }, [tasks, searchTerm, sortConfig, companyFilter, departmentFilter, teamMemberFilter]);
+  }, [tasks, searchTerm, sortConfig, companyFilter, departmentFilter, teamMemberFilter, monthFilter, dateFilterType, fromDate, toDate]);
 
   const columns = [
     { key: 'contentId', label: 'ID' },
@@ -162,52 +235,128 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
   ];
 
   return (
-    <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-8 md:p-12 overflow-hidden flex flex-col space-y-8 h-[80vh]">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-6 md:p-10 overflow-hidden flex flex-col space-y-6 h-[85vh]">
+      {/* Top Header & Zoom Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
             Task <span className="text-[#F05E23]">Spreadsheet</span>
           </h2>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Raw Database View (Zoom: {Math.round(zoom * 100)}%)</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">
+            Showing {sortedAndFilteredTasks.length} of {tasks.length} tasks
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <select
-            value={companyFilter}
-            onChange={(e) => setCompanyFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-black/40 border border-transparent focus:border-[#F05E23]/50 focus:bg-white dark:focus:bg-black/60 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer"
+
+        {/* Zoom Controls */}
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-black/40 p-1.5 rounded-2xl border border-black/5 dark:border-white/10">
+          <span className="text-[10px] font-black uppercase text-slate-400 px-2">Zoom:</span>
+          <button
+            onClick={() => setZoom(z => Math.max(0.4, Number((z - 0.1).toFixed(2))))}
+            title="Zoom Out"
+            className="p-2 rounded-xl hover:bg-white dark:hover:bg-white/10 text-slate-700 dark:text-white transition-all shadow-sm active:scale-95"
           >
-            <option value="">All Companies</option>
-            {uniqueCompanies.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select
-            value={departmentFilter}
-            onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-black/40 border border-transparent focus:border-[#F05E23]/50 focus:bg-white dark:focus:bg-black/60 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer"
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setZoom(1.0)}
+            title="Reset Zoom (100%)"
+            className="px-3 py-1.5 rounded-xl bg-white dark:bg-white/10 text-xs font-black text-[#F05E23] transition-all shadow-sm hover:scale-105"
           >
-            <option value="">All Departments</option>
-            {uniqueDepartments.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <select
-            value={teamMemberFilter}
-            onChange={(e) => setTeamMemberFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-black/40 border border-transparent focus:border-[#F05E23]/50 focus:bg-white dark:focus:bg-black/60 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer"
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            onClick={() => setZoom(z => Math.min(2.0, Number((z + 0.1).toFixed(2))))}
+            title="Zoom In"
+            className="p-2 rounded-xl hover:bg-white dark:hover:bg-white/10 text-slate-700 dark:text-white transition-all shadow-sm active:scale-95"
           >
-            <option value="">All Team Members</option>
-            {uniqueTeamMembers.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-100 dark:bg-black/40 border border-transparent focus:border-[#F05E23]/50 focus:bg-white dark:focus:bg-black/60 outline-none text-sm font-bold text-slate-900 dark:text-white transition-all placeholder:text-slate-400"
-            />
-          </div>
+            <ZoomIn className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
+      {/* Filters Bar */}
+      <div className="flex flex-wrap items-center gap-3 bg-slate-50 dark:bg-black/20 p-4 rounded-2xl border border-black/5 dark:border-white/5">
+        <select
+          value={companyFilter}
+          onChange={(e) => setCompanyFilter(e.target.value)}
+          className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-700 dark:text-white transition-all appearance-none cursor-pointer"
+        >
+          <option value="">All Companies</option>
+          {uniqueCompanies.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+
+        <select
+          value={departmentFilter}
+          onChange={(e) => setDepartmentFilter(e.target.value)}
+          className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-700 dark:text-white transition-all appearance-none cursor-pointer"
+        >
+          <option value="">All Departments</option>
+          {uniqueDepartments.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
+
+        <select
+          value={teamMemberFilter}
+          onChange={(e) => setTeamMemberFilter(e.target.value)}
+          className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-700 dark:text-white transition-all appearance-none cursor-pointer"
+        >
+          <option value="">All Team Members</option>
+          {uniqueTeamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+
+        <select
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-[#F05E23] transition-all appearance-none cursor-pointer"
+        >
+          <option value="">All Months</option>
+          {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, idx) => (
+            <option key={m} value={idx}>{m}</option>
+          ))}
+        </select>
+
+        <select
+          value={dateFilterType}
+          onChange={(e) => setDateFilterType(e.target.value)}
+          className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-700 dark:text-white transition-all appearance-none cursor-pointer"
+        >
+          <option value="All">All Dates</option>
+          <option value="Today">Today</option>
+          <option value="This Week">This Week</option>
+          <option value="This Month">This Month</option>
+          <option value="Custom">Custom Range</option>
+        </select>
+
+        {dateFilterType === 'Custom' && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-white dark:bg-black/40 border border-black/5 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-white outline-none"
+            />
+            <span className="text-xs text-slate-400 font-bold">to</span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-white dark:bg-black/40 border border-black/5 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-white outline-none"
+            />
+          </div>
+        )}
+
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-900 dark:text-white transition-all placeholder:text-slate-400"
+          />
+        </div>
+      </div>
+
+      {/* Spreadsheet Table Container */}
       <div 
         ref={containerRef}
         onMouseDown={handleMouseDown}
@@ -215,16 +364,16 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
         onWheel={handleWheel}
-        className={`flex-1 overflow-x-auto overflow-y-auto rounded-2xl border border-black/5 dark:border-white/10 custom-scrollbar ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+        className={`flex-1 overflow-x-auto overflow-y-auto rounded-2xl border border-black/5 dark:border-white/10 custom-scrollbar ${isDragging ? 'cursor-grabbing select-none' : ''}`}
       >
-        <table className="w-full text-left border-collapse min-w-max" style={{ zoom }}>
-          <thead className="bg-slate-50 dark:bg-black/40 sticky top-0 z-10">
+        <table className="w-full text-left border-collapse min-w-max transition-all duration-150" style={{ zoom }}>
+          <thead className="bg-slate-100 dark:bg-black/60 sticky top-0 z-10 shadow-sm">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => handleSort(col.key)}
-                  className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-black/5 dark:border-white/10 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5 transition-colors whitespace-nowrap"
+                  className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-black/5 dark:border-white/10 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors whitespace-nowrap select-none"
                 >
                   <div className="flex items-center gap-2">
                     {col.label}
@@ -241,35 +390,35 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
           <tbody className="divide-y divide-black/5 dark:divide-white/5">
             {sortedAndFilteredTasks.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="p-8 text-center text-sm font-bold text-slate-400 italic">
-                  No tasks found.
+                <td colSpan={columns.length} className="p-12 text-center text-sm font-bold text-slate-400 italic">
+                  No tasks match your filters.
                 </td>
               </tr>
             ) : (
               sortedAndFilteredTasks.map((task) => (
-                <tr key={task._id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
+                <tr key={task._id} className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors group">
                   <td className="p-4 text-xs font-black text-slate-500 uppercase tracking-widest">
                     {task.contentId || '-'}
                   </td>
-                  <td className="p-4 text-xs font-bold text-slate-900 dark:text-white max-w-[200px] truncate" title={task.title}>
+                  <td className="p-4 text-xs font-bold text-slate-900 dark:text-white max-w-[220px] truncate" title={task.title}>
                     {task.title}
                   </td>
-                  <td className="p-4 text-xs font-medium text-slate-600 dark:text-white/60">
+                  <td className="p-4 text-xs font-medium text-slate-600 dark:text-white/70">
                     {task.internId?.name || 'Unassigned'}
                   </td>
-                  <td className="p-4 text-xs font-medium text-slate-600 dark:text-white/60">
+                  <td className="p-4 text-xs font-medium text-slate-600 dark:text-white/70">
                     {task.marketingData?.companyId?.name || '-'}
                   </td>
-                  <td className="p-4 text-xs font-medium text-slate-600 dark:text-white/60">
+                  <td className="p-4 text-xs font-medium text-slate-600 dark:text-white/70">
                     {task.marketingData?.departmentId?.name || '-'}
                   </td>
                   <td className="p-4">
-                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-md ${task.status === 'Complete' ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/60 border border-black/10 dark:border-white/20'}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md ${task.status === 'Complete' ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/60 border border-black/10 dark:border-white/20'}`}>
                       {task.status}
                     </span>
                   </td>
                   <td className="p-4">
-                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-md ${task.priority === 'High' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/60 border border-black/10 dark:border-white/20'}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md ${task.priority === 'High' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/60 border border-black/10 dark:border-white/20'}`}>
                       {task.priority || 'Medium'}
                     </span>
                   </td>
@@ -277,10 +426,10 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
                     {task.taskType || 'General'}
                   </td>
                   <td className="p-4 text-[10px] font-bold text-[#F05E23] uppercase tracking-widest">
-                    {task.marketingData?.postTracker?.scheduledDate || '-'}
+                    {task.marketingData?.postTracker?.scheduledDate || task.dueDate || '-'}
                   </td>
                   <td className="p-4">
-                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : (task.marketingData?.postTracker?.status ? 'text-amber-500' : 'text-slate-400')}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500 font-bold' : (task.marketingData?.postTracker?.status ? 'text-amber-500 font-bold' : 'text-slate-400')}`}>
                       {task.marketingData?.postTracker?.status || '-'}
                     </span>
                   </td>
