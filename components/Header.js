@@ -193,6 +193,23 @@ export default function Header() {
                   </Link>
                 </motion.div>
               ))}
+              {user && (
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: navLinks.length * 0.1 }}
+                >
+                  <Link
+                    href={user.role === 'admin' ? '/admin' : (user.role === 'client' ? '/client' : (user.role === 'brand_manager' ? '/brand' : '/intern'))}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`text-4xl sm:text-6xl md:text-7xl font-black tracking-[-0.05em] leading-[0.85] transition-all hover:tracking-[-0.03em] ${
+                      pathname === '/admin' || pathname === '/intern' || pathname === '/client' || pathname === '/brand' ? 'text-[#F05E23]' : `${isDark ? 'text-white/40 hover:text-white' : 'text-[#111]/40 hover:text-[#111]'} hover:text-[#F05E23]`
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
+                </motion.div>
+              )}
             </div>
 
             <motion.div
@@ -207,6 +224,29 @@ export default function Header() {
                 <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />
               </div>
               <PWAInstallButton isDark={isDark} mobile={true} />
+              {!user ? (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-sm border ${
+                    isDark ? 'bg-white/10 text-white border-white/10 hover:bg-white/20' : 'bg-black/5 text-[#111] border-black/10 hover:bg-black/10'
+                  }`}
+                >
+                  <span>Login / Portal Access</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-sm border ${
+                    isDark ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-600 border-red-200'
+                  }`}
+                >
+                  <span>Logout</span>
+                </button>
+              )}
               <Link
                 href="/contact"
                 onClick={() => setMobileMenuOpen(false)}
