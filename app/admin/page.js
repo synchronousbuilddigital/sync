@@ -6,7 +6,7 @@ import { useAuth } from "../../components/AuthContext";
 import AdminSpreadsheet from "../../components/AdminSpreadsheet";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Users, CheckCircle2, Clock, Plus, Trash2,
+  Users, CheckCircle2, Clock, Plus, Trash2, Edit,
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
   ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText,
@@ -18,7 +18,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const {
     user, interns, tasks, leaves, projects,
-    addIntern, removeIntern, assignTask, updateTaskStatus, deleteTask, reassignTask,
+    addIntern, removeIntern, assignTask, updateTaskStatus, deleteTask, updateTask, reassignTask,
     approveLeave, announceToAll, addProject, updateProject, deleteProject,
     adminClientProjects, createClient, createClientProject, updateClientProject,
     purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed,
@@ -73,6 +73,7 @@ export default function AdminDashboard() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+  const [editingTaskModal, setEditingTaskModal] = useState(null);
 
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [newIntern, setNewIntern] = useState({ name: "", email: "", password: "", department: "" });
@@ -1067,9 +1068,14 @@ export default function AdminDashboard() {
                                 <h4 className="font-black text-xs tracking-tight truncate text-slate-900 dark:text-white">{task.title}</h4>
                                 <p className="text-[0.6rem] uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">{task.internId?.name || "Unassigned"}</p>
                               </div>
-                              <button onClick={() => deleteTask(task._id)} className="p-1.5 rounded-lg bg-red-500/0 text-red-500 hover:bg-red-500/10 transition-all shrink-0 opacity-0 group-hover:opacity-100">
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button onClick={() => setEditingTaskModal({ ...task, internId: task.internId?._id || task.internId || "" })} title="Edit Task" className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all">
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                                <button onClick={() => { if(confirm("Are you sure you want to delete this task?")) deleteTask(task._id); }} title="Delete Task" className="p-1.5 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-all">
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
 
                             {task.marketingData && (
@@ -1149,14 +1155,14 @@ export default function AdminDashboard() {
                               </span>
                             </div>
 
-                            <div className="flex gap-1.5 flex-wrap">
+                            <div className="flex gap-1.5 flex-wrap items-center">
                               {column.key !== 'complete' && task.status !== 'Complete' && (
-                                <button onClick={() => updateTaskStatus(task._id, 'Complete', 'Marked complete.', true)} className="flex-1 min-w-[50px] bg-green-500 hover:bg-green-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm shadow-green-500/20">
+                                <button onClick={() => updateTaskStatus(task._id, 'Complete', 'Marked complete.', true)} className="flex-1 min-w-[40px] bg-green-500 hover:bg-green-600 text-white py-1.5 px-2 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm shadow-green-500/20">
                                   Done
                                 </button>
                               )}
                               {column.key !== 'working' && task.status !== 'Complete' && (
-                                <button onClick={() => updateTaskStatus(task._id, 'In Progress', 'Moved to working.', true)} className="flex-1 min-w-[50px] bg-blue-500 hover:bg-blue-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm shadow-blue-500/20">
+                                <button onClick={() => updateTaskStatus(task._id, 'In Progress', 'Moved to working.', true)} className="flex-1 min-w-[40px] bg-blue-500 hover:bg-blue-600 text-white py-1.5 px-2 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm shadow-blue-500/20">
                                   Start
                                 </button>
                               )}
@@ -1168,10 +1174,16 @@ export default function AdminDashboard() {
                                   } else {
                                     handleApproveTask(task._id);
                                   }
-                                }} className="flex-1 min-w-[50px] bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white py-1.5 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm">
+                                }} className="flex-1 min-w-[40px] bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white py-1.5 px-2 rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all shadow-sm">
                                   Review
                                 </button>
                               )}
+                              <button onClick={() => setEditingTaskModal({ ...task, internId: task.internId?._id || task.internId || "" })} className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all flex items-center gap-1 shadow-sm">
+                                <Edit className="w-2.5 h-2.5" /> Edit
+                              </button>
+                              <button onClick={() => { if(confirm("Are you sure you want to delete this task?")) deleteTask(task._id); }} className="px-2.5 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all flex items-center gap-1 shadow-sm">
+                                <Trash2 className="w-2.5 h-2.5" /> Delete
+                              </button>
                             </div>
                           </motion.div>
                         );
@@ -2570,7 +2582,15 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
-                <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all"><PlusCircle className="w-6 h-6 rotate-45" /></button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setChatTaskId(null); setEditingTaskModal({ ...chatTask, internId: chatTask?.internId?._id || chatTask?.internId || "" }); }} title="Edit Task" className="p-2.5 bg-white/20 hover:bg-white/30 rounded-xl transition-all flex items-center gap-1.5 text-xs font-black uppercase tracking-widest">
+                    <Edit className="w-4 h-4" /> Edit Task
+                  </button>
+                  <button onClick={() => { if(confirm("Are you sure you want to delete this task?")) { deleteTask(chatTask?._id); setChatTaskId(null); } }} title="Delete Task" className="p-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all flex items-center gap-1.5 text-xs font-black uppercase tracking-widest">
+                    <Trash2 className="w-4 h-4" /> Delete
+                  </button>
+                  <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all ml-1"><PlusCircle className="w-6 h-6 rotate-45" /></button>
+                </div>
               </div>
 
               <div className="grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50">
@@ -2885,6 +2905,119 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => setIsAddingBrandManager(false)}
                   className="flex-1 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 py-4 rounded-2xl font-black uppercase text-[0.65rem] tracking-[0.2em] hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {editingTaskModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-black/10 dark:border-white/10 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 border-b border-black/5 dark:border-white/10 pb-4">
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tighter text-slate-900 dark:text-white">Edit Task</h3>
+                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-400">Modify details or delete task</p>
+                </div>
+                <button onClick={() => setEditingTaskModal(null)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400 block mb-1">Task Title</label>
+                  <input
+                    type="text"
+                    value={editingTaskModal.title || ""}
+                    onChange={e => setEditingTaskModal({ ...editingTaskModal, title: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400 block mb-1">Description</label>
+                  <textarea
+                    rows={3}
+                    value={editingTaskModal.description || ""}
+                    onChange={e => setEditingTaskModal({ ...editingTaskModal, description: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400 block mb-1">Assign To Intern</label>
+                    <select
+                      value={editingTaskModal.internId || ""}
+                      onChange={e => setEditingTaskModal({ ...editingTaskModal, internId: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]"
+                    >
+                      <option value="">Unassigned</option>
+                      {(interns || []).map(i => (
+                        <option key={i._id} value={i._id}>{i.name} ({i.department})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400 block mb-1">Priority</label>
+                    <select
+                      value={editingTaskModal.priority || "Medium"}
+                      onChange={e => setEditingTaskModal({ ...editingTaskModal, priority: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]"
+                    >
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-6 mt-6 border-t border-black/5 dark:border-white/10">
+                <button
+                  onClick={async () => {
+                    if (!editingTaskModal.title?.trim()) {
+                      alert("Please enter a task title");
+                      return;
+                    }
+                    const res = await updateTask(editingTaskModal._id, {
+                      title: editingTaskModal.title,
+                      description: editingTaskModal.description,
+                      internId: editingTaskModal.internId || undefined,
+                      priority: editingTaskModal.priority
+                    });
+                    if (res?.success) {
+                      setEditingTaskModal(null);
+                    } else {
+                      alert(res?.message || "Failed to update task");
+                    }
+                  }}
+                  className="flex-1 min-w-[120px] bg-[#F05E23] hover:bg-[#d9531e] text-white py-3.5 rounded-2xl font-black uppercase text-[0.65rem] tracking-widest transition-all shadow-lg shadow-[#F05E23]/20"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm("Are you sure you want to permanently delete this task?")) {
+                      const res = await deleteTask(editingTaskModal._id);
+                      if (res?.success) {
+                        setEditingTaskModal(null);
+                      } else {
+                        alert(res?.message || "Failed to delete task");
+                      }
+                    }
+                  }}
+                  className="px-5 bg-red-500 hover:bg-red-600 text-white py-3.5 rounded-2xl font-black uppercase text-[0.65rem] tracking-widest transition-all shadow-lg shadow-red-500/20 flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+                <button
+                  onClick={() => setEditingTaskModal(null)}
+                  className="px-5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 py-3.5 rounded-2xl font-black uppercase text-[0.65rem] tracking-widest hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
                 >
                   Cancel
                 </button>

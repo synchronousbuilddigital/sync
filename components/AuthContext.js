@@ -538,6 +538,20 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const updateTask = async (taskId, updateData) => {
+    const res = await fetch(`/api/admin/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(updateData)
+    });
+    const data = await res.json();
+    if (data.success) fetchTasks("admin", token);
+    return data;
+  };
+
   const addCompany = async (name) => {
     const res = await fetch("/api/admin/companies", {
       method: "POST",
@@ -768,7 +782,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
       interns, tasks, taskStore, fetchTasks, fetchInterns, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, refreshAdminData, refreshInternData, refreshBrandData, refreshClientData, companyName, leaves, projects, addIntern, removeIntern, assignTask, 
-      updateTaskStatus, deleteTask, reassignTask, approveLeave,
+      updateTaskStatus, deleteTask, updateTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
       clientProject, adminClientProjects, internProjects, createClient, createClientProject, 
       updateClientProject, purgeClientProject, sendClientMessage, sendClientFeed, sendAdminFeed, sendDiscussion, updateClientInfo, generateRoadmap,
