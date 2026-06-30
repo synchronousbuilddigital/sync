@@ -3,6 +3,8 @@ import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
 import { sendOnboardingEmail } from "@/lib/mail";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   try {
     const decoded = verifyToken(req);

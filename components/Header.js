@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight, Zap, Sun, Moon } from "lucide-react";
 import { useTheme } from './ThemeContext';
 import { useAuth } from "./AuthContext";
+import PWAInstallButton from "./PWAInstallButton";
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -87,6 +88,7 @@ export default function Header() {
 
         {/* Action Button Section Area */}
         <div className="hidden md:flex items-center gap-2 lg:gap-4">
+          <PWAInstallButton isScrolled={isScrolled} isDark={isDark} />
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={toggleTheme}
@@ -204,6 +206,7 @@ export default function Header() {
                 <span className="font-bold uppercase tracking-widest text-[0.6rem]">Ready to Scale?</span>
                 <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />
               </div>
+              <PWAInstallButton isDark={isDark} mobile={true} />
               <Link
                 href="/contact"
                 onClick={() => setMobileMenuOpen(false)}

@@ -73,20 +73,27 @@ export const metadata = {
   icons: {
     icon: '/logo.png',
   },
+  manifest: '/manifest.json',
 };
 
 import { ThemeProvider } from "../components/ThemeContext";
 import { AuthProvider } from "../components/AuthContext";
 import { ChatProvider } from "../components/ChatContext";
+import PWARegister from "../components/PWARegister";
 
 export default function RootLayout({ children }) {
 
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#F05E23" />
+      </head>
       <body
         className={`${outfit.className} antialiased min-h-screen flex flex-col`}
         suppressHydrationWarning
       >
+        <PWARegister />
         <ThemeProvider>
           <AuthProvider>
             <ChatProvider>

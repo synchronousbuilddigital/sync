@@ -10,13 +10,15 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function BrandManagerDashboard() {
-  const { user, token, tasks: contextTasks, taskStore, fetchTasks, companyName, logout, brandManagerReviewTask } = useAuth();
+  const { user, token, tasks: contextTasks, taskStore, fetchTasks, companyName, logout, brandManagerReviewTask, refreshBrandData } = useAuth();
   
   useEffect(() => {
-    if (user?.role === "brand_manager" && token && fetchTasks) {
+    if (user?.role === "brand_manager" && refreshBrandData) {
+      refreshBrandData();
+    } else if (user?.role === "brand_manager" && token && fetchTasks) {
       fetchTasks("brand_manager", token);
     }
-  }, [user?.role, token, fetchTasks]);
+  }, [user?.role, token, fetchTasks, refreshBrandData]);
 
   // Ownership-Stamped State guard: Only display tasks if memory is explicitly stamped for brand_manager identity!
   const tasks = (taskStore?.role === "brand_manager") ? (contextTasks || []) : [];
@@ -28,6 +30,10 @@ export default function BrandManagerDashboard() {
   const [deptFilter, setDeptFilter] = useState("");
   const [reviewForm, setReviewForm] = useState({ status: "", remarks: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [monthFilter, setMonthFilter] = useState("");
+  const [dateFilterType, setDateFilterType] = useState("All");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   // Apply Tabs and Search
   const displayTasks = tasks.filter(task => {
@@ -36,16 +42,80 @@ export default function BrandManagerDashboard() {
                           task.contentId?.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
 
-    if (activeTab === "All") return true;
-    if (activeTab === "Completed") return task.status === "Complete";
-    if (activeTab === "In Review") return task.marketingData?.reviewStatus === "Pending" && task.status !== "Complete";
-    return task.status === activeTab;
+    if (activeTab === "All") {
+      // proceed to date filters
+    } else if (activeTab === "Completed") {
+      if (task.status !== "Complete") return false;
+    } else if (activeTab === "In Review") {
+      if (!(task.marketingData?.reviewStatus === "Pending" && task.status !== "Complete")) return false;
+    } else if (task.status !== activeTab) {
+      return false;
+    }
+
+    if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
+      const dStr = task.dueDate || task.marketingData?.postTracker?.scheduledDate || task.createdAt;
+      let d = null;
+      if (dStr) {
+        d = new Date(dStr);
+        if (isNaN(d.getTime())) {
+          const parts = String(dStr).trim().match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+          if (parts) {
+            let year = parseInt(parts[3], 10);
+            if (year < 100) year += 2000;
+            d = new Date(year, parseInt(parts[2], 10) - 1, parseInt(parts[1], 10));
+            if (isNaN(d.getTime())) d = null;
+          } else {
+            d = null;
+          }
+        }
+      }
+      const sheetMonth = task.marketingData?.postTracker?.month || "";
+
+      if (monthFilter !== "") {
+        const mIndex = parseInt(monthFilter, 10);
+        const monthsFull = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+        const monthsShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+        const targetFull = monthsFull[mIndex];
+        const targetShort = monthsShort[mIndex];
+        const targetNum = (mIndex + 1).toString();
+        const targetNumPad = targetNum.padStart(2, "0");
+
+        let monthMatched = false;
+        if (d && d.getMonth() === mIndex) monthMatched = true;
+        if (!monthMatched && sheetMonth) {
+          const sStr = String(sheetMonth).trim().toLowerCase();
+          if (sStr === targetFull || sStr === targetShort || sStr === targetNum || sStr === targetNumPad || sStr.includes(targetFull) || sStr.includes(targetShort)) {
+            monthMatched = true;
+          }
+        }
+        if (!monthMatched) return false;
+      }
+
+      if (dateFilterType !== "All" || fromDate || toDate) {
+        if (!d) return false;
+        const now = new Date();
+        if (dateFilterType === "Today" && d.toDateString() !== now.toDateString()) return false;
+        if (dateFilterType === "This Week") {
+          const firstDay = new Date(now);
+          firstDay.setHours(0, 0, 0, 0);
+          firstDay.setDate(now.getDate() - now.getDay());
+          const lastDay = new Date(firstDay);
+          lastDay.setDate(firstDay.getDate() + 6);
+          lastDay.setHours(23, 59, 59, 999);
+          if (d < firstDay || d > lastDay) return false;
+        }
+        if (dateFilterType === "This Month" && (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())) return false;
+        if (fromDate && new Date(fromDate + "T00:00:00") > d) return false;
+        if (toDate && new Date(toDate + "T23:59:59") < d) return false;
+      }
+    }
+    return true;
   });
 
   // Group tasks by Main Department -> Sub Department for Card View
   const tasksByMainDept = displayTasks.reduce((acc, task) => {
-    const mainDeptName = task.marketingData?.departmentId?.mainDepartment || "Digital Marketing";
-    const subDeptName = task.marketingData?.departmentId?.name || "Uncategorized";
+    const mainDeptName = task.marketingData?.departmentId?.mainDepartment || task.internId?.department || "Digital Marketing";
+    const subDeptName = task.marketingData?.departmentId?.name || task.internId?.department || task.marketingData?.postTracker?.postType || task.taskType || "General Assignments";
     
     if (!acc[mainDeptName]) acc[mainDeptName] = {};
     if (!acc[mainDeptName][subDeptName]) acc[mainDeptName][subDeptName] = [];
@@ -187,12 +257,64 @@ export default function BrandManagerDashboard() {
             </button>
             <button 
               onClick={() => setViewMode("spreadsheet")}
-              className={`p-2 rounded-lg transition-all ${viewMode === "spreadsheet" ? "bg-[#F05E23] text-white shadow-md" : isDark ? "text-white/40 hover:text-white" : "text-slate-400 hover:text-slate-800"}`}
+              className={`p-2.5 rounded-lg transition-all ${viewMode === "spreadsheet" ? "bg-[#F05E23] text-white shadow-md" : (isDark ? "text-white/40 hover:text-white" : "text-slate-400 hover:text-[#111]")}`}
             >
               <TableIcon className="w-4 h-4" />
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Date & Month Filter Bar */}
+      <div className="max-w-[1600px] mx-auto relative z-10 mb-8 flex flex-wrap items-center gap-3">
+        <select
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold outline-none cursor-pointer border transition-all ${isDark ? "bg-black/40 border-white/10 text-white" : "bg-white border-black/10 text-[#111]"}`}
+        >
+          <option value="">All Months</option>
+          {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, idx) => (
+            <option key={idx} value={idx.toString()}>{m}</option>
+          ))}
+        </select>
+
+        <div className={`flex items-center p-1 rounded-xl border ${isDark ? "bg-black/40 border-white/10" : "bg-white border-black/10"}`}>
+          {["All", "Today", "This Week", "This Month"].map((type) => (
+            <button
+              key={type}
+              onClick={() => { setDateFilterType(type); setFromDate(""); setToDate(""); }}
+              className={`px-3 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-widest transition-all ${dateFilterType === type && !fromDate && !toDate ? "bg-[#F05E23] text-white shadow-sm" : (isDark ? "text-white/40 hover:text-white" : "text-slate-400 hover:text-[#111]")}`}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+
+        <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-bold ${isDark ? "bg-black/40 border-white/10 text-white" : "bg-white border-black/10 text-[#111]"}`}>
+          <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black">From</span>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => { setFromDate(e.target.value); setDateFilterType("Custom"); }}
+            className="bg-transparent outline-none text-xs font-bold cursor-pointer"
+          />
+          <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black ml-1">To</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => { setToDate(e.target.value); setDateFilterType("Custom"); }}
+            className="bg-transparent outline-none text-xs font-bold cursor-pointer"
+          />
+        </div>
+
+        {(monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) && (
+          <button
+            onClick={() => { setMonthFilter(""); setDateFilterType("All"); setFromDate(""); setToDate(""); }}
+            className="text-xs font-bold text-[#F05E23] underline underline-offset-2 ml-1"
+          >
+            Clear Date Filter
+          </button>
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -479,7 +601,7 @@ export default function BrandManagerDashboard() {
                       <td className="px-8 py-6">
                         <div className="flex flex-col gap-1">
                           <span className={`text-xs font-bold ${isDark ? "text-white/60" : "text-slate-600"}`}>
-                            {task.internId?.department || task.marketingData?.departmentId?.name || task.marketingData?.postTracker?.postType || "Uncategorized"}
+                            {task.internId?.department || task.marketingData?.departmentId?.name || task.marketingData?.postTracker?.postType || "General Assignments"}
                           </span>
                         </div>
                       </td>

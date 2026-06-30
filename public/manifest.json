@@ -1,0 +1,22 @@
+{
+  "name": "Synchronous Build Digital",
+  "short_name": "Sync Digital",
+  "description": "Helping brands grow with fast websites, expert design, and smart AI tools.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#F05E23",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

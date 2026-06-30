@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,7 +14,14 @@ import {
 } from "lucide-react";
 
 export default function InternDashboard() {
-   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading } = useAuth();
+   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData } = useAuth();
+   
+   useEffect(() => {
+     if (user?.role === "intern" && refreshInternData) {
+       refreshInternData();
+     }
+   }, [user, refreshInternData]);
+
    const [selectedTaskId, setSelectedTaskId] = useState(null);
    const [updatePostData, setUpdatePostData] = useState({ contentId: "", finalLink: "", postedLink: "", status: "", clientRemarks: "" });
    const [isUpdatingPost, setIsUpdatingPost] = useState(false);
@@ -33,6 +40,10 @@ export default function InternDashboard() {
    const [activeTool, setActiveTool] = useState(null);
    const [taskFilter, setTaskFilter] = useState("All");
    const [viewMode, setViewMode] = useState("cards");
+   const [monthFilter, setMonthFilter] = useState("");
+   const [dateFilterType, setDateFilterType] = useState("All");
+   const [fromDate, setFromDate] = useState("");
+   const [toDate, setToDate] = useState("");
    const { getAIBlockerSuggestion } = useAuth();
 
    const handleUpdatePost = async (e) => {
@@ -61,8 +72,68 @@ export default function InternDashboard() {
    };
 
    const selectedTask = tasks.find(t => t._id === selectedTaskId);
-   const chatTask = tasks.find(t => t._id === chatTaskId);
-   const myTasks = tasks.filter(t => t.internId?._id === user?._id || t.internId === user?._id);
+   const myTasks = tasks.filter(t => {
+     if (t.internId?._id !== user?._id && t.internId !== user?._id) return false;
+
+     if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
+       const dStr = t.dueDate || t.marketingData?.postTracker?.scheduledDate || t.createdAt;
+       let d = null;
+       if (dStr) {
+         d = new Date(dStr);
+         if (isNaN(d.getTime())) {
+           const parts = String(dStr).trim().match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+           if (parts) {
+             let year = parseInt(parts[3], 10);
+             if (year < 100) year += 2000;
+             d = new Date(year, parseInt(parts[2], 10) - 1, parseInt(parts[1], 10));
+             if (isNaN(d.getTime())) d = null;
+           } else {
+             d = null;
+           }
+         }
+       }
+       const sheetMonth = t.marketingData?.postTracker?.month || "";
+
+       if (monthFilter !== "") {
+         const mIndex = parseInt(monthFilter, 10);
+         const monthsFull = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+         const monthsShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+         const targetFull = monthsFull[mIndex];
+         const targetShort = monthsShort[mIndex];
+         const targetNum = (mIndex + 1).toString();
+         const targetNumPad = targetNum.padStart(2, "0");
+
+         let monthMatched = false;
+         if (d && d.getMonth() === mIndex) monthMatched = true;
+         if (!monthMatched && sheetMonth) {
+           const sStr = String(sheetMonth).trim().toLowerCase();
+           if (sStr === targetFull || sStr === targetShort || sStr === targetNum || sStr === targetNumPad || sStr.includes(targetFull) || sStr.includes(targetShort)) {
+             monthMatched = true;
+           }
+         }
+         if (!monthMatched) return false;
+       }
+
+       if (dateFilterType !== "All" || fromDate || toDate) {
+         if (!d) return false;
+         const now = new Date();
+         if (dateFilterType === "Today" && d.toDateString() !== now.toDateString()) return false;
+         if (dateFilterType === "This Week") {
+           const firstDay = new Date(now);
+           firstDay.setHours(0, 0, 0, 0);
+           firstDay.setDate(now.getDate() - now.getDay());
+           const lastDay = new Date(firstDay);
+           lastDay.setDate(firstDay.getDate() + 6);
+           lastDay.setHours(23, 59, 59, 999);
+           if (d < firstDay || d > lastDay) return false;
+         }
+         if (dateFilterType === "This Month" && (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())) return false;
+         if (fromDate && new Date(fromDate + "T00:00:00") > d) return false;
+         if (toDate && new Date(toDate + "T23:59:59") < d) return false;
+       }
+     }
+     return true;
+   });
 
    if (loading) return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
@@ -209,6 +280,58 @@ export default function InternDashboard() {
                      <ListTodo className="w-4 h-4" />
                    </button>
                  </div>
+               </div>
+
+               {/* Date & Month Filter Bar */}
+               <div className="flex flex-wrap items-center gap-3 pt-2">
+                 <select
+                   value={monthFilter}
+                   onChange={(e) => setMonthFilter(e.target.value)}
+                   className="px-4 py-2 rounded-xl text-xs font-bold outline-none cursor-pointer border bg-white dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-700 dark:text-white transition-all"
+                 >
+                   <option value="">All Months</option>
+                   {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, idx) => (
+                     <option key={idx} value={idx.toString()}>{m}</option>
+                   ))}
+                 </select>
+
+                 <div className="flex items-center p-1 rounded-xl border bg-white dark:bg-white/5 border-black/5 dark:border-white/10">
+                   {["All", "Today", "This Week", "This Month"].map((type) => (
+                     <button
+                       key={type}
+                       onClick={() => { setDateFilterType(type); setFromDate(""); setToDate(""); }}
+                       className={`px-3 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-widest transition-all ${dateFilterType === type && !fromDate && !toDate ? "bg-[#F05E23] text-white shadow-sm" : "text-slate-400 hover:text-slate-700 dark:hover:text-white"}`}
+                     >
+                       {type}
+                     </button>
+                   ))}
+                 </div>
+
+                 <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-bold bg-white dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-700 dark:text-white">
+                   <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black">From</span>
+                   <input
+                     type="date"
+                     value={fromDate}
+                     onChange={(e) => { setFromDate(e.target.value); setDateFilterType("Custom"); }}
+                     className="bg-transparent outline-none text-xs font-bold cursor-pointer"
+                   />
+                   <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black ml-1">To</span>
+                   <input
+                     type="date"
+                     value={toDate}
+                     onChange={(e) => { setToDate(e.target.value); setDateFilterType("Custom"); }}
+                     className="bg-transparent outline-none text-xs font-bold cursor-pointer"
+                   />
+                 </div>
+
+                 {(monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) && (
+                   <button
+                     onClick={() => { setMonthFilter(""); setDateFilterType("All"); setFromDate(""); setToDate(""); }}
+                     className="text-xs font-bold text-[#F05E23] underline underline-offset-2 ml-1"
+                   >
+                     Clear Date Filter
+                   </button>
+                 )}
                </div>
              </div>
 

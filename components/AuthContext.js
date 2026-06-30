@@ -38,7 +38,8 @@ export function AuthProvider({ children }) {
   const fetchInterns = useCallback(async (authToken) => {
     try {
       const res = await fetch("/api/admin/interns", {
-        headers: { "Authorization": `Bearer ${authToken}` }
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
       });
       const data = await res.json();
       if (data.success) setInterns(data.interns);
@@ -51,7 +52,8 @@ export function AuthProvider({ children }) {
     try {
       const endpoint = role === "admin" ? "/api/admin/tasks" : (role === "brand_manager" ? "/api/client/tasks" : "/api/intern/tasks");
       const res = await fetch(endpoint, {
-        headers: { "Authorization": `Bearer ${authToken}` }
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
       });
       const data = await res.json();
       if (data.success) {
@@ -72,7 +74,8 @@ export function AuthProvider({ children }) {
   const fetchLeaves = useCallback(async (authToken) => {
     try {
       const res = await fetch("/api/intern/leave", {
-        headers: { "Authorization": `Bearer ${authToken}` }
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
       });
       const data = await res.json();
       if (data.success) setLeaves(data.leaves);
@@ -83,7 +86,7 @@ export function AuthProvider({ children }) {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/projects");
+      const res = await fetch("/api/admin/projects", { cache: "no-store" });
       const data = await res.json();
       if (data.success) setProjects(data.projects);
     } catch (e) {
@@ -94,7 +97,8 @@ export function AuthProvider({ children }) {
   const fetchClientProject = useCallback(async (authToken) => {
     try {
       const res = await fetch("/api/client/project", {
-        headers: { "Authorization": `Bearer ${authToken}` }
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
       });
       const data = await res.json();
       if (data.success) setClientProject(data.project);
@@ -106,7 +110,8 @@ export function AuthProvider({ children }) {
   const fetchAdminClientProjects = useCallback(async (authToken) => {
     try {
       const res = await fetch("/api/admin/client-projects", {
-        headers: { "Authorization": `Bearer ${authToken}` }
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
       });
       const data = await res.json();
       if (data.success) setAdminClientProjects(data.projects);
@@ -118,7 +123,8 @@ export function AuthProvider({ children }) {
   const fetchInternProjects = useCallback(async (authToken) => {
     try {
       const res = await fetch("/api/intern/projects", {
-        headers: { "Authorization": `Bearer ${authToken}` }
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
       });
       const data = await res.json();
       if (data.success) setInternProjects(data.projects);
@@ -130,7 +136,8 @@ export function AuthProvider({ children }) {
   const fetchCompanies = useCallback(async (authToken) => {
     try {
       const res = await fetch("/api/admin/companies", {
-        headers: { "Authorization": `Bearer ${authToken}` }
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
       });
       const data = await res.json();
       if (data.success) setCompanies(data.companies);
@@ -142,7 +149,8 @@ export function AuthProvider({ children }) {
   const fetchBrandManagers = useCallback(async (authToken) => {
     try {
       const res = await fetch("/api/admin/clients", {
-        headers: { "Authorization": `Bearer ${authToken}` }
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
       });
       const data = await res.json();
       if (data.success) setBrandManagers(data.clients);
@@ -338,6 +346,14 @@ export function AuthProvider({ children }) {
           fetchInterns(data.token);
           fetchCompanies(data.token);
           fetchBrandManagers(data.token);
+          fetchAdminClientProjects(data.token);
+        }
+        if (data.user.role === "intern") {
+          fetchInternProjects(data.token);
+          fetchLeaves(data.token);
+        }
+        if (data.user.role === "client") {
+          fetchClientProject(data.token);
         }
         
         return { success: true };
@@ -717,10 +733,41 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const refreshAdminData = useCallback(() => {
+    if (token) {
+      fetchInterns(token);
+      fetchTasks("admin", token);
+      fetchAdminClientProjects(token);
+      fetchCompanies(token);
+      fetchBrandManagers(token);
+      fetchProjects();
+    }
+  }, [token, fetchInterns, fetchTasks, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, fetchProjects]);
+
+  const refreshInternData = useCallback(() => {
+    if (token) {
+      fetchTasks("intern", token);
+      fetchLeaves(token);
+      fetchInternProjects(token);
+    }
+  }, [token, fetchTasks, fetchLeaves, fetchInternProjects]);
+
+  const refreshBrandData = useCallback(() => {
+    if (token) {
+      fetchTasks("brand_manager", token);
+    }
+  }, [token, fetchTasks]);
+
+  const refreshClientData = useCallback(() => {
+    if (token) {
+      fetchClientProject(token);
+    }
+  }, [token, fetchClientProject]);
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword,
-      interns, tasks, taskStore, fetchTasks, companyName, leaves, projects, addIntern, removeIntern, assignTask, 
+      interns, tasks, taskStore, fetchTasks, fetchInterns, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, refreshAdminData, refreshInternData, refreshBrandData, refreshClientData, companyName, leaves, projects, addIntern, removeIntern, assignTask, 
       updateTaskStatus, deleteTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
       clientProject, adminClientProjects, internProjects, createClient, createClientProject, 

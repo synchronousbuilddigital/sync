@@ -3,6 +3,8 @@ import Task from "@/models/Task";
 import { verifyToken } from "@/lib/auth";
 import { fetchPostTrackerData } from "@/lib/googleSheets";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   try {
     const decoded = verifyToken(req);
@@ -18,14 +20,22 @@ export async function GET(req) {
     const postTrackerData = await fetchPostTrackerData();
     const tasksWithTracker = tasks.map(task => {
       const taskObj = task.toObject();
-       if (taskObj.contentId) {
-         taskObj.marketingData = taskObj.marketingData || {};
-         const nativePT = taskObj.marketingData.postTracker;
-         const hasNativeData = nativePT && (nativePT.scheduledDate || nativePT.postType || nativePT.status);
-         
-         if (!hasNativeData && postTrackerData[taskObj.contentId]) {
-            taskObj.marketingData.postTracker = postTrackerData[taskObj.contentId];
-         }
+       if (taskObj.contentId && postTrackerData[taskObj.contentId]) {
+          taskObj.marketingData = taskObj.marketingData || {};
+          const sheetData = postTrackerData[taskObj.contentId];
+          const nativePT = taskObj.marketingData.postTracker || {};
+          taskObj.marketingData.postTracker = {
+            ...sheetData,
+            ...nativePT,
+            scheduledDate: nativePT.scheduledDate || sheetData.scheduledDate || "",
+            month: nativePT.month || sheetData.month || "",
+            day: nativePT.day || sheetData.day || "",
+            postType: nativePT.postType || sheetData.postType || "",
+            status: nativePT.status || sheetData.status || "Pending",
+            finalLink: nativePT.finalLink || sheetData.finalLink || "",
+            postedLink: nativePT.postedLink || sheetData.postedLink || "",
+            clientRemarks: nativePT.clientRemarks || sheetData.clientRemarks || "",
+          };
        }
       return taskObj;
     });

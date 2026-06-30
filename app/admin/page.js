@@ -24,7 +24,7 @@ export default function AdminDashboard() {
     purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed,
     markFeedbackAsRead, loading, token,
     companies, addCompany, updateCompany, deleteCompany,
-    brandManagers, removeBrandManager
+    brandManagers, removeBrandManager, refreshAdminData
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState("interns");
@@ -32,6 +32,10 @@ export default function AdminDashboard() {
   const [taskDepartmentFilter, setTaskDepartmentFilter] = useState("");
   const [taskTeamMemberFilter, setTaskTeamMemberFilter] = useState("");
   const [teamDepartmentFilter, setTeamDepartmentFilter] = useState("");
+  const [monthFilter, setMonthFilter] = useState("");
+  const [dateFilterType, setDateFilterType] = useState("All");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   // Client Management States
   const [isAddingClient, setIsAddingClient] = useState(false);
@@ -142,8 +146,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (user?.role === "admin") {
+      if (refreshAdminData) refreshAdminData();
       fetch("/api/admin/marketing-sheet", {
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { "Authorization": `Bearer ${token}` },
+        cache: "no-store"
       })
         .then(res => res.json())
         .then(data => {
@@ -151,7 +157,7 @@ export default function AdminDashboard() {
         })
         .catch(err => console.error("Error fetching marketing sheet:", err));
     }
-  }, [user, token]);
+  }, [user, token, refreshAdminData]);
 
   const [chatTaskId, setChatTaskId] = useState(null);
   const [reviewingTask, setReviewingTask] = useState(null);
@@ -245,9 +251,67 @@ export default function AdminDashboard() {
       if (taskDepartmentFilter && t.marketingData?.departmentId?.name !== taskDepartmentFilter) return false;
       if (taskTeamMemberFilter && t.internId?.name !== taskTeamMemberFilter) return false;
       if (teamDepartmentFilter && (t.internId?.department || "Tech") !== teamDepartmentFilter) return false;
+
+      if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
+        const dStr = t.dueDate || t.marketingData?.postTracker?.scheduledDate || t.createdAt;
+        let d = null;
+        if (dStr) {
+          d = new Date(dStr);
+          if (isNaN(d.getTime())) {
+            const parts = String(dStr).trim().match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+            if (parts) {
+              let year = parseInt(parts[3], 10);
+              if (year < 100) year += 2000;
+              d = new Date(year, parseInt(parts[2], 10) - 1, parseInt(parts[1], 10));
+              if (isNaN(d.getTime())) d = null;
+            } else {
+              d = null;
+            }
+          }
+        }
+        const sheetMonth = t.marketingData?.postTracker?.month || "";
+
+        if (monthFilter !== "") {
+          const mIndex = parseInt(monthFilter, 10);
+          const monthsFull = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+          const monthsShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+          const targetFull = monthsFull[mIndex];
+          const targetShort = monthsShort[mIndex];
+          const targetNum = (mIndex + 1).toString();
+          const targetNumPad = targetNum.padStart(2, "0");
+
+          let monthMatched = false;
+          if (d && d.getMonth() === mIndex) monthMatched = true;
+          if (!monthMatched && sheetMonth) {
+            const sStr = String(sheetMonth).trim().toLowerCase();
+            if (sStr === targetFull || sStr === targetShort || sStr === targetNum || sStr === targetNumPad || sStr.includes(targetFull) || sStr.includes(targetShort)) {
+              monthMatched = true;
+            }
+          }
+          if (!monthMatched) return false;
+        }
+
+        if (dateFilterType !== "All" || fromDate || toDate) {
+          if (!d) return false;
+          const now = new Date();
+          if (dateFilterType === "Today" && d.toDateString() !== now.toDateString()) return false;
+          if (dateFilterType === "This Week") {
+            const firstDay = new Date(now);
+            firstDay.setHours(0, 0, 0, 0);
+            firstDay.setDate(now.getDate() - now.getDay());
+            const lastDay = new Date(firstDay);
+            lastDay.setDate(firstDay.getDate() + 6);
+            lastDay.setHours(23, 59, 59, 999);
+            if (d < firstDay || d > lastDay) return false;
+          }
+          if (dateFilterType === "This Month" && (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())) return false;
+          if (fromDate && new Date(fromDate + "T00:00:00") > d) return false;
+          if (toDate && new Date(toDate + "T23:59:59") < d) return false;
+        }
+      }
       return true;
     });
-  }, [tasks, taskCompanyFilter, taskDepartmentFilter, taskTeamMemberFilter, teamDepartmentFilter]);
+  }, [tasks, taskCompanyFilter, taskDepartmentFilter, taskTeamMemberFilter, teamDepartmentFilter, monthFilter, dateFilterType, fromDate, toDate]);
 
   const displayedInterns = useMemo(() => {
     return interns.filter(i => {
@@ -766,6 +830,58 @@ export default function AdminDashboard() {
                Clear Filters
              </button>
           )}
+
+          {/* Date & Month Filter Controls */}
+          <div className="w-full flex flex-wrap items-center gap-3 pt-2 border-t border-black/5 dark:border-white/10">
+            <select
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold outline-none cursor-pointer border bg-white dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-700 dark:text-white transition-all"
+            >
+              <option value="">All Months</option>
+              {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, idx) => (
+                <option key={idx} value={idx.toString()}>{m}</option>
+              ))}
+            </select>
+
+            <div className="flex items-center p-1 rounded-xl border bg-white dark:bg-white/5 border-black/5 dark:border-white/10">
+              {["All", "Today", "This Week", "This Month"].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => { setDateFilterType(type); setFromDate(""); setToDate(""); }}
+                  className={`px-3 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-widest transition-all ${dateFilterType === type && !fromDate && !toDate ? "bg-[#F05E23] text-white shadow-sm" : "text-slate-400 hover:text-slate-700 dark:hover:text-white"}`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-bold bg-white dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-700 dark:text-white">
+              <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black">From</span>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => { setFromDate(e.target.value); setDateFilterType("Custom"); }}
+                className="bg-transparent outline-none text-xs font-bold cursor-pointer"
+              />
+              <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black ml-1">To</span>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => { setToDate(e.target.value); setDateFilterType("Custom"); }}
+                className="bg-transparent outline-none text-xs font-bold cursor-pointer"
+              />
+            </div>
+
+            {(monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) && (
+              <button
+                onClick={() => { setMonthFilter(""); setDateFilterType("All"); setFromDate(""); setToDate(""); }}
+                className="text-xs font-bold text-[#F05E23] underline underline-offset-2 ml-1"
+              >
+                Clear Date Filter
+              </button>
+            )}
+          </div>
         </div>
       )}
 

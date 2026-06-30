@@ -2,6 +2,8 @@ import dbConnect from "@/lib/mongodb";
 import ClientProject from "@/models/ClientProject";
 import { verifyToken } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   try {
     const decoded = verifyToken(req);

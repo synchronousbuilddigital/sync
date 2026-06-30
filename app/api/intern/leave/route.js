@@ -2,6 +2,8 @@ import dbConnect from "@/lib/mongodb";
 import Leave from "@/models/Leave";
 import { verifyToken } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req) {
   try {
     const decoded = verifyToken(req);
