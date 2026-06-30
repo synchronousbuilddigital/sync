@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Smartphone } from "lucide-react";
+import { Download } from "lucide-react";
 
-export default function PWAInstallButton({ isScrolled, isDark, mobile }) {
+export default function PWAInstallButton({ isScrolled, isDark, mobile, floating }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
 
@@ -43,7 +43,7 @@ export default function PWAInstallButton({ isScrolled, isDark, mobile }) {
     }
   };
 
-  if (mobile) {
+  if (mobile && !floating) {
     return (
       <button
         onClick={handleInstall}
@@ -59,20 +59,17 @@ export default function PWAInstallButton({ isScrolled, isDark, mobile }) {
     );
   }
 
+  // Floating bottom corner button
   return (
-    <button
-      onClick={handleInstall}
-      title="Download & Install App"
-      className={`relative overflow-hidden flex items-center gap-2 ${
-        isScrolled ? "px-3.5 py-1.5 rounded-full text-[0.6rem]" : "px-4 py-2.5 rounded-xl text-[0.65rem]"
-      } font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm border ${
-        isDark
-          ? "bg-gradient-to-r from-[#F05E23]/20 to-amber-500/20 border-[#F05E23]/40 text-[#F05E23] hover:bg-[#F05E23] hover:text-white"
-          : "bg-gradient-to-r from-[#F05E23]/10 to-amber-500/10 border-[#F05E23]/30 text-[#F05E23] hover:bg-[#F05E23] hover:text-white"
-      }`}
-    >
-      <Download className="w-3.5 h-3.5 shrink-0" />
-      <span className="hidden xl:inline">Install App</span>
-    </button>
+    <div className="fixed bottom-6 left-6 z-[90]">
+      <button
+        onClick={handleInstall}
+        title="Download & Install App"
+        className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#111] dark:bg-white text-white dark:text-[#111] font-black text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(240,94,35,0.35)] border border-[#F05E23] hover:bg-[#F05E23] hover:text-white dark:hover:bg-[#F05E23] dark:hover:text-white hover:scale-105 active:scale-95 transition-all group"
+      >
+        <Download className="w-4 h-4 shrink-0 text-[#F05E23] group-hover:text-white transition-colors animate-bounce" />
+        <span>Install App</span>
+      </button>
+    </div>
   );
 }

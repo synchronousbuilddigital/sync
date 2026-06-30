@@ -88,7 +88,6 @@ export default function Header() {
 
         {/* Action Button Section Area */}
         <div className="hidden md:flex items-center gap-2 lg:gap-4">
-          <PWAInstallButton isScrolled={isScrolled} isDark={isDark} />
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={toggleTheme}

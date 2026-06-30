@@ -2096,7 +2096,35 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {isAddingPost && (
+        {isAddingPost && (() => {
+          const availableCompanies = Array.from(new Set([
+            ...(companies || []).map(c => typeof c === 'string' ? c : c.name),
+            ...(tasks || []).map(t => t.marketingData?.companyId?.name || t.marketingData?.postTracker?.companyName)
+          ].filter(Boolean))).sort();
+
+          const filteredTasks = (tasks || []).filter(t => {
+            if (!newPostData.company) return true;
+            const cName = t.marketingData?.companyId?.name || t.marketingData?.postTracker?.companyName || "";
+            return cName.toLowerCase() === newPostData.company.toLowerCase();
+          });
+
+          const availableContentIds = Array.from(new Set(filteredTasks.map(t => t.contentId).filter(Boolean))).sort();
+
+          const handleDateChange = (e) => {
+            const val = e.target.value;
+            let dStr = "";
+            let mStr = "";
+            if (val) {
+              const dateObj = new Date(val + "T12:00:00");
+              if (!isNaN(dateObj.getTime())) {
+                dStr = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                mStr = dateObj.toLocaleDateString('en-US', { month: 'long' });
+              }
+            }
+            setNewPostData({ ...newPostData, scheduledDate: val, day: dStr, month: mStr });
+          };
+
+          return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-[#1E1E1E] rounded-3xl p-8 max-w-xl w-full max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/5 shadow-2xl">
               <div className="flex justify-between items-center mb-8">
@@ -2112,25 +2140,67 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Company Name</label>
-                    <input type="text" value={newPostData.company} onChange={(e) => setNewPostData({...newPostData, company: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" placeholder="e.g. Intelexa Ai" required />
+                    <select
+                      value={newPostData.company}
+                      onChange={(e) => setNewPostData({ ...newPostData, company: e.target.value, contentId: "" })}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all appearance-none cursor-pointer text-slate-900 dark:text-white"
+                      required
+                    >
+                      <option value="">Select Company ({availableCompanies.length})</option>
+                      {availableCompanies.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Content ID</label>
-                    <input type="text" value={newPostData.contentId} onChange={(e) => setNewPostData({...newPostData, contentId: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" placeholder="e.g. INT-1206-SP" required />
+                    <select
+                      value={newPostData.contentId}
+                      onChange={(e) => {
+                        const selId = e.target.value;
+                        const matchingTask = (tasks || []).find(t => t.contentId === selId);
+                        let updatedData = { ...newPostData, contentId: selId };
+                        if (matchingTask) {
+                          if (matchingTask.taskType && !newPostData.postType) {
+                            updatedData.postType = matchingTask.taskType;
+                          }
+                          const sDate = matchingTask.marketingData?.postTracker?.scheduledDate || matchingTask.dueDate;
+                          if (sDate && !newPostData.scheduledDate) {
+                            updatedData.scheduledDate = sDate;
+                            const dObj = new Date(sDate + "T12:00:00");
+                            if (!isNaN(dObj.getTime())) {
+                              updatedData.day = dObj.toLocaleDateString('en-US', { weekday: 'long' });
+                              updatedData.month = dObj.toLocaleDateString('en-US', { month: 'long' });
+                            }
+                          }
+                        }
+                        setNewPostData(updatedData);
+                      }}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all appearance-none cursor-pointer text-slate-900 dark:text-white"
+                      required
+                    >
+                      <option value="">Select Content ID ({availableContentIds.length})</option>
+                      {availableContentIds.map(id => (
+                        <option key={id} value={id}>{id}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Scheduled Date</label>
-                    <input type="date" value={newPostData.scheduledDate} onChange={(e) => setNewPostData({...newPostData, scheduledDate: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" required />
+                    <input type="date" value={newPostData.scheduledDate} onChange={handleDateChange} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all text-slate-900 dark:text-white" required />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#F05E23] mb-2">Day (Auto)</label>
+                    <input type="text" readOnly value={newPostData.day || ""} placeholder="Select Date to Auto-Fill Day" className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-black/40 border border-black/5 dark:border-white/5 text-[#F05E23] font-black text-sm outline-none cursor-not-allowed" />
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Post Type</label>
-                    <input type="text" value={newPostData.postType} onChange={(e) => setNewPostData({...newPostData, postType: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" placeholder="e.g. Static Post, Reel" required />
+                    <input type="text" value={newPostData.postType} onChange={(e) => setNewPostData({...newPostData, postType: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all text-slate-900 dark:text-white" placeholder="e.g. Static Post, Reel" required />
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Posting Time</label>
-                    <input type="text" value={newPostData.postingTime} onChange={(e) => setNewPostData({...newPostData, postingTime: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all" placeholder="e.g. 5:00 PM" />
+                    <input type="text" value={newPostData.postingTime} onChange={(e) => setNewPostData({...newPostData, postingTime: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all text-slate-900 dark:text-white" placeholder="e.g. 5:00 PM" />
                   </div>
-
                 </div>
                 <button disabled={isSubmittingPost} type="submit" className="w-full py-5 bg-[#F05E23] text-white rounded-2xl font-black uppercase tracking-widest text-[0.7rem] hover:shadow-[0_0_40px_rgba(240,94,35,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                   {isSubmittingPost ? "Saving to Google Sheets..." : "Add to Post Tracker"}
@@ -2138,7 +2208,8 @@ export default function AdminDashboard() {
               </form>
             </motion.div>
           </div>
-        )}
+          );
+        })()}
 
         {isAssigningTask && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/60">

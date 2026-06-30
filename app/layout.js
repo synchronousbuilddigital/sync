@@ -72,6 +72,8 @@ export const metadata = {
   },
   icons: {
     icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
   },
   manifest: '/manifest.json',
 };
@@ -80,6 +82,7 @@ import { ThemeProvider } from "../components/ThemeContext";
 import { AuthProvider } from "../components/AuthContext";
 import { ChatProvider } from "../components/ChatContext";
 import PWARegister from "../components/PWARegister";
+import PWAInstallButton from "../components/PWAInstallButton";
 
 export default function RootLayout({ children }) {
 
@@ -94,6 +97,7 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
       >
         <PWARegister />
+        <PWAInstallButton floating={true} />
         <ThemeProvider>
           <AuthProvider>
             <ChatProvider>
