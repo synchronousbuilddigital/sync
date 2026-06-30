@@ -1,4 +1,4 @@
-import dbConnect from "@/lib/dbConnect";
+import dbConnect from "@/lib/mongodb";
 import Task from "@/models/Task";
 import { verifyToken } from "@/lib/auth";
 
