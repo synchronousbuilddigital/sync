@@ -892,10 +892,10 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               <AnimatePresence mode="popLayout">
                 {displayedInterns.map((intern) => {
-                  const iTasks = filteredTasks.filter(t => t.internId?._id === intern._id);
-                  const completedMonthly = iTasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length;
-                  const totalMonthly = iTasks.filter(t => isCurrentMonth(t.createdAt)).length || 1;
-                  const rate = Math.round((completedMonthly / totalMonthly) * 100);
+                  const iTasks = filteredTasks.filter(t => t.internId?._id === intern._id || t.internId === intern._id || String(t.internId?._id || t.internId) === String(intern._id));
+                  const completedTasks = iTasks.filter(t => t.status === "Complete").length;
+                  const totalTasks = iTasks.length;
+                  const rate = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
                   const pendingTasks = iTasks.filter(t => t.status !== "Complete").length;
 
                   return (
@@ -925,7 +925,7 @@ export default function AdminDashboard() {
                       <div className="space-y-3">
                         <div className="bg-slate-50 dark:bg-white/5 rounded-lg p-3">
                           <div className="flex justify-between items-center mb-1.5">
-                            <span className="text-[0.55rem] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tight">Performance (Monthly)</span>
+                            <span className="text-[0.55rem] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tight">Performance Rate</span>
                             <span className="#F05E23 font-black text-xs">{rate}%</span>
                           </div>
                           <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
@@ -940,7 +940,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
                             <span className="block text-[0.5rem] font-black text-slate-500 dark:text-slate-400 uppercase mb-0.5">Score</span>
-                            <span className="text-base font-black text-green-600 dark:text-green-400">{completedMonthly}</span>
+                            <span className="text-base font-black text-green-600 dark:text-green-400">{completedTasks}</span>
                           </div>
                         </div>
 
@@ -1061,15 +1061,17 @@ export default function AdminDashboard() {
                     <AnimatePresence mode="popLayout">
                       {taskBuckets[column.key].map((task) => {
                         const isBlocked = ["Need Credentials", "Need Meeting", "Blocked"].includes(task.status);
+                        const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
+                        const isOverdue = task.status !== "Complete" && dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
                         return (
-                          <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} key={task._id} className="rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/3 p-3.5 shadow-sm hover:border-[#F05E23]/20 hover:shadow-md transition-all group">
+                          <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} key={task._id} className={`rounded-xl border ${isOverdue ? 'border-red-500/50 dark:border-red-500/50 bg-red-500/5' : 'border-black/5 dark:border-white/10 bg-white dark:bg-white/3'} p-3.5 shadow-sm hover:border-[#F05E23]/20 hover:shadow-md transition-all group`}>
                             <div className="flex items-start justify-between gap-2 mb-2.5">
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-black text-xs tracking-tight truncate text-slate-900 dark:text-white">{task.title}</h4>
                                 <p className="text-[0.6rem] uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">{task.internId?.name || "Unassigned"}</p>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
-                                <button onClick={() => setEditingTaskModal({ ...task, internId: task.internId?._id || task.internId || "" })} title="Edit Task" className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all">
+                                <button onClick={() => setEditingTaskModal({ ...task, internId: task.internId?._id || task.internId || "", dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "" })} title="Edit Task" className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all">
                                   <Edit className="w-3 h-3" />
                                 </button>
                                 <button onClick={() => { if(confirm("Are you sure you want to delete this task?")) deleteTask(task._id); }} title="Delete Task" className="p-1.5 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-all">
@@ -1143,10 +1145,18 @@ export default function AdminDashboard() {
                               <span className={`text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 rounded border ${task.priority === 'High' ? 'border-red-500/20 text-red-500 bg-red-500/5' : 'border-amber-500/20 text-amber-500 bg-amber-500/5'}`}>
                                 {task.priority || "Medium"}
                               </span>
-                              {task.createdAt && <span className="text-[0.5rem] font-bold uppercase tracking-widest text-slate-400">{new Date(task.createdAt).toLocaleDateString()}</span>}
+                              <div className="flex flex-col items-end">
+                                {dueDateVal && <span className={`text-[0.5rem] font-black uppercase tracking-widest ${isOverdue ? 'text-red-500 animate-pulse font-bold' : 'text-slate-400'}`}>Due: {new Date(dueDateVal).toLocaleDateString()}</span>}
+                                {!dueDateVal && task.createdAt && <span className="text-[0.5rem] font-bold uppercase tracking-widest text-slate-400">{new Date(task.createdAt).toLocaleDateString()}</span>}
+                              </div>
                             </div>
 
                             <div className="flex flex-wrap gap-1.5 mb-3">
+                              {isOverdue && (
+                                <span className="text-[0.45rem] font-black px-1.5 py-1 rounded-md uppercase tracking-widest border border-red-500 text-red-600 dark:text-red-400 bg-red-500/10 animate-pulse flex items-center gap-1">
+                                  🚨 DEADLINE MISSED
+                                </span>
+                              )}
                               <span className={`text-[0.45rem] font-black px-1.5 py-1 rounded-md uppercase tracking-widest border ${isBlocked ? 'border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5' : column.key === 'complete' ? 'border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/5' : column.key === 'working' ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5' : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/5'}`}>
                                 {isBlocked ? 'Blocked' : task.status}
                               </span>
@@ -2975,6 +2985,16 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                 </div>
+
+                <div>
+                  <label className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400 block mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    value={editingTaskModal.dueDate || ""}
+                    onChange={e => setEditingTaskModal({ ...editingTaskModal, dueDate: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-4 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-[#F05E23]"
+                  />
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-3 pt-6 mt-6 border-t border-black/5 dark:border-white/10">
@@ -2988,7 +3008,8 @@ export default function AdminDashboard() {
                       title: editingTaskModal.title,
                       description: editingTaskModal.description,
                       internId: editingTaskModal.internId || undefined,
-                      priority: editingTaskModal.priority
+                      priority: editingTaskModal.priority,
+                      dueDate: editingTaskModal.dueDate ? new Date(editingTaskModal.dueDate).toISOString() : undefined
                     });
                     if (res?.success) {
                       setEditingTaskModal(null);

@@ -196,7 +196,7 @@ export default function InternDashboard() {
 
    const stats = {
       pending: myTasks.filter(t => t.status !== "Complete").length,
-      completedMonthly: myTasks.filter(t => t.status === "Complete" && isCurrentMonth(t.updatedAt || t.createdAt)).length,
+      completedTotal: myTasks.filter(t => t.status === "Complete").length,
    };
 
    return (
@@ -237,8 +237,8 @@ export default function InternDashboard() {
                <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 flex items-center gap-3 sm:gap-6 shadow-sm">
                   <div className="p-3 sm:p-4 bg-green-500/10 rounded-xl sm:rounded-2xl"><CheckCircle2 className="w-5 sm:w-6 h-5 sm:h-6 text-green-500" /></div>
                   <div>
-                     <span className="block text-[0.5rem] sm:text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-1">Monthly Score</span>
-                     <span className="font-black text-xl sm:text-2xl leading-none">{stats.completedMonthly}</span>
+                     <span className="block text-[0.5rem] sm:text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-1">Completed Score</span>
+                     <span className="font-black text-xl sm:text-2xl leading-none">{stats.completedTotal}</span>
                   </div>
                </div>
             </div>
@@ -548,21 +548,29 @@ export default function InternDashboard() {
                               <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {myTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).map((task) => (
-                                 <div key={task._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10">
-                                    <div className="flex justify-between items-start mb-6">
-                                       <div className="flex items-center gap-2">
-                                          <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
-                                             {task.priority}
-                                          </div>
-                                          {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
-                                             <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
-                                                {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
-                                             </div>
-                                          )}
-                                       </div>
-                                    </div>
-                                    <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
+                              {myTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).map((task) => {
+                                 const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
+                                 const isOverdue = dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
+                                 return (
+                                  <div key={task._id} className={`bg-white dark:bg-white/5 border ${isOverdue ? 'border-red-500/60 bg-red-500/5' : 'border-black/5 dark:border-white/10'} rounded-[3rem] p-10`}>
+                                     <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                           <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                              {task.priority}
+                                           </div>
+                                           {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                              <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                                 {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                              </div>
+                                           )}
+                                           {isOverdue && (
+                                              <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white animate-pulse">
+                                                 🚨 DEADLINE MISSED ({new Date(dueDateVal).toLocaleDateString()})
+                                              </div>
+                                           )}
+                                        </div>
+                                     </div>
+                                     <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
                                     <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
                                     {task.marketingData && (
                                        <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
@@ -635,7 +643,8 @@ export default function InternDashboard() {
                                        </button>
                                     </div>
                                  </div>
-                              ))}
+                                 );
+                              })}
                            </div>
                         </section>
                      )}
@@ -648,20 +657,28 @@ export default function InternDashboard() {
                               <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {myTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').map((task) => (
-                                 <div key={task._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10">
-                                    <div className="flex justify-between items-start mb-6">
-                                       <div className="flex items-center gap-2">
-                                          <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
-                                             {task.priority}
-                                          </div>
-                                          {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
-                                             <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
-                                                {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
-                                             </div>
-                                          )}
-                                       </div>
-                                    </div>
+                              {myTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').map((task) => {
+                                 const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
+                                 const isOverdue = dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
+                                 return (
+                                  <div key={task._id} className={`bg-white dark:bg-white/5 border ${isOverdue ? 'border-red-500/60 bg-red-500/5' : 'border-black/5 dark:border-white/10'} rounded-[3rem] p-10`}>
+                                     <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                           <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                              {task.priority}
+                                           </div>
+                                           {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                              <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                                 {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                              </div>
+                                           )}
+                                           {isOverdue && (
+                                              <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white animate-pulse">
+                                                 🚨 DEADLINE MISSED ({new Date(dueDateVal).toLocaleDateString()})
+                                              </div>
+                                           )}
+                                        </div>
+                                     </div>
                                     <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
                                     <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
                                     {task.marketingData && (
@@ -735,7 +752,8 @@ export default function InternDashboard() {
                                        </button>
                                     </div>
                                  </div>
-                              ))}
+                                 );
+                              })}
                            </div>
                         </section>
                      )}
