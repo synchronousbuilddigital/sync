@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthContext";
 import AdminSpreadsheet from "../../components/AdminSpreadsheet";
@@ -39,8 +39,14 @@ export default function AdminDashboard() {
   };
 
   const [prevAdminUnreadCount, setPrevAdminUnreadCount] = useState(0);
+  const isInitialLoadRef = useRef(true);
   useEffect(() => {
     const unreadCount = (tasks || []).filter(hasUnreadAdminMessage).length;
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      setPrevAdminUnreadCount(unreadCount);
+      return;
+    }
     if (unreadCount > prevAdminUnreadCount && showToast) {
       showToast("💬 New Mission Log message received from an intern!", "info");
     }

@@ -9,16 +9,12 @@ export async function PUT(req, { params }) {
     const decoded = verifyToken(req);
     if (!decoded) return Response.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
-    const task = await Task.findById(taskId);
+    const updateField = decoded.role === "admin" ? { hasUnreadAdminChat: false } : { hasUnreadInternChat: false };
+    const task = await Task.findByIdAndUpdate(taskId, { $set: updateField }, { new: true })
+      .populate("clientProjectId", "projectName workflow credentials requirements sop")
+      .populate({ path: "marketingData.companyId", model: "Company", select: "name", strictPopulate: false });
     if (!task) return Response.json({ success: false, message: "Task not found" }, { status: 404 });
 
-    if (decoded.role === "admin") {
-      task.hasUnreadAdminChat = false;
-    } else {
-      task.hasUnreadInternChat = false;
-    }
-
-    await task.save();
     return Response.json({ success: true, task });
   } catch (err) {
     return Response.json({ success: false, message: err.message }, { status: 500 });

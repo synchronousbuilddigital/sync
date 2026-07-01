@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -28,8 +28,14 @@ export default function InternDashboard() {
    };
 
    const [prevInternUnreadCount, setPrevInternUnreadCount] = useState(0);
+   const isInitialLoadRef = useRef(true);
    useEffect(() => {
      const unreadCount = (tasks || []).filter(hasUnreadInternMessage).length;
+     if (isInitialLoadRef.current) {
+       isInitialLoadRef.current = false;
+       setPrevInternUnreadCount(unreadCount);
+       return;
+     }
      if (unreadCount > prevInternUnreadCount && showToast) {
        showToast("💬 New Mission Log message received from Admin HQ!", "info");
      }
@@ -485,7 +491,12 @@ export default function InternDashboard() {
                                                       )}
                                                    </div>
                                                    <h4 className="text-xl font-black uppercase tracking-tighter italic leading-none">{task.title}</h4>
-                                                   <p className="text-[11px] text-slate-500 font-bold italic">&quot;{task.description}&quot;</p>
+                                                   <p className="text-[11px] text-slate-500 font-bold italic mb-3">&quot;{task.description}&quot;</p>
+                                                   {task.dueDate && (
+                                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded-lg text-[0.6rem] font-black uppercase tracking-widest">
+                                                         <span>Due Date: {new Date(task.dueDate).toLocaleDateString()}</span>
+                                                      </div>
+                                                   )}
                                                    {task.marketingData && (
                                                       <div className="mt-4 p-3 bg-white/5 border border-white/10 rounded-xl space-y-2 w-full max-w-sm">
                                                          {task.marketingData.topic && (
@@ -604,7 +615,12 @@ export default function InternDashboard() {
                                         </div>
                                      </div>
                                      <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
-                                    <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
+                                     <p className="text-xs text-slate-500 font-bold italic mb-4">&quot;{task.description}&quot;</p>
+                                     {task.dueDate && (
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-6 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded-lg text-[0.65rem] font-black uppercase tracking-widest">
+                                           <span>Due Date: {new Date(task.dueDate).toLocaleDateString()}</span>
+                                        </div>
+                                     )}
                                     {task.marketingData && (
                                        <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
                                           {task.marketingData.topic && (

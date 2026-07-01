@@ -83,6 +83,7 @@ import { AuthProvider } from "../components/AuthContext";
 import { ChatProvider } from "../components/ChatContext";
 import PWARegister from "../components/PWARegister";
 import PWAInstallButton from "../components/PWAInstallButton";
+import PullToRefresh from "../components/PullToRefresh";
 
 export default function RootLayout({ children }) {
 
@@ -97,6 +98,7 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
       >
         <PWARegister />
+        <PullToRefresh />
         <PWAInstallButton floating={true} />
         <ThemeProvider>
           <AuthProvider>
