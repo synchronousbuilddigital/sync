@@ -15,8 +15,26 @@ import {
 import NotificationToaster from "../../components/NotificationToaster";
 
 export default function InternDashboard() {
-   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData } = useAuth();
+   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData, markChatRead, showToast } = useAuth();
    
+   const hasUnreadInternMessage = (task) => {
+     if (!task) return false;
+     if (task.hasUnreadInternChat === true) return true;
+     if (task.hasUnreadInternChat === undefined && (task.discussion || []).length > 0) {
+       return task.discussion[task.discussion.length - 1]?.sender === 'admin';
+     }
+     return false;
+   };
+
+   const [prevInternUnreadCount, setPrevInternUnreadCount] = useState(0);
+   useEffect(() => {
+     const unreadCount = (tasks || []).filter(hasUnreadInternMessage).length;
+     if (unreadCount > prevInternUnreadCount && prevInternUnreadCount > 0 && showToast) {
+       showToast("💬 New Mission Log message received from Admin HQ!", "info");
+     }
+     setPrevInternUnreadCount(unreadCount);
+   }, [tasks]);
+
    useEffect(() => {
      if (user?.role === "intern" && refreshInternData) {
        refreshInternData();
@@ -29,6 +47,10 @@ export default function InternDashboard() {
    const [isSubmittingPostUpdate, setIsSubmittingPostUpdate] = useState(false);
 
    const [chatTaskId, setChatTaskId] = useState(null);
+   const handleOpenChat = (id) => {
+      setChatTaskId(id);
+      if (id && markChatRead) markChatRead(id);
+   };
    const [note, setNote] = useState("");
    const [marketingForm, setMarketingForm] = useState({ editedLink: "", rawLink: "", editorStatus: "" });
    const [chatMsg, setChatMsg] = useState("");
@@ -72,8 +94,11 @@ export default function InternDashboard() {
       }
    };
 
-   const selectedTask = tasks.find(t => t._id === selectedTaskId);
-   const myTasks = tasks.filter(t => {
+   const safeTasks = Array.isArray(tasks) ? tasks : [];
+   const safeProjects = Array.isArray(internProjects) ? internProjects : [];
+   const selectedTask = safeTasks.find(t => t._id === selectedTaskId);
+   const chatTask = safeTasks.find(t => t._id === chatTaskId);
+   const myTasks = safeTasks.filter(t => {
      if (t.internId?._id !== user?._id && t.internId !== user?._id) return false;
 
      if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
@@ -184,7 +209,7 @@ export default function InternDashboard() {
 
    const handleSendChat = async (e) => {
       e.preventDefault();
-      if (!chatMsg.trim()) return;
+      if (!chatTask || !chatMsg.trim()) return;
       await sendDiscussion(chatTask._id, chatMsg);
       setChatMsg("");
    };
@@ -339,15 +364,15 @@ export default function InternDashboard() {
                {viewMode === "cards" && (<>
                {/* Active Projects */}
                {(taskFilter === "All" || taskFilter === "In Progress" || taskFilter === "Pending") && (
-                  internProjects.length === 0 && myTasks.filter(t => !t.clientProjectId).length === 0 ? (
+                  safeProjects.length === 0 && safeTasks.filter(t => !t.clientProjectId).length === 0 ? (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-24 text-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-[4rem] bg-white/5">
                      <Activity className="w-16 h-16 text-slate-300 mx-auto mb-6 opacity-20" />
                      <p className="text-slate-400 font-black uppercase tracking-widest text-[0.65rem]">No active projects assigned at this time.</p>
                   </motion.div>
                ) : (
                   <div className="space-y-16">
-                     {internProjects.map((project) => {
-                        const projectTasks = myTasks.filter(t => t.clientProjectId?._id === project._id || t.clientProjectId === project._id);
+                     {safeProjects.map((project) => {
+                        const projectTasks = safeTasks.filter(t => t.clientProjectId?._id === project._id || t.clientProjectId === project._id);
                         return (
                            <motion.section
                               key={project._id}
@@ -366,11 +391,11 @@ export default function InternDashboard() {
                                  </div>
                                  <div className="flex items-center gap-6 relative z-10">
                                     <div className="text-right">
-                                       <span className="block text-3xl font-black italic">{Math.round((project.workflow?.filter(s => s.status === 'Complete').length / (project.workflow?.length || 1)) * 100)}%</span>
+                                       <span className="block text-3xl font-black italic">{Math.round(((project.workflow || []).filter(s => s.status === 'Complete').length / ((project.workflow || []).length || 1)) * 100)}%</span>
                                        <span className="text-[8px] font-black uppercase text-green-500 tracking-widest">{project.status}</span>
                                     </div>
                                     <div className="w-1.5 h-12 bg-white/10 rounded-full overflow-hidden">
-                                       <motion.div initial={{ height: 0 }} animate={{ height: `${(project.workflow?.filter(s => s.status === 'Complete').length / (project.workflow?.length || 1)) * 100}%` }} className="w-full bg-[#F05E23] rounded-full" />
+                                       <motion.div initial={{ height: 0 }} animate={{ height: `${((project.workflow || []).filter(s => s.status === 'Complete').length / ((project.workflow || []).length || 1)) * 100}%` }} className="w-full bg-[#F05E23] rounded-full" />
                                     </div>
                                  </div>
                               </div>
@@ -401,11 +426,11 @@ export default function InternDashboard() {
                                        <ListTodo className="w-5 h-5 text-[#F05E23]" />
                                        <h3 className="text-2xl font-black uppercase tracking-tighter italic">Project <span className="text-[#F05E23]">Steps</span></h3>
                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-white/5 px-4 py-1.5 rounded-full ml-auto">
-                                          {project.workflow?.filter(s => s.status === 'Complete').length} / {project.workflow?.length} Done
+                                          {(project.workflow || []).filter(s => s.status === 'Complete').length} / {(project.workflow || []).length} Done
                                        </span>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                       {project.workflow?.map((step, idx) => (
+                                       {(project.workflow || []).map((step, idx) => (
                                           <div key={idx} className="relative p-6 bg-slate-50 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-3xl group">
                                              <div className="flex items-start gap-4">
                                                 <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${step.status === 'Complete' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' :
@@ -475,7 +500,7 @@ export default function InternDashboard() {
                                                                <ExternalLink className="w-3 h-3" /> Edited Output
                                                             </a>
                                                          )}
-                                                         {task.marketingData.platforms && task.marketingData.platforms.length > 0 && (
+                                                         {(task.marketingData.platforms || []).length > 0 && (
                                                             <div className="flex gap-2 pt-1 flex-wrap">
                                                                {task.marketingData.platforms.map(p => (
                                                                   <span key={p} className="text-[0.5rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
@@ -501,8 +526,14 @@ export default function InternDashboard() {
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                    <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[8px] font-black uppercase text-blue-500 hover:scale-110 transition-transform">Update</button>
-                                                   <button onClick={() => setChatTaskId(task._id)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all">
-                                                      <MessageSquare className="w-4 h-4 text-slate-400" />
+                                                   <button onClick={() => handleOpenChat(task._id)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all relative">
+                                                      <MessageSquare className="w-4 h-4" />
+                                                      {hasUnreadInternMessage(task) && (
+                                                         <span className="flex h-2 w-2 absolute top-1 right-1">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
+                                                         </span>
+                                                      )}
                                                    </button>
                                                 </div>
                                              </div>
@@ -542,14 +573,14 @@ export default function InternDashboard() {
                ))}
 
                {/* Pending Tasks */}
-                     {(taskFilter === "All" || taskFilter === "Pending") && myTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).length > 0 && (
+                     {(taskFilter === "All" || taskFilter === "Pending") && safeTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).length > 0 && (
                         <section className="space-y-10 pt-10">
                            <div className="flex items-center gap-6">
                               <h2 className="text-3xl font-black uppercase tracking-tighter italic">Pending <span className="text-red-500">Tasks</span></h2>
                               <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {myTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).map((task) => {
+                              {safeTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).map((task) => {
                                  const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
                                  const isOverdue = dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
                                  return (
@@ -588,7 +619,7 @@ export default function InternDashboard() {
                                                 <ExternalLink className="w-3 h-3" /> Edited Output
                                              </a>
                                           )}
-                                          {task.marketingData.platforms && task.marketingData.platforms.length > 0 && (
+                                          {(task.marketingData.platforms || []).length > 0 && (
                                              <div className="flex gap-2 pt-1 flex-wrap">
                                                 {task.marketingData.platforms.map(p => (
                                                    <span key={p} className="text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
@@ -651,14 +682,14 @@ export default function InternDashboard() {
                      )}
 
                {/* In Progress Tasks */}
-                     {(taskFilter === "All" || taskFilter === "In Progress") && myTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').length > 0 && (
+                     {(taskFilter === "All" || taskFilter === "In Progress") && safeTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').length > 0 && (
                         <section className="space-y-10 pt-10">
                            <div className="flex items-center gap-6">
                               <h2 className="text-3xl font-black uppercase tracking-tighter italic">In-Progress <span className="text-[#F05E23]">Tasks</span></h2>
                               <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {myTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').map((task) => {
+                              {safeTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').map((task) => {
                                  const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
                                  const isOverdue = dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
                                  return (
@@ -697,7 +728,7 @@ export default function InternDashboard() {
                                                 <ExternalLink className="w-3 h-3" /> Edited Output
                                              </a>
                                           )}
-                                          {task.marketingData.platforms && task.marketingData.platforms.length > 0 && (
+                                          {(task.marketingData.platforms || []).length > 0 && (
                                              <div className="flex gap-2 pt-1 flex-wrap">
                                                 {task.marketingData.platforms.map(p => (
                                                    <span key={p} className="text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
@@ -759,15 +790,15 @@ export default function InternDashboard() {
                         </section>
                      )}
 
-                     {(taskFilter === "Post Tracker") && myTasks.filter(t => t.contentId).length > 0 && (
+                     {(taskFilter === "Post Tracker") && safeTasks.filter(t => t.contentId).length > 0 && (
                         <div className="space-y-6 pt-10 border-t border-white/5">
                            <div className="flex items-center gap-4 mb-8">
                               <h2 className="text-3xl font-black uppercase tracking-tighter italic">Post <span className="text-[#F05E23]">Tracker</span></h2>
                               <div className="h-px bg-white/10 flex-1" />
-                              <span className="text-[0.6rem] font-black uppercase tracking-widest text-slate-500">{myTasks.filter(t => t.contentId).length} Tasks</span>
+                              <span className="text-[0.6rem] font-black uppercase tracking-widest text-slate-500">{safeTasks.filter(t => t.contentId).length} Tasks</span>
                            </div>
                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                              {myTasks.filter(t => t.contentId).map((task) => (
+                              {safeTasks.filter(t => t.contentId).map((task) => (
                                  <div key={task._id} className="group bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 hover:border-[#F05E23]/30 transition-all shadow-sm relative overflow-hidden flex flex-col min-h-[320px]">
                                     <div className="flex-1">
                                        <div className="flex justify-between items-start mb-6">
@@ -798,7 +829,7 @@ export default function InternDashboard() {
                                           "{task.description}"
                                        </p>
 
-                                       {task.marketingData?.platforms?.length > 0 && (
+                                       {(task.marketingData?.platforms || []).length > 0 && (
                                           <div className="flex flex-wrap gap-1 mb-6">
                                              {task.marketingData.platforms.map((platform, idx) => (
                                                 <span key={idx} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border bg-blue-500/10 border-blue-500/20 text-blue-400">
@@ -840,8 +871,14 @@ export default function InternDashboard() {
                                        <button onClick={() => setSelectedTaskId(task._id)} className="text-[9px] font-black uppercase text-[#F05E23] hover:text-[#F05E23]/80 transition-colors tracking-widest">
                                           Update
                                        </button>
-                                       <button onClick={() => setChatTaskId(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors">
+                                       <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
                                           <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
+                                          {hasUnreadInternMessage(task) && (
+                                             <span className="flex h-2 w-2 relative">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
+                                             </span>
+                                          )}
                                        </button>
                                     </div>
                                  </div>
@@ -850,14 +887,14 @@ export default function InternDashboard() {
                         </div>
                      )}
 
-                     {(taskFilter === "All" || taskFilter === "Completed") && myTasks.filter(t => t.status === 'Complete').length > 0 && (
+                     {(taskFilter === "All" || taskFilter === "Completed") && safeTasks.filter(t => t.status === 'Complete').length > 0 && (
                         <section className="space-y-10 pt-10">
                            <div className="flex items-center gap-6">
                               <h2 className="text-3xl font-black uppercase tracking-tighter italic">Task <span className="text-green-500">History</span></h2>
                               <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                            </div>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {myTasks.filter(t => t.status === 'Complete').map((task) => (
+                              {safeTasks.filter(t => t.status === 'Complete').map((task) => (
                                  <div key={task._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
                                     <div className="flex justify-between items-start mb-6">
                                        <div className="flex items-center gap-2">
@@ -902,8 +939,14 @@ export default function InternDashboard() {
                                        </div>
                                     )}
                                     <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
-                                       <button onClick={() => setChatTaskId(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors">
+                                       <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
                                           <MessageSquare className="w-4 h-4" /> View Chat ({task.discussion?.length || 0})
+                                          {hasUnreadInternMessage(task) && (
+                                             <span className="flex h-2 w-2 relative">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
+                                             </span>
+                                          )}
                                        </button>
                                     </div>
                                  </div>
@@ -929,7 +972,7 @@ export default function InternDashboard() {
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                              {myTasks.filter(t => taskFilter === "All" || 
+                              {safeTasks.filter(t => taskFilter === "All" || 
                                  (taskFilter === "Pending" && (t.status === "Pending" || t.status === "Need Credentials" || t.status === "Need Meeting")) ||
                                  (taskFilter === "In Progress" && t.status === "In Progress") ||
                                  (taskFilter === "Completed" && t.status === "Complete") ||
@@ -958,7 +1001,7 @@ export default function InternDashboard() {
                                        </span>
                                     </td>
                                     <td className="px-8 py-6">
-                                       {task.marketingData?.platforms?.length > 0 ? (
+                                       {(task.marketingData?.platforms || []).length > 0 ? (
                                           <div className="flex flex-wrap gap-1">
                                              {task.marketingData.platforms.map((p, idx) => (
                                                 <span key={idx} className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border bg-blue-500/10 border-blue-500/20 text-blue-400">
@@ -985,6 +1028,15 @@ export default function InternDashboard() {
                                           <button onClick={() => setSelectedTaskId(task._id)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">
                                              Details
                                           </button>
+                                          <button onClick={() => handleOpenChat(task._id)} className="px-3 py-2 bg-purple-500/20 text-purple-400 hover:bg-purple-500/40 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 relative">
+                                             Chat ({task.discussion?.length || 0})
+                                             {hasUnreadInternMessage(task) && (
+                                                <span className="flex h-2 w-2 relative">
+                                                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                   <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
+                                                </span>
+                                             )}
+                                          </button>
                                           {task.contentId && (
                                              <button onClick={() => {
                                                 setUpdatePostData({
@@ -1003,7 +1055,7 @@ export default function InternDashboard() {
                                     </td>
                                  </tr>
                               ))}
-                              {myTasks.length === 0 && (
+                              {safeTasks.length === 0 && (
                                  <tr>
                                     <td colSpan="6" className="px-8 py-16 text-center">
                                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No tasks found.</p>
@@ -1096,18 +1148,18 @@ export default function InternDashboard() {
                                  { name: "Alex Rivera", score: 2450, rank: 1, avatar: "AR" },
                                  { name: "Priya Sharma", score: 2320, rank: 2, avatar: "PS" },
                                  { name: "Jordan Lee", score: 2180, rank: 3, avatar: "JL" },
-                                 { name: "You", score: 1850, rank: 4, avatar: user.name?.split(' ').map(n=>n[0]).join('') || 'U' }
-                              ].map((user, i) => (
-                                 <div key={i} className={`p-8 rounded-[2.5rem] border flex items-center justify-between transition-all ${user.name === 'You' ? 'bg-[#F05E23] border-[#F05E23] text-white shadow-xl scale-[1.02]' : 'bg-slate-50 dark:bg-white/5 border-black/5 dark:border-white/5'}`}>
+                                 { name: "You", score: 1850, rank: 4, avatar: user?.name ? user.name.split(' ').filter(Boolean).map(n=>n[0]).join('') : 'U' }
+                              ].map((item, i) => (
+                                 <div key={i} className={`p-8 rounded-[2.5rem] border flex items-center justify-between transition-all ${item.name === 'You' ? 'bg-[#F05E23] border-[#F05E23] text-white shadow-xl scale-[1.02]' : 'bg-slate-50 dark:bg-white/5 border-black/5 dark:border-white/5'}`}>
                                     <div className="flex items-center gap-6">
-                                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${user.name === 'You' ? 'bg-white text-[#F05E23]' : 'bg-slate-900 text-white'}`}>{user.rank}</div>
-                                       <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[10px] font-black">{user.avatar}</div>
+                                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${item.name === 'You' ? 'bg-white text-[#F05E23]' : 'bg-slate-900 text-white'}`}>{item.rank}</div>
+                                       <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[10px] font-black">{item.avatar}</div>
                                        <div>
-                                          <h4 className="text-xl font-black uppercase tracking-tighter italic leading-none">{user.name}</h4>
-                                          <span className={`text-[10px] font-black uppercase tracking-widest ${user.name === 'You' ? 'text-white/60' : 'text-slate-400'}`}>Contribution Score</span>
+                                          <h4 className="text-xl font-black uppercase tracking-tighter italic leading-none">{item.name}</h4>
+                                          <span className={`text-[10px] font-black uppercase tracking-widest ${item.name === 'You' ? 'text-white/60' : 'text-slate-400'}`}>Contribution Score</span>
                                        </div>
                                     </div>
-                                    <div className="text-2xl font-black italic">{user.score} XP</div>
+                                    <div className="text-2xl font-black italic">{item.score} XP</div>
                                  </div>
                               ))}
                            </div>

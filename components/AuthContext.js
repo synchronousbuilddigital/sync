@@ -511,17 +511,46 @@ export function AuthProvider({ children }) {
   };
 
   const sendDiscussion = async (taskId, message) => {
-    const res = await fetch(`/api/tasks/${taskId}/discussion`, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ message })
-    });
-    const data = await res.json();
-    if (data.success) fetchTasks(user.role, token);
-    return data;
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/discussion`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      if (data.success && data.task) {
+        setTasks(prev => prev.map(t => t._id === taskId ? data.task : t));
+        fetchTasks(user.role, token);
+      }
+      return data;
+    } catch (err) {
+      console.error("Failed sendDiscussion", err);
+      return { success: false, message: "Transmission error" };
+    }
+  };
+
+  const markChatRead = async (taskId) => {
+    try {
+      setTasks(prev => prev.map(t => {
+        if (t._id === taskId) {
+          return { ...t, hasUnreadAdminChat: false, hasUnreadInternChat: false };
+        }
+        return t;
+      }));
+      const res = await fetch(`/api/tasks/${taskId}/mark-chat-read`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.task) {
+        setTasks(prev => prev.map(t => t._id === taskId ? data.task : t));
+      }
+    } catch (e) {
+      console.error("Failed marking chat read", e);
+    }
   };
 
   const sendInvite = async (internData) => {
@@ -838,7 +867,7 @@ export function AuthProvider({ children }) {
       updateTaskStatus, deleteTask, updateTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
       clientProject, adminClientProjects, internProjects, createClient, createClientProject, 
-      updateClientProject, purgeClientProject, sendClientMessage, sendClientFeed, sendAdminFeed, sendDiscussion, updateClientInfo, generateRoadmap,
+      updateClientProject, purgeClientProject, sendClientMessage, sendClientFeed, sendAdminFeed, sendDiscussion, markChatRead, updateClientInfo, generateRoadmap,
       generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions,
       generateBrandIntel, markFeedbackAsRead, brandManagerReviewTask,
       companies, addCompany, updateCompany, deleteCompany,

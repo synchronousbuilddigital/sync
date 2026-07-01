@@ -25,8 +25,26 @@ export default function AdminDashboard() {
     purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed,
     markFeedbackAsRead, loading, token,
     companies, addCompany, updateCompany, deleteCompany,
-    brandManagers, removeBrandManager, refreshAdminData
+    brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion
   } = useAuth();
+
+  const hasUnreadAdminMessage = (task) => {
+    if (!task) return false;
+    if (task.hasUnreadAdminChat === true) return true;
+    if (task.hasUnreadAdminChat === undefined && (task.discussion || []).length > 0) {
+      return task.discussion[task.discussion.length - 1]?.sender === 'intern';
+    }
+    return false;
+  };
+
+  const [prevAdminUnreadCount, setPrevAdminUnreadCount] = useState(0);
+  useEffect(() => {
+    const unreadCount = (tasks || []).filter(hasUnreadAdminMessage).length;
+    if (unreadCount > prevAdminUnreadCount && prevAdminUnreadCount > 0 && showToast) {
+      showToast("💬 New Mission Log message received from an intern!", "info");
+    }
+    setPrevAdminUnreadCount(unreadCount);
+  }, [tasks]);
 
   const [activeTab, setActiveTab] = useState("interns");
   const [taskCompanyFilter, setTaskCompanyFilter] = useState("");
@@ -402,13 +420,12 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!chatMsg.trim() || !chatTask) return;
 
-    // Placeholder as per structure
-    const res = await { success: false };
-    if (res.success) {
+    const res = await sendDiscussion(chatTask._id, chatMsg);
+    if (res && res.success) {
       setStatusMsg({ type: "success", msg: "Direct Sync active." });
       setChatMsg("");
     } else {
-      setStatusMsg({ type: "error", msg: "Transmission failed." });
+      setStatusMsg({ type: "error", msg: res?.message || "Transmission failed." });
     }
   };
 
@@ -952,11 +969,19 @@ export default function AdminDashboard() {
                           </div>
                           <div className="space-y-1.5 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/20 scrollbar-track-transparent">
                             {iTasks.length > 0 ? [...iTasks].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).map((task) => (
-                              <button key={task._id} onClick={() => setChatTaskId(task._id)} className={`w-full flex items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 transition-all text-left group/task ${task.status === 'Complete' ? 'bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20' : 'bg-slate-50 dark:bg-white/3 hover:bg-slate-100 dark:hover:bg-white/5'}`}>
+                              <button key={task._id} onClick={() => { setChatTaskId(task._id); if(markChatRead) markChatRead(task._id); }} className={`w-full flex items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 transition-all text-left group/task relative ${task.status === 'Complete' ? 'bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/20' : 'bg-slate-50 dark:bg-white/3 hover:bg-slate-100 dark:hover:bg-white/5'}`}>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover/task:text-[#F05E23]">
-                                    {task.title} {task.contentId && <span className="opacity-60 font-normal">({task.contentId})</span>}
-                                  </p>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover/task:text-[#F05E23]">
+                                      {task.title} {task.contentId && <span className="opacity-60 font-normal">({task.contentId})</span>}
+                                    </p>
+                                    {hasUnreadAdminMessage(task) && (
+                                      <span className="flex h-2 w-2 relative shrink-0">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from intern"></span>
+                                      </span>
+                                    )}
+                                  </div>
                                   <span className={`text-[0.45rem] font-black uppercase tracking-tight border px-1 py-0.5 rounded inline-block mt-0.5 ${getTaskTypeClasses(task.taskType || "General")}`}>
                                     {task.taskType || "General"}
                                   </span>
@@ -1189,6 +1214,15 @@ export default function AdminDashboard() {
                                   Review
                                 </button>
                               )}
+                              <button onClick={() => { setChatTaskId(task._id); if(markChatRead) markChatRead(task._id); }} className="px-2.5 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all flex items-center gap-1 shadow-sm relative">
+                                <MessageSquare className="w-2.5 h-2.5" /> Chat ({task.discussion?.length || 0})
+                                {hasUnreadAdminMessage(task) && (
+                                  <span className="flex h-2 w-2 relative ml-0.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from intern"></span>
+                                  </span>
+                                )}
+                              </button>
                               <button onClick={() => setEditingTaskModal({ ...task, internId: task.internId?._id || task.internId || "" })} className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black uppercase tracking-widest text-[0.45rem] transition-all flex items-center gap-1 shadow-sm">
                                 <Edit className="w-2.5 h-2.5" /> Edit
                               </button>

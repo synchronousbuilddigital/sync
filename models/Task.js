@@ -55,7 +55,9 @@ const TaskSchema = new mongoose.Schema({
     sender: { type: String }, // 'admin' or 'intern'
     content: { type: String },
     timestamp: { type: Date, default: Date.now }
-  }]
+  }],
+  hasUnreadAdminChat: { type: Boolean, default: false },
+  hasUnreadInternChat: { type: Boolean, default: false }
 }, { timestamps: true });
 
 export default mongoose.models.Task || mongoose.model("Task", TaskSchema);
