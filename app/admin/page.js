@@ -2239,11 +2239,11 @@ export default function AdminDashboard() {
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-white border border-slate-200 w-full max-w-4xl p-10 sm:p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
+              className="bg-white border border-slate-200 w-full max-w-4xl p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] shadow-2xl relative overflow-x-hidden max-h-[90vh] overflow-y-auto scrollbar-hide"
             >
               <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#F05E23]/5 rounded-full blur-[100px]" />
 
-              <div className="flex justify-between items-start mb-12">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8 sm:mb-12">
                 <div>
                   <h2 className="text-5xl font-black uppercase tracking-tighter italic text-slate-900 leading-none">Task <span className="text-[#F05E23]">Matrix</span></h2>
                   <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mt-4">Multi-Assignment Deployment Console</p>
@@ -2477,43 +2477,50 @@ export default function AdminDashboard() {
 
                   <div className="space-y-8">
                     <div className="space-y-4">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Custom Objectives</label>
-                      <div className="flex gap-3">
-                        <input
-                          type="text"
-                          value={newTask.contentId || ''}
-                          onChange={e => setNewTask({ ...newTask, contentId: e.target.value })}
-                          placeholder="SYN1 (Optional)"
-                          className="w-1/3 bg-slate-50 border border-slate-200 rounded-2xl py-5 px-6 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800"
-                        />
-                        <input
-                          type="text"
-                          value={customTaskInput}
-                          onChange={e => setCustomTaskInput(e.target.value)}
-                          placeholder="Enter task title..."
-                          className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (customTaskInput.trim()) {
-                              setCustomTasks([...customTasks, customTaskInput.trim()]);
-                              setCustomTaskInput("");
-                            }
-                          }}
-                          className="p-5 bg-black text-white rounded-2xl hover:bg-slate-800 transition-all shadow-xl"
-                        >
-                          <Plus className="w-5 h-5" />
-                        </button>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="sm:col-span-1 space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block">Content ID</label>
+                          <input
+                            type="text"
+                            value={newTask.contentId || ''}
+                            onChange={e => setNewTask({ ...newTask, contentId: e.target.value })}
+                            placeholder="e.g. SYN1"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800"
+                          />
+                        </div>
+                        <div className="sm:col-span-2 space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block">Custom Objective Title</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={customTaskInput}
+                              onChange={e => setCustomTaskInput(e.target.value)}
+                              placeholder="Enter task title..."
+                              className="min-w-0 flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (customTaskInput.trim()) {
+                                  setCustomTasks([...customTasks, customTaskInput.trim()]);
+                                  setCustomTaskInput("");
+                                }
+                              }}
+                              className="shrink-0 px-5 py-4 bg-black text-white rounded-2xl hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center"
+                            >
+                              <Plus className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-3 p-6 bg-slate-50 border border-slate-200 rounded-3xl max-h-60 overflow-y-auto scrollbar-hide">
+                      <div className="space-y-3 p-5 bg-slate-50 border border-slate-200 rounded-3xl max-h-60 overflow-y-auto scrollbar-hide">
                         {customTasks.map((task, i) => (
                           <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                            <span className="text-xs font-bold uppercase tracking-tight text-slate-700">{task}</span>
-                            <button type="button" onClick={() => setCustomTasks(customTasks.filter((_, idx) => idx !== i))} className="text-red-500/40 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                            <span className="text-xs font-bold uppercase tracking-tight text-slate-700 break-all">{task}</span>
+                            <button type="button" onClick={() => setCustomTasks(customTasks.filter((_, idx) => idx !== i))} className="shrink-0 ml-2 text-red-500/40 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         ))}
-                        {customTasks.length === 0 && <p className="text-[10px] font-black uppercase text-slate-300 text-center py-10 tracking-widest">No custom tasks added</p>}
+                        {customTasks.length === 0 && <p className="text-[10px] font-black uppercase text-slate-300 text-center py-6 tracking-widest">No custom tasks added</p>}
                       </div>
                     </div>
 
@@ -2554,12 +2561,12 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="flex gap-4 pt-10 border-t border-slate-100">
-                  <button type="button" onClick={() => setIsAssigningTask(false)} className="flex-1 py-6 rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] border-2 border-slate-200 text-slate-400 hover:bg-slate-50 transition-all italic">Abort Deployment</button>
+                <div className="flex flex-col sm:flex-row gap-4 pt-8 sm:pt-10 border-t border-slate-100">
+                  <button type="button" onClick={() => setIsAssigningTask(false)} className="w-full sm:flex-1 py-5 sm:py-6 rounded-2xl sm:rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] border-2 border-slate-200 text-slate-400 hover:bg-slate-50 transition-all italic">Abort Deployment</button>
                   <button
                     type="submit"
                     disabled={loading || (selectedSteps.length === 0 && customTasks.length === 0)}
-                    className="flex-[2] bg-[#F05E23] text-white py-6 rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] shadow-2xl shadow-[#F05E23]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 italic"
+                    className="w-full sm:flex-[2] bg-[#F05E23] text-white py-5 sm:py-6 rounded-2xl sm:rounded-[2rem] font-black uppercase text-[0.7rem] tracking-[0.2em] shadow-2xl shadow-[#F05E23]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 italic"
                   >
                     Deploy {selectedSteps.length + customTasks.length} Matrix Tasks
                   </button>
