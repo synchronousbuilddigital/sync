@@ -2,10 +2,62 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import NotificationToaster from "./NotificationToaster";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+  const [globalToast, setGlobalToast] = useState({ type: "", msg: "" });
+
+  const requestNotificationPermission = useCallback(async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm === "granted" && "serviceWorker" in navigator) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.showNotification("Mobile Notifications Enabled 🔔", {
+                body: "You will now receive instant push alerts on your phone.",
+                icon: "/logo.png",
+                badge: "/logo.png",
+                vibrate: [200, 100, 200]
+              });
+            });
+          }
+          return perm;
+        } catch (e) {
+          console.warn("Notification permission error:", e);
+        }
+      }
+      return Notification.permission;
+    }
+    return "unsupported";
+  }, []);
+
+  const showToast = useCallback((msg, type = "success") => {
+    setGlobalToast({ type, msg });
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "SHOW_NOTIFICATION",
+          title: type === "error" ? "System Alert ⚠" : "Synchronous Build HQ",
+          options: {
+            body: msg,
+            icon: "/logo.png",
+            badge: "/logo.png",
+            tag: "sync-notification-" + Date.now()
+          }
+        });
+      } else {
+        try {
+          new Notification(type === "error" ? "System Alert ⚠" : "Synchronous Build HQ", {
+            body: msg,
+            icon: "/logo.png"
+          });
+        } catch (e) {}
+      }
+    }
+  }, []);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -334,6 +386,7 @@ export function AuthProvider({ children }) {
         setToken(data.token);
         localStorage.setItem("sync_user", JSON.stringify(data.user));
         localStorage.setItem("sync_token", data.token);
+        setTimeout(() => requestNotificationPermission(), 1500);
         
         if (data.user.mustChangePassword) {
           router.push("/change-password");
@@ -780,7 +833,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{ 
-      user, token, loading, login, logout, changePassword,
+      user, token, loading, login, logout, changePassword, showToast, requestNotificationPermission,
       interns, tasks, taskStore, fetchTasks, fetchInterns, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, refreshAdminData, refreshInternData, refreshBrandData, refreshClientData, companyName, leaves, projects, addIntern, removeIntern, assignTask, 
       updateTaskStatus, deleteTask, updateTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
@@ -792,6 +845,7 @@ export function AuthProvider({ children }) {
       brandManagers, removeBrandManager
     }}>
       {children}
+      <NotificationToaster statusMsg={globalToast} onClose={() => setGlobalToast({ type: "", msg: "" })} />
     </AuthContext.Provider>
   );
 }

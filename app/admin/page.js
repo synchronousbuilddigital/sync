@@ -13,6 +13,7 @@ import {
   Globe, ChevronRight, Trophy, Table
 } from "lucide-react";
 import AdminHiring from "../../components/AdminHiring";
+import NotificationToaster from "../../components/NotificationToaster";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -3047,11 +3048,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {statusMsg.msg && (
-          <motion.div key="status-notification" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-200 p-6 rounded-3xl shadow-2xl flex items-center gap-4 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white' : 'bg-red-500 border-red-400 text-white'}`}>
-            <span className="font-black text-[0.7rem] uppercase tracking-widest">{statusMsg.msg}</span>
-          </motion.div>
-        )}
+        <NotificationToaster statusMsg={statusMsg} onClose={() => setStatusMsg({ type: "", msg: "" })} />
       </AnimatePresence>
     </div>
   );

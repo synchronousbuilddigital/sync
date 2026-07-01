@@ -6,6 +6,7 @@ import {
   CheckCircle2, Clock, Layout, Activity, ChevronDown, ChevronUp, Zap, MessageSquare, AlertTriangle, HelpCircle, Send
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationToaster from "@/components/NotificationToaster";
 
 export default function PublicBrandPage() {
   const params = useParams();
@@ -15,6 +16,7 @@ export default function PublicBrandPage() {
   const [feedback, setFeedback] = useState({ category: "Idea", content: "" });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [toastMsg, setToastMsg] = useState({ type: "", msg: "" });
 
   const submitFeedback = async (e) => {
     e.preventDefault();
@@ -287,7 +289,7 @@ export default function PublicBrandPage() {
                   });
                   const data = await res.json();
                   if (data.success) {
-                    alert("Technical Matrix Synchronized Successfully.");
+                    setToastMsg({ type: "success", msg: "Technical Matrix Synchronized Successfully." });
                     e.target.reset();
                   }
                 } catch (err) {
@@ -387,11 +389,11 @@ export default function PublicBrandPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="pt-24 pb-12 text-center border-t border-white/5">
            <p className="text-[10px] font-black uppercase tracking-[0.8em] text-white/20 italic">Synchronous Build Digital Matrix</p>
         </div>
       </div>
+      <NotificationToaster statusMsg={toastMsg} onClose={() => setToastMsg({ type: "", msg: "" })} />
     </div>
   );
 }

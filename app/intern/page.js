@@ -12,6 +12,7 @@ import {
    Cpu as CpuIcon, Trophy, BookOpen, Newspaper, Box, 
    Sparkles, Target, Compass, HardDrive, Timer, X
 } from "lucide-react";
+import NotificationToaster from "../../components/NotificationToaster";
 
 export default function InternDashboard() {
    const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData } = useAuth();
@@ -61,11 +62,11 @@ export default function InternDashboard() {
             window.location.reload();
          } else {
             const data = await res.json();
-            alert(data.error || "Failed to update post");
+            setStatusMsg({ type: "error", msg: data.error || "Failed to update post" });
          }
       } catch (error) {
          console.error("Error updating post:", error);
-         alert("An error occurred");
+         setStatusMsg({ type: "error", msg: "An error occurred while updating post" });
       } finally {
          setIsSubmittingPostUpdate(false);
       }
@@ -1244,14 +1245,7 @@ export default function InternDashboard() {
             )}
          </AnimatePresence>
 
-         <AnimatePresence>
-            {statusMsg.msg && (
-               <motion.div key="status-notification" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className={`fixed bottom-10 right-10 z-[200] p-8 rounded-[2.5rem] shadow-2xl flex items-center gap-5 border ${statusMsg.type === 'success' ? 'bg-green-500 border-green-400 text-white shadow-green-500/30' : 'bg-red-500 border-red-400 text-white shadow-red-500/30'}`}>
-                  {statusMsg.type === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
-                  <span className="font-black text-[0.75rem] uppercase tracking-[0.2em] italic">{statusMsg.msg}</span>
-               </motion.div>
-            )}
-         </AnimatePresence>
+         <NotificationToaster statusMsg={statusMsg} onClose={() => setStatusMsg({ type: "", msg: "" })} />
 
          {isUpdatingPost && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">

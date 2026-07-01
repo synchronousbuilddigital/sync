@@ -10,6 +10,7 @@ import {
   Terminal, Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationToaster from "@/components/NotificationToaster";
 
 export default function ProjectMissionControl() {
   const { id } = useParams();
@@ -685,6 +686,7 @@ export default function ProjectMissionControl() {
           </div>
         </div>
       </div>
+      <NotificationToaster statusMsg={statusMsg} onClose={() => setStatusMsg({ type: "", msg: "" })} />
     </div>
   );
 }

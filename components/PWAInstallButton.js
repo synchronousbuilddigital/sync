@@ -1,14 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download } from "lucide-react";
+import { Download, Bell } from "lucide-react";
 
 export default function PWAInstallButton({ isScrolled, isDark, mobile, floating }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
 
+  const [notifPerm, setNotifPerm] = useState("default");
+
   useEffect(() => {
     if (typeof window !== "undefined") {
+      if ("Notification" in window) {
+        setNotifPerm(Notification.permission);
+      }
       if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
         setIsStandalone(true);
       }
@@ -23,7 +28,39 @@ export default function PWAInstallButton({ isScrolled, isDark, mobile, floating 
     }
   }, []);
 
-  if (isStandalone) return null;
+  const handleEnableNotifs = async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const perm = await Notification.requestPermission();
+      setNotifPerm(perm);
+      if (perm === "granted" && "serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification("Notifications Enabled 🔔", {
+            body: "You will now receive native alerts on your mobile device.",
+            icon: "/logo.png",
+            vibrate: [200, 100, 200]
+          });
+        });
+      }
+    }
+  };
+
+  if (isStandalone) {
+    if (notifPerm === "default") {
+      return (
+        <div className="fixed bottom-6 left-6 z-[90]">
+          <button
+            onClick={handleEnableNotifs}
+            title="Enable Phone Notifications"
+            className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#111] dark:bg-white text-white dark:text-[#111] font-black text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(240,94,35,0.35)] border border-[#F05E23] hover:bg-[#F05E23] hover:text-white transition-all group"
+          >
+            <Bell className="w-4 h-4 shrink-0 text-[#F05E23] group-hover:text-white animate-bounce" />
+            <span>Enable Notifications</span>
+          </button>
+        </div>
+      );
+    }
+    return null;
+  }
 
   const handleInstall = async () => {
     if (deferredPrompt) {
@@ -61,7 +98,17 @@ export default function PWAInstallButton({ isScrolled, isDark, mobile, floating 
 
   // Floating bottom corner button
   return (
-    <div className="fixed bottom-6 left-6 z-[90]">
+    <div className="fixed bottom-6 left-6 z-[90] flex flex-col gap-2">
+      {notifPerm === "default" && (
+        <button
+          onClick={handleEnableNotifs}
+          title="Enable Phone Notifications"
+          className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#111] dark:bg-white text-white dark:text-[#111] font-black text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(240,94,35,0.35)] border border-[#F05E23] hover:bg-[#F05E23] hover:text-white transition-all group"
+        >
+          <Bell className="w-4 h-4 shrink-0 text-[#F05E23] group-hover:text-white animate-bounce" />
+          <span>Enable Alerts</span>
+        </button>
+      )}
       <button
         onClick={handleInstall}
         title="Download & Install App"
