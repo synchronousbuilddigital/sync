@@ -127,7 +127,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (isAssigningTask && !newTask.contentId) {
+    if (isAssigningTask && (!newTask.contentId || newTask.contentId === 'SYN1')) {
       let maxId = 0;
       (tasks || []).forEach(t => {
         if (t.contentId && typeof t.contentId === 'string') {
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
         setNewTask(current => ({ ...current, contentId: `SYN1` }));
       }
     }
-  }, [isAssigningTask]);
+  }, [isAssigningTask, tasks]);
 
   useEffect(() => {
     if (user?.role === "admin") {
