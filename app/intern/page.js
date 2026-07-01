@@ -18,7 +18,8 @@ export default function InternDashboard() {
    const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData, markChatRead, showToast } = useAuth();
    
    const hasUnreadInternMessage = (task) => {
-     if (!task) return false;
+     if (!task || task._id === chatTaskId) return false;
+     if (task.hasUnreadInternChat === false) return false;
      if (task.hasUnreadInternChat === true) return true;
      if (task.hasUnreadInternChat === undefined && (task.discussion || []).length > 0) {
        return task.discussion[task.discussion.length - 1]?.sender === 'admin';
@@ -29,7 +30,7 @@ export default function InternDashboard() {
    const [prevInternUnreadCount, setPrevInternUnreadCount] = useState(0);
    useEffect(() => {
      const unreadCount = (tasks || []).filter(hasUnreadInternMessage).length;
-     if (unreadCount > prevInternUnreadCount && prevInternUnreadCount > 0 && showToast) {
+     if (unreadCount > prevInternUnreadCount && showToast) {
        showToast("💬 New Mission Log message received from Admin HQ!", "info");
      }
      setPrevInternUnreadCount(unreadCount);
@@ -670,8 +671,14 @@ export default function InternDashboard() {
                                     )}
                                     <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
                                        <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
-                                       <button onClick={() => setChatTaskId(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2">
+                                       <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
                                           <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
+                                          {hasUnreadInternMessage(task) && (
+                                             <span className="flex h-2 w-2 relative">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin HQ"></span>
+                                             </span>
+                                          )}
                                        </button>
                                     </div>
                                  </div>
@@ -779,8 +786,14 @@ export default function InternDashboard() {
                                     )}
                                     <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
                                        <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
-                                       <button onClick={() => setChatTaskId(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2">
+                                       <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
                                           <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
+                                          {hasUnreadInternMessage(task) && (
+                                             <span className="flex h-2 w-2 relative">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin HQ"></span>
+                                             </span>
+                                          )}
                                        </button>
                                     </div>
                                  </div>
@@ -1222,16 +1235,20 @@ export default function InternDashboard() {
             )}
 
             {chatTask && (
-               <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
-                  <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0E] rounded-[4rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[85vh]">
-                     <div className="p-10 bg-[#F05E23] text-white flex items-center justify-between">
-                        <div className="flex items-center gap-6">
-                           <div className="p-4 bg-white/20 rounded-[1.5rem]"><MessageSquare className="w-8 h-8" /></div>
-                           <div>
-                              <h2 className="text-2xl font-black uppercase tracking-tighter italic">Project <span className="opacity-60">Chat</span></h2>
-                              <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Updating: {chatTask.title}</p>
-                              {chatTask.marketingData && (
-                                <div className="flex gap-4 mt-2 bg-black/20 px-3 py-1.5 rounded-lg w-max">
+               <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 backdrop-blur-3xl bg-black/80">
+                  <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[4rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[85vh] max-h-[700px]">
+                     <div className="p-5 sm:p-8 bg-[#F05E23] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
+                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
+                           <div className="p-2.5 sm:p-3 bg-white/20 rounded-2xl shrink-0 mt-0.5 sm:mt-0"><MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" /></div>
+                           <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                 <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight truncate">Mission <span className="opacity-60">Log</span></h2>
+                                 <span className="px-2 py-0.5 bg-white/20 rounded-md text-[0.55rem] font-black uppercase tracking-widest">{chatTask?.status || "Pending"}</span>
+                                 <span className="px-2 py-0.5 bg-black/20 rounded-md text-[0.55rem] font-black uppercase tracking-widest">{chatTask?.priority || "Normal"}</span>
+                              </div>
+                              <p className="text-[0.65rem] sm:text-xs font-bold uppercase tracking-wide text-white/90 truncate mt-1">Task: {chatTask?.title}</p>
+                              {chatTask?.marketingData && (
+                                <div className="flex flex-wrap gap-2 mt-2 bg-black/20 px-2.5 py-1 rounded-lg w-max max-w-full">
                                   {chatTask.marketingData.rawLink && (
                                     <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
                                       <ExternalLink className="w-3 h-3" /> Raw Asset
@@ -1246,22 +1263,31 @@ export default function InternDashboard() {
                               )}
                            </div>
                         </div>
-                        <button onClick={() => setChatTaskId(null)} className="p-3 hover:bg-white/20 rounded-2xl transition-all"><Plus className="w-8 h-8 rotate-45" /></button>
+                        <button onClick={() => setChatTaskId(null)} className="p-2 sm:p-3 hover:bg-white/20 rounded-2xl transition-all self-end sm:self-auto"><Plus className="w-6 h-6 sm:w-8 sm:h-8 rotate-45" /></button>
                      </div>
-                     <div className="flex-grow p-10 overflow-y-auto space-y-8 scrollbar-hide bg-slate-50 dark:bg-transparent">
+                     <div className="flex-grow p-4 sm:p-8 overflow-y-auto space-y-4 sm:space-y-6 scrollbar-hide bg-slate-50 dark:bg-transparent">
                         {(chatTask.discussion || []).map((msg, idx) => (
                            <div key={idx} className={`flex flex-col ${msg.sender === 'intern' ? 'items-end' : 'items-start'}`}>
-                              <span className="text-[0.6rem] font-black uppercase tracking-[0.3em] text-slate-400 mb-2 px-3">{msg.sender === 'intern' ? 'MY UPDATE' : 'TEAM UPDATE'} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                              <div className={`max-w-[85%] p-6 rounded-[2rem] font-bold text-sm shadow-xl ${msg.sender === 'intern' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-tl-none text-slate-700 dark:text-white'}`}>
+                              <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-1 px-2">
+                                 {msg.sender === 'intern' ? 'YOU (MY UPDATE)' : 'ADMIN HQ'} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <div className={`max-w-[85%] sm:max-w-[80%] p-4 sm:p-5 rounded-2xl sm:rounded-3xl font-bold text-xs sm:text-sm shadow-xl break-words ${msg.sender === 'intern' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-tl-none text-slate-700 dark:text-white'}`}>
                                  {msg.content}
                               </div>
                            </div>
                         ))}
+                        {(chatTask.discussion || []).length === 0 && (
+                           <div className="h-full flex flex-col items-center justify-center opacity-30 py-16 text-center">
+                              <MessageSquare className="w-12 h-12 mb-3" />
+                              <p className="font-black uppercase tracking-widest text-xs">No discussion yet.</p>
+                              <p className="text-[10px] font-bold text-slate-500 mt-1">Send a message to Admin HQ below.</p>
+                           </div>
+                        )}
                      </div>
-                     <form onSubmit={handleSendChat} className="p-10 border-t border-black/5 dark:border-white/10 bg-white dark:bg-black/20">
-                        <div className="flex gap-5">
-                           <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Type a message..." className="flex-grow bg-slate-50 dark:bg-white/5 border-2 border-black/5 dark:border-white/5 rounded-2xl px-8 py-5 outline-none focus:border-[#F05E23] font-bold text-sm italic" />
-                           <button type="submit" className="bg-[#F05E23] text-white p-5 rounded-2xl shadow-2xl shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-7 h-7" /></button>
+                     <form onSubmit={handleSendChat} className="p-4 sm:p-6 border-t border-black/5 dark:border-white/10 bg-white dark:bg-black/20 shrink-0">
+                        <div className="flex gap-2 sm:gap-4">
+                           <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Type a message to Admin HQ..." className="min-w-0 grow bg-slate-50 dark:bg-white/5 border-2 border-black/5 dark:border-white/5 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 outline-none focus:border-[#F05E23] font-bold text-xs sm:text-sm italic" />
+                           <button type="submit" className="bg-[#F05E23] text-white p-3 sm:p-4 rounded-2xl shadow-2xl shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all shrink-0"><Send className="w-5 h-5 sm:w-6 sm:h-6" /></button>
                         </div>
                      </form>
                   </motion.div>

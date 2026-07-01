@@ -29,7 +29,8 @@ export default function AdminDashboard() {
   } = useAuth();
 
   const hasUnreadAdminMessage = (task) => {
-    if (!task) return false;
+    if (!task || task._id === chatTaskId) return false;
+    if (task.hasUnreadAdminChat === false) return false;
     if (task.hasUnreadAdminChat === true) return true;
     if (task.hasUnreadAdminChat === undefined && (task.discussion || []).length > 0) {
       return task.discussion[task.discussion.length - 1]?.sender === 'intern';
@@ -40,7 +41,7 @@ export default function AdminDashboard() {
   const [prevAdminUnreadCount, setPrevAdminUnreadCount] = useState(0);
   useEffect(() => {
     const unreadCount = (tasks || []).filter(hasUnreadAdminMessage).length;
-    if (unreadCount > prevAdminUnreadCount && prevAdminUnreadCount > 0 && showToast) {
+    if (unreadCount > prevAdminUnreadCount && showToast) {
       showToast("💬 New Mission Log message received from an intern!", "info");
     }
     setPrevAdminUnreadCount(unreadCount);
@@ -2610,16 +2611,23 @@ export default function AdminDashboard() {
           </div>
         )}
         {chatTaskId && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-            <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[80vh]">
-              <div className="p-8 bg-[#F05E23] text-white flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-2xl"><MessageSquare className="w-6 h-6" /></div>
-                  <div>
-                    <h2 className="text-xl font-black uppercase tracking-tight">Mission <span className="opacity-60">Log</span></h2>
-                    <p className="text-[0.6rem] font-black uppercase tracking-widest opacity-60">Active Channel: {chatTask?.title}</p>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 backdrop-blur-xl bg-black/60">
+            <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[2rem] sm:rounded-[3rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[85vh] max-h-[700px]">
+              <div className="p-5 sm:p-8 bg-[#F05E23] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
+                  <div className="p-2.5 sm:p-3 bg-white/20 rounded-2xl shrink-0 mt-0.5 sm:mt-0"><MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight truncate">Mission <span className="opacity-60">Log</span></h2>
+                      <span className="px-2 py-0.5 bg-white/20 rounded-md text-[0.55rem] font-black uppercase tracking-widest">{chatTask?.status || "Pending"}</span>
+                      <span className="px-2 py-0.5 bg-black/20 rounded-md text-[0.55rem] font-black uppercase tracking-widest">{chatTask?.priority || "Normal"}</span>
+                    </div>
+                    <p className="text-[0.65rem] sm:text-xs font-bold uppercase tracking-wide text-white/90 truncate mt-1">Task: {chatTask?.title}</p>
+                    <p className="text-[0.55rem] font-black uppercase tracking-widest text-white/70 mt-0.5 truncate">
+                      Intern: {chatTask?.internId?.name || "Unassigned"} {chatTask?.internId?.department ? `(${chatTask?.internId?.department})` : ""}
+                    </p>
                     {chatTask?.marketingData && (
-                      <div className="flex gap-4 mt-2 bg-black/20 px-3 py-1.5 rounded-lg w-max">
+                      <div className="flex flex-wrap gap-2 mt-2 bg-black/20 px-2.5 py-1 rounded-lg w-max max-w-full">
                         {chatTask.marketingData.rawLink && (
                           <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
                             <ExternalLink className="w-3 h-3" /> Raw Asset
@@ -2634,38 +2642,41 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { setChatTaskId(null); setEditingTaskModal({ ...chatTask, internId: chatTask?.internId?._id || chatTask?.internId || "" }); }} title="Edit Task" className="p-2.5 bg-white/20 hover:bg-white/30 rounded-xl transition-all flex items-center gap-1.5 text-xs font-black uppercase tracking-widest">
-                    <Edit className="w-4 h-4" /> Edit Task
+                <div className="flex items-center justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/20 shrink-0">
+                  <button onClick={() => { setChatTaskId(null); setEditingTaskModal({ ...chatTask, internId: chatTask?.internId?._id || chatTask?.internId || "" }); }} title="Edit Task" className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all flex items-center gap-1 text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                    <Edit className="w-3.5 h-3.5" /> Edit
                   </button>
-                  <button onClick={() => { if(confirm("Are you sure you want to delete this task?")) { deleteTask(chatTask?._id); setChatTaskId(null); } }} title="Delete Task" className="p-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all flex items-center gap-1.5 text-xs font-black uppercase tracking-widest">
-                    <Trash2 className="w-4 h-4" /> Delete
+                  <button onClick={() => { if(confirm("Are you sure you want to delete this task?")) { deleteTask(chatTask?._id); setChatTaskId(null); } }} title="Delete Task" className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all flex items-center gap-1 text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>
-                  <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all ml-1"><PlusCircle className="w-6 h-6 rotate-45" /></button>
+                  <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all ml-auto sm:ml-1"><PlusCircle className="w-6 h-6 rotate-45" /></button>
                 </div>
               </div>
 
-              <div className="grow p-8 overflow-y-auto space-y-6 scrollbar-hide bg-slate-50">
+              <div className="grow p-4 sm:p-8 overflow-y-auto space-y-4 sm:space-y-6 scrollbar-hide bg-slate-50">
                 {(chatTask?.discussion || []).map((msg, idx) => (
                   <div key={idx} className={`flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}`}>
-                    <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-2 px-2">{msg.sender === 'admin' ? 'YOU' : 'INTERN'} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    <div className={`max-w-[80%] p-5 rounded-3xl font-bold text-sm shadow-sm ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white border border-slate-200 rounded-tl-none text-slate-700'}`}>
+                    <span className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 mb-1 px-2">
+                      {msg.sender === 'admin' ? 'YOU (ADMIN)' : (chatTask?.internId?.name || 'INTERN')} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <div className={`max-w-[85%] sm:max-w-[80%] p-4 sm:p-5 rounded-2xl sm:rounded-3xl font-bold text-xs sm:text-sm shadow-sm break-words ${msg.sender === 'admin' ? 'bg-[#F05E23] text-white rounded-tr-none' : 'bg-white border border-slate-200 rounded-tl-none text-slate-700'}`}>
                       {msg.content}
                     </div>
                   </div>
                 ))}
                 {(chatTask?.discussion || []).length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
-                    <MessageSquare className="w-16 h-16 mb-4" />
-                    <p className="font-black uppercase tracking-widest text-xs">Awaiting operational dialogue.</p>
+                  <div className="h-full flex flex-col items-center justify-center opacity-30 py-16 text-center">
+                    <MessageSquare className="w-12 h-12 mb-3" />
+                    <p className="font-black uppercase tracking-widest text-xs">No discussion yet.</p>
+                    <p className="text-[10px] font-bold text-slate-500 mt-1">Start operational dialogue below.</p>
                   </div>
                 )}
               </div>
 
-              <form onSubmit={handleSendChat} className="p-8 border-t border-slate-200 bg-white">
-                <div className="flex gap-4">
-                  <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Enter briefing intel..." className="grow bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-[#F05E23] font-bold text-sm" />
-                  <button type="submit" className="bg-[#F05E23] text-white p-4 rounded-2xl shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
+              <form onSubmit={handleSendChat} className="p-4 sm:p-6 border-t border-slate-200 bg-white shrink-0">
+                <div className="flex gap-2 sm:gap-4">
+                  <input type="text" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Type a message..." className="min-w-0 grow bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 outline-none focus:border-[#F05E23] font-bold text-xs sm:text-sm" />
+                  <button type="submit" className="bg-[#F05E23] text-white p-3 sm:p-4 rounded-2xl shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all shrink-0"><Send className="w-5 h-5 sm:w-6 sm:h-6" /></button>
                 </div>
               </form>
             </motion.div>

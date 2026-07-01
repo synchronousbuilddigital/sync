@@ -522,7 +522,17 @@ export function AuthProvider({ children }) {
       });
       const data = await res.json();
       if (data.success && data.task) {
-        setTasks(prev => prev.map(t => t._id === taskId ? data.task : t));
+        setTasks(prev => prev.map(t => {
+          if (t._id === taskId) {
+            return {
+              ...t,
+              ...data.task,
+              clientProjectId: t.clientProjectId || data.task.clientProjectId,
+              marketingData: { ...(t.marketingData || {}), ...(data.task.marketingData || {}) }
+            };
+          }
+          return t;
+        }));
         fetchTasks(user.role, token);
       }
       return data;
@@ -546,7 +556,19 @@ export function AuthProvider({ children }) {
       });
       const data = await res.json();
       if (data.success && data.task) {
-        setTasks(prev => prev.map(t => t._id === taskId ? data.task : t));
+        setTasks(prev => prev.map(t => {
+          if (t._id === taskId) {
+            return {
+              ...t,
+              ...data.task,
+              hasUnreadAdminChat: false,
+              hasUnreadInternChat: false,
+              clientProjectId: t.clientProjectId || data.task.clientProjectId,
+              marketingData: { ...(t.marketingData || {}), ...(data.task.marketingData || {}) }
+            };
+          }
+          return t;
+        }));
       }
     } catch (e) {
       console.error("Failed marking chat read", e);
