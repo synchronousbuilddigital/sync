@@ -38,19 +38,75 @@ export default function AdminDashboard() {
     return false;
   };
 
+  const triggerNativeAlert = (title, body, tag) => {
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      const options = {
+        body: body || "Tap to view in Sync Command",
+        icon: "/logo.png",
+        badge: "/logo.png",
+        vibrate: [200, 100, 200],
+        tag: tag || `sync-alert-${Date.now()}`,
+        renotify: true,
+        data: { url: "/admin" }
+      };
+      if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, options);
+        }).catch(() => {
+          new Notification(title, options);
+        });
+      } else {
+        new Notification(title, options);
+      }
+    }
+  };
+
   const [prevAdminUnreadCount, setPrevAdminUnreadCount] = useState(0);
+  const prevCompletedIdsRef = useRef(new Set());
   const isInitialLoadRef = useRef(true);
   useEffect(() => {
     const unreadCount = (tasks || []).filter(hasUnreadAdminMessage).length;
+    const currentCompletedTasks = (tasks || []).filter(t => ["Done", "Completed", "Complete"].includes(t.status) || t.marketingData?.postTracker?.status?.includes("Posted"));
+    const currentCompletedIds = new Set(currentCompletedTasks.map(t => t._id));
+    
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
       setPrevAdminUnreadCount(unreadCount);
+      prevCompletedIdsRef.current = currentCompletedIds;
+      
+      const overduePosts = (tasks || []).filter(t => {
+        const dueDateVal = t.dueDate || t.marketingData?.postTracker?.scheduledDate || t.timeline?.end;
+        const isPostPosted = t.marketingData?.postTracker?.status?.includes("Posted") || t.marketingData?.postTracker?.status?.includes("Client Review");
+        return !isPostPosted && !["Done", "Completed", "Complete"].includes(t.status) && dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
+      });
+      if (overduePosts.length > 0) {
+        const itemNames = overduePosts.slice(0, 3).map(t => t.marketingData?.postTracker?.companyName ? `${t.marketingData.postTracker.companyName} (${t.marketingData.postTracker.contentId || t.title})` : t.title).join(", ");
+        const suffix = overduePosts.length > 3 ? ` +${overduePosts.length - 3} more` : "";
+        const alertTitle = overduePosts.length === 1 ? `⚠️ Overdue: ${itemNames}` : `⚠️ Overdue: ${overduePosts.length} Items`;
+        const alertMsg = overduePosts.length === 1 ? `Post/Task "${itemNames}" is past due!` : `Overdue: ${itemNames}${suffix} are past scheduled date!`;
+        if (showToast) showToast(alertMsg, "error");
+        triggerNativeAlert(alertTitle, alertMsg, "overdue-posts-admin");
+      }
       return;
     }
-    if (unreadCount > prevAdminUnreadCount && showToast) {
-      showToast("💬 New Mission Log message received from an intern!", "info");
+    if (unreadCount > prevAdminUnreadCount) {
+      if (showToast) showToast("💬 New Mission Log message received from an intern!", "info");
+      triggerNativeAlert("💬 New Mission Log Message", "An intern replied in the Mission Log. Tap to view.", "new-chat-admin");
     }
+    
+    const newlyCompleted = currentCompletedTasks.filter(t => !prevCompletedIdsRef.current.has(t._id));
+    if (newlyCompleted.length > 0) {
+      newlyCompleted.forEach(t => {
+        const memberName = t.internId?.name || "A team member";
+        const postName = t.marketingData?.postTracker?.companyName ? `${t.marketingData.postTracker.companyName} (${t.marketingData.postTracker.contentId || t.title})` : t.title;
+        const msg = `🎉 ${memberName} completed "${postName}"!`;
+        if (showToast) showToast(msg, "success");
+        triggerNativeAlert(`🎉 Completed by ${memberName}`, msg, `completed-${t._id}`);
+      });
+    }
+    
     setPrevAdminUnreadCount(unreadCount);
+    prevCompletedIdsRef.current = currentCompletedIds;
   }, [tasks]);
 
   const [activeTab, setActiveTab] = useState("interns");
@@ -128,24 +184,24 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsSubmittingPost(true);
     try {
-      const token = localStorage.getItem("token");
+      const authToken = token || localStorage.getItem("sync_token") || localStorage.getItem("token") || "";
       const res = await fetch("/api/admin/post-tracker", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` },
         body: JSON.stringify(newPostData)
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("Post successfully tracked in Google Sheets!");
+        showToast("Post successfully tracked in Google Sheets!", "success");
+        triggerNativeAlert("📌 Post Tracker Updated", `Added ${newPostData.postType || "post"} for ${newPostData.company || "company"} at ${newPostData.postingTime || "scheduled time"}.`, "post-tracker-added");
         setIsAddingPost(false);
         setNewPostData({ company: "", contentId: "", scheduledDate: "", day: "", month: "", postType: "", postingTime: "", finalLink: "", status: "Pending", postedLink: "", clientRemarks: "" });
-        // Instead of fetchData (which may not exist as a global func), just reload page for now to sync
-        window.location.reload();
+        if (refreshAdminData) refreshAdminData();
       } else {
-        toast.error(data.message || "Failed to add post");
+        showToast(data.message || "Failed to add post", "error");
       }
     } catch (err) {
-      toast.error(err.message);
+      showToast(err.message, "error");
     } finally {
       setIsSubmittingPost(false);
     }
@@ -1093,15 +1149,20 @@ export default function AdminDashboard() {
                   <div className={selectedTaskColumn === "all" ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"}>
                     <AnimatePresence mode="popLayout">
                       {taskBuckets[column.key].map((task) => {
-                        const isBlocked = ["Need Credentials", "Need Meeting", "Blocked"].includes(task.status);
-                        const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
-                        const isOverdue = task.status !== "Complete" && dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
+                        const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate || task.timeline?.end;
+                        const isPostPosted = task.marketingData?.postTracker?.status?.includes("Posted") || task.marketingData?.postTracker?.status?.includes("Client Review");
+                        const isOverdue = !isPostPosted && !["Done", "Completed", "Complete"].includes(task.status) && dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
                         return (
                           <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} key={task._id} className={`rounded-xl border ${isOverdue ? 'border-red-500/50 dark:border-red-500/50 bg-red-500/5' : 'border-black/5 dark:border-white/10 bg-white dark:bg-white/3'} p-3.5 shadow-sm hover:border-[#F05E23]/20 hover:shadow-md transition-all group`}>
                             <div className="flex items-start justify-between gap-2 mb-2.5">
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-black text-xs tracking-tight truncate text-slate-900 dark:text-white">{task.title}</h4>
                                 <p className="text-[0.6rem] uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">{task.internId?.name || "Unassigned"}</p>
+                                {isOverdue && (
+                                  <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-red-500 text-white rounded-md text-[0.45rem] font-black uppercase tracking-widest animate-pulse">
+                                    ⚠️ Overdue / Missing Post
+                                  </span>
+                                )}
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 <button onClick={() => setEditingTaskModal({ ...task, internId: task.internId?._id || task.internId || "", dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "" })} title="Edit Task" className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all">
@@ -1140,8 +1201,9 @@ export default function AdminDashboard() {
                                 <div className="flex justify-between items-center pt-1 mt-1 border-t border-slate-200/50 dark:border-slate-700/50">
                                   {task.marketingData.postTracker && (
                                     <div className="flex flex-col w-full gap-1 mb-1">
-                                      <div className="flex justify-between items-center text-[0.45rem] font-black uppercase tracking-widest text-slate-500">
+                                      <div className="flex justify-between items-center text-[0.45rem] font-black uppercase tracking-widest text-slate-500 gap-1">
                                         <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData.postTracker.scheduledDate || "TBA"}</span></span>
+                                        <span>Time: <span className="text-amber-500">{task.marketingData.postTracker.postingTime || "TBA"}</span></span>
                                         <span>Status: <span className={task.marketingData.postTracker.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.postTracker.status || "Pending"}</span></span>
                                       </div>
                                       <div className="flex justify-between items-center text-[0.45rem] font-black uppercase tracking-widest text-slate-500">
@@ -2263,7 +2325,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Posting Time</label>
-                    <input type="text" value={newPostData.postingTime} onChange={(e) => setNewPostData({...newPostData, postingTime: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all text-slate-900 dark:text-white" placeholder="e.g. 5:00 PM" />
+                    <input type="time" value={newPostData.postingTime} onChange={(e) => setNewPostData({...newPostData, postingTime: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-black/5 dark:border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold transition-all text-slate-900 dark:text-white" />
                   </div>
                 </div>
                 <button disabled={isSubmittingPost} type="submit" className="w-full py-5 bg-[#F05E23] text-white rounded-2xl font-black uppercase tracking-widest text-[0.7rem] hover:shadow-[0_0_40px_rgba(240,94,35,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
@@ -2658,16 +2720,29 @@ export default function AdminDashboard() {
                       Intern: {chatTask?.internId?.name || "Unassigned"} {chatTask?.internId?.department ? `(${chatTask?.internId?.department})` : ""}
                     </p>
                     {chatTask?.marketingData && (
-                      <div className="flex flex-wrap gap-2 mt-2 bg-black/20 px-2.5 py-1 rounded-lg w-max max-w-full">
-                        {chatTask.marketingData.rawLink && (
-                          <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
-                            <ExternalLink className="w-3 h-3" /> Raw Asset
-                          </a>
-                        )}
-                        {chatTask.marketingData.editedLink && (
-                          <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
-                            <ExternalLink className="w-3 h-3" /> Edited Output
-                          </a>
+                      <div className="flex flex-col gap-2 mt-2 bg-black/20 p-2.5 rounded-xl w-full">
+                        <div className="flex flex-wrap gap-2">
+                          {chatTask.marketingData.rawLink && (
+                            <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
+                              <ExternalLink className="w-3 h-3" /> Raw Asset
+                            </a>
+                          )}
+                          {chatTask.marketingData.editedLink && (
+                            <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
+                              <ExternalLink className="w-3 h-3" /> Edited Output
+                            </a>
+                          )}
+                        </div>
+                        {chatTask.marketingData.postTracker && (
+                          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10 text-[0.55rem] font-black uppercase tracking-widest text-white">
+                            <span className="bg-white/10 px-2 py-1 rounded">📌 {chatTask.marketingData.postTracker.companyName || "Company"}: <span className="text-amber-300">{chatTask.marketingData.postTracker.scheduledDate || "TBA"}</span> @ <span className="text-amber-300">{chatTask.marketingData.postTracker.postingTime || "TBA"}</span></span>
+                            <span className="bg-white/10 px-2 py-1 rounded">Status: <span className={chatTask.marketingData.postTracker.status?.includes('Posted') ? 'text-green-300' : 'text-amber-300'}>{chatTask.marketingData.postTracker.status || "Pending"}</span></span>
+                            {chatTask.marketingData.postTracker.postedLink && (
+                              <a href={chatTask.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600/80 px-2 py-1 rounded hover:bg-blue-600 underline flex items-center gap-1">
+                                <ExternalLink className="w-3 h-3" /> Live Link
+                              </a>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}

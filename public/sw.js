@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sync-pwa-cache-v1.0.0';
+const CACHE_NAME = 'sync-pwa-cache-v1.1.0';
 
 const PRECACHE_URLS = [
   '/',
@@ -41,8 +41,8 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Skip API calls from caching
-  if (url.pathname.startsWith('/api/')) {
+  // Skip API calls, service worker, and manifest from caching
+  if (url.pathname.startsWith('/api/') || url.pathname === '/sw.js' || url.pathname === '/manifest.json') {
     return;
   }
 

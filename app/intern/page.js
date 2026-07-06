@@ -27,19 +27,70 @@ export default function InternDashboard() {
      return false;
    };
 
+   const triggerNativeAlert = (title, body, tag) => {
+     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+       const options = {
+         body: body || "Tap to view in Sync Command",
+         icon: "/logo.png",
+         badge: "/logo.png",
+         vibrate: [200, 100, 200],
+         tag: tag || `sync-alert-${Date.now()}`,
+         renotify: true,
+         data: { url: "/intern" }
+       };
+       if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+         navigator.serviceWorker.ready.then(reg => {
+           reg.showNotification(title, options);
+         }).catch(() => {
+           new Notification(title, options);
+         });
+       } else {
+         new Notification(title, options);
+       }
+     }
+   };
+
    const [prevInternUnreadCount, setPrevInternUnreadCount] = useState(0);
    const isInitialLoadRef = useRef(true);
+   const prevTaskIdsRef = useRef(null);
+
    useEffect(() => {
      const unreadCount = (tasks || []).filter(hasUnreadInternMessage).length;
+     const currentTaskIds = new Set((tasks || []).map(t => t._id));
+
      if (isInitialLoadRef.current) {
        isInitialLoadRef.current = false;
        setPrevInternUnreadCount(unreadCount);
+       prevTaskIdsRef.current = currentTaskIds;
        return;
      }
-     if (unreadCount > prevInternUnreadCount && showToast) {
-       showToast("💬 New Mission Log message received from Admin HQ!", "info");
+
+     // 1. Check for New Mission Log Chat Messages
+     if (unreadCount > prevInternUnreadCount) {
+       if (showToast) showToast("💬 New Mission Log message received from Admin HQ!", "info");
+       triggerNativeAlert("💬 New Mission Log Message", "Admin HQ replied in your Mission Log. Tap to view.", "new-chat-intern");
      }
      setPrevInternUnreadCount(unreadCount);
+
+     // 2. Check for Newly Assigned Tasks
+     if (prevTaskIdsRef.current) {
+       const newTasks = (tasks || []).filter(t => !prevTaskIdsRef.current.has(t._id));
+       if (newTasks.length > 0) {
+         const taskTitle = newTasks[0].title || "New Mission";
+         const msgText = newTasks.length === 1 
+           ? `🚀 New Task Assigned: "${taskTitle}" from Admin HQ!`
+           : `🚀 ${newTasks.length} New Tasks Assigned from Admin HQ!`;
+
+         if (showToast) {
+           showToast(msgText, "info");
+         }
+
+         const notifTitle = newTasks.length === 1 ? `🚀 New Task: ${taskTitle}` : `🚀 ${newTasks.length} New Tasks Assigned!`;
+         const notifBody = newTasks.length === 1 ? `Priority: ${newTasks[0].priority || "Normal"} • Tap to view in Sync Command` : "Tap to open your task list in Sync Command";
+         triggerNativeAlert(notifTitle, notifBody, `new-task-${newTasks[0]._id || Date.now()}`);
+       }
+     }
+     prevTaskIdsRef.current = currentTaskIds;
    }, [tasks]);
 
    useEffect(() => {
@@ -49,7 +100,7 @@ export default function InternDashboard() {
    }, [user, refreshInternData]);
 
    const [selectedTaskId, setSelectedTaskId] = useState(null);
-   const [updatePostData, setUpdatePostData] = useState({ contentId: "", finalLink: "", postedLink: "", status: "", clientRemarks: "" });
+   const [updatePostData, setUpdatePostData] = useState({ contentId: "", finalLink: "", postedLink: "", status: "", clientRemarks: "", postingTime: "" });
    const [isUpdatingPost, setIsUpdatingPost] = useState(false);
    const [isSubmittingPostUpdate, setIsSubmittingPostUpdate] = useState(false);
 
@@ -88,7 +139,9 @@ export default function InternDashboard() {
          
          if (res.ok) {
             setIsUpdatingPost(false);
-            window.location.reload();
+            if (showToast) showToast("Live post status & time updated!", "success");
+            triggerNativeAlert("📌 Post Tracker Updated", "Live post status & time synced to Google Sheets.", "post-tracker-intern");
+            if (refreshInternData) refreshInternData();
          } else {
             const data = await res.json();
             setStatusMsg({ type: "error", msg: data.error || "Failed to update post" });
@@ -660,7 +713,7 @@ export default function InternDashboard() {
                                           {task.contentId && (
                                              <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
                                                 <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span>
+                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
                                                    <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
@@ -674,7 +727,8 @@ export default function InternDashboard() {
                                                          finalLink: task.marketingData?.postTracker?.finalLink || "",
                                                          postedLink: task.marketingData?.postTracker?.postedLink || "",
                                                          status: task.marketingData?.postTracker?.status || "Pending",
-                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || ""
+                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
+                                                         postingTime: task.marketingData?.postTracker?.postingTime || ""
                                                       });
                                                       setIsUpdatingPost(true);
                                                    }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
@@ -775,7 +829,7 @@ export default function InternDashboard() {
                                           {task.contentId && (
                                              <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
                                                 <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span>
+                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
                                                    <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
@@ -789,7 +843,8 @@ export default function InternDashboard() {
                                                          finalLink: task.marketingData?.postTracker?.finalLink || "",
                                                          postedLink: task.marketingData?.postTracker?.postedLink || "",
                                                          status: task.marketingData?.postTracker?.status || "Pending",
-                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || ""
+                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
+                                                         postingTime: task.marketingData?.postTracker?.postingTime || ""
                                                       });
                                                       setIsUpdatingPost(true);
                                                    }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
@@ -871,7 +926,7 @@ export default function InternDashboard() {
                                        {task.contentId && (
                                           <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
                                              <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span>
+                                                <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
                                                 <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
                                              </div>
                                              <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
@@ -885,7 +940,8 @@ export default function InternDashboard() {
                                                       finalLink: task.marketingData?.postTracker?.finalLink || "",
                                                       postedLink: task.marketingData?.postTracker?.postedLink || "",
                                                       status: task.marketingData?.postTracker?.status || "Pending",
-                                                      clientRemarks: task.marketingData?.postTracker?.clientRemarks || ""
+                                                      clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
+                                                      postingTime: task.marketingData?.postTracker?.postingTime || ""
                                                    });
                                                    setIsUpdatingPost(true);
                                                 }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
@@ -1073,7 +1129,8 @@ export default function InternDashboard() {
                                                    finalLink: task.marketingData?.postTracker?.finalLink || "",
                                                    postedLink: task.marketingData?.postTracker?.postedLink || "",
                                                    status: task.marketingData?.postTracker?.status || "Pending",
-                                                   clientRemarks: task.marketingData?.postTracker?.clientRemarks || ""
+                                                   clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
+                                                   postingTime: task.marketingData?.postTracker?.postingTime || ""
                                                 });
                                                 setIsUpdatingPost(true);
                                              }} className="px-4 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/40 border border-blue-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
@@ -1264,16 +1321,29 @@ export default function InternDashboard() {
                               </div>
                               <p className="text-[0.65rem] sm:text-xs font-bold uppercase tracking-wide text-white/90 truncate mt-1">Task: {chatTask?.title}</p>
                               {chatTask?.marketingData && (
-                                <div className="flex flex-wrap gap-2 mt-2 bg-black/20 px-2.5 py-1 rounded-lg w-max max-w-full">
-                                  {chatTask.marketingData.rawLink && (
-                                    <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
-                                      <ExternalLink className="w-3 h-3" /> Raw Asset
-                                    </a>
-                                  )}
-                                  {chatTask.marketingData.editedLink && (
-                                    <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1">
-                                      <ExternalLink className="w-3 h-3" /> Edited Output
-                                    </a>
+                                <div className="flex flex-col gap-2 mt-2 bg-black/20 p-2.5 rounded-xl w-full">
+                                  <div className="flex flex-wrap gap-2">
+                                    {chatTask.marketingData.rawLink && (
+                                      <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
+                                        <ExternalLink className="w-3 h-3" /> Raw Asset
+                                      </a>
+                                    )}
+                                    {chatTask.marketingData.editedLink && (
+                                      <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
+                                        <ExternalLink className="w-3 h-3" /> Edited Output
+                                      </a>
+                                    )}
+                                  </div>
+                                  {chatTask.marketingData.postTracker && (
+                                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10 text-[0.55rem] font-black uppercase tracking-widest text-white">
+                                      <span className="bg-white/10 px-2 py-1 rounded">📌 {chatTask.marketingData.postTracker.companyName || "Company"}: <span className="text-amber-300">{chatTask.marketingData.postTracker.scheduledDate || "TBA"}</span> @ <span className="text-amber-300">{chatTask.marketingData.postTracker.postingTime || "TBA"}</span></span>
+                                      <span className="bg-white/10 px-2 py-1 rounded">Status: <span className={chatTask.marketingData.postTracker.status?.includes('Posted') ? 'text-green-300' : 'text-amber-300'}>{chatTask.marketingData.postTracker.status || "Pending"}</span></span>
+                                      {chatTask.marketingData.postTracker.postedLink && (
+                                        <a href={chatTask.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600/80 px-2 py-1 rounded hover:bg-blue-600 underline flex items-center gap-1">
+                                          <ExternalLink className="w-3 h-3" /> Live Link
+                                        </a>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               )}
@@ -1371,6 +1441,10 @@ export default function InternDashboard() {
                               <option value="Posted">Posted</option>
                               <option value="Client Review">Client Review</option>
                            </select>
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Time Clock (Posting Time)</label>
+                           <input type="time" value={updatePostData.postingTime || ""} onChange={(e) => setUpdatePostData({...updatePostData, postingTime: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" />
                         </div>
                      </div>
                      <button disabled={isSubmittingPostUpdate} type="submit" className="w-full py-5 bg-gradient-to-r from-[#F05E23] to-[#FF7B47] text-white rounded-2xl font-black uppercase tracking-widest text-[0.7rem] hover:shadow-[0_0_40px_rgba(240,94,35,0.4)] transition-all disabled:opacity-50">

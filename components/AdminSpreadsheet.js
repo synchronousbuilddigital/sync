@@ -226,6 +226,7 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
     { key: 'priority', label: 'Priority' },
     { key: 'taskType', label: 'Type' },
     { key: 'scheduledDate', label: 'Scheduled' },
+    { key: 'postingTime', label: 'Time Clock' },
     { key: 'postStatus', label: 'Post Status' },
     { key: 'createdAt', label: 'Created At' },
     { key: 'rawLink', label: 'Raw Link' },
@@ -427,6 +428,9 @@ export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }
                   </td>
                   <td className="p-4 text-[10px] font-bold text-[#F05E23] uppercase tracking-widest">
                     {task.marketingData?.postTracker?.scheduledDate || task.dueDate || '-'}
+                  </td>
+                  <td className="p-4 text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                    {task.marketingData?.postTracker?.postingTime || '-'}
                   </td>
                   <td className="p-4">
                     <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500 font-bold' : (task.marketingData?.postTracker?.status ? 'text-amber-500 font-bold' : 'text-slate-400')}`}>

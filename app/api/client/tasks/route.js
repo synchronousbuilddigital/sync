@@ -53,6 +53,7 @@ export async function GET(req) {
             ...sheetData,
             ...nativePT,
             scheduledDate: nativePT.scheduledDate || sheetData.scheduledDate || "",
+            postingTime: nativePT.postingTime || sheetData.postingTime || "",
             month: nativePT.month || sheetData.month || "",
             day: nativePT.day || sheetData.day || "",
             postType: nativePT.postType || sheetData.postType || "",

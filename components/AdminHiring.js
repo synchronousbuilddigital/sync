@@ -34,7 +34,7 @@ export default function AdminHiring() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("sync_token") || localStorage.getItem("token") || "";
       const [jobsRes, appsRes] = await Promise.all([
         fetch("/api/admin/hiring/jobs", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("/api/admin/hiring/applications", { headers: { Authorization: `Bearer ${token}` } })
@@ -52,7 +52,7 @@ export default function AdminHiring() {
 
   const handleJobSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("sync_token") || localStorage.getItem("token") || "";
     const method = editingJob ? "PUT" : "POST";
     const body = editingJob ? { ...jobForm, id: editingJob._id } : jobForm;
 
@@ -79,7 +79,7 @@ export default function AdminHiring() {
 
   const deleteJob = async (id) => {
     if (!confirm("Are you sure?")) return;
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("sync_token") || localStorage.getItem("token") || "";
     try {
       const res = await fetch(`/api/admin/hiring/jobs?id=${id}`, {
         method: "DELETE",
@@ -92,7 +92,7 @@ export default function AdminHiring() {
   };
 
   const updateAppStatus = async (id, status) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("sync_token") || localStorage.getItem("token") || "";
     try {
       const res = await fetch("/api/admin/hiring/applications", {
         method: "PATCH",
