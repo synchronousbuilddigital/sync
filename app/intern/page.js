@@ -15,7 +15,7 @@ import {
 import NotificationToaster from "../../components/NotificationToaster";
 
 export default function InternDashboard() {
-   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData, markChatRead, showToast } = useAuth();
+   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData, markChatRead, showToast, token } = useAuth();
    
    const hasUnreadInternMessage = (task) => {
      if (!task || task._id === chatTaskId) return false;
@@ -100,7 +100,7 @@ export default function InternDashboard() {
    }, [user, refreshInternData]);
 
    const [selectedTaskId, setSelectedTaskId] = useState(null);
-   const [updatePostData, setUpdatePostData] = useState({ contentId: "", finalLink: "", postedLink: "", status: "", clientRemarks: "", postingTime: "" });
+   const [updatePostData, setUpdatePostData] = useState({ taskId: "", contentId: "", finalLink: "", postedLink: "", status: "", clientRemarks: "", postingTime: "" });
    const [isUpdatingPost, setIsUpdatingPost] = useState(false);
    const [isSubmittingPostUpdate, setIsSubmittingPostUpdate] = useState(false);
 
@@ -110,7 +110,7 @@ export default function InternDashboard() {
       if (id && markChatRead) markChatRead(id);
    };
    const [note, setNote] = useState("");
-   const [marketingForm, setMarketingForm] = useState({ editedLink: "", rawLink: "", editorStatus: "" });
+   const [marketingForm, setMarketingForm] = useState({ editedLink: "", rawLink: "", postedLink: "", editorStatus: "" });
    const [chatMsg, setChatMsg] = useState("");
    const [submitting, setSubmitting] = useState(false);
    const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -131,9 +131,13 @@ export default function InternDashboard() {
       e.preventDefault();
       setIsSubmittingPostUpdate(true);
       try {
+         const authToken = token || localStorage.getItem("sync_token") || localStorage.getItem("token") || "";
          const res = await fetch("/api/intern/post-tracker", {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+               "Content-Type": "application/json",
+               "Authorization": `Bearer ${authToken}`
+            },
             body: JSON.stringify(updatePostData)
          });
          
@@ -144,7 +148,7 @@ export default function InternDashboard() {
             if (refreshInternData) refreshInternData();
          } else {
             const data = await res.json();
-            setStatusMsg({ type: "error", msg: data.error || "Failed to update post" });
+            setStatusMsg({ type: "error", msg: data.error || data.message || "Failed to update post" });
          }
       } catch (error) {
          console.error("Error updating post:", error);
@@ -241,8 +245,14 @@ export default function InternDashboard() {
    };
 
    const handleUpdateTask = async (taskId, status) => {
+      const currentTask = tasks?.find(t => t._id === taskId);
+      const hasLink = marketingForm.rawLink?.trim() || marketingForm.editedLink?.trim() || marketingForm.postedLink?.trim() || currentTask?.marketingData?.rawLink || currentTask?.marketingData?.editedLink || currentTask?.marketingData?.postedLink || currentTask?.liveLink;
+      if (!hasLink) {
+         if (showToast) showToast("⚠️ Mandatory: Please provide at least one Asset or Posted Link before updating status!", "error");
+         return;
+      }
       setSubmitting(true);
-      await updateTaskStatus(taskId, status, note, undefined, user.department === 'Digital Marketing' ? marketingForm : undefined);
+      await updateTaskStatus(taskId, status, note, undefined, marketingForm);
       setSelectedTaskId(null);
       setNote("");
       setSubmitting(false);
@@ -590,7 +600,7 @@ export default function InternDashboard() {
                                                    )}
                                                 </div>
                                                 <div className="flex items-center gap-4">
-                                                   <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[8px] font-black uppercase text-blue-500 hover:scale-110 transition-transform">Update</button>
+                                                   <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[8px] font-black uppercase text-blue-500 hover:scale-110 transition-transform">Update</button>
                                                    <button onClick={() => handleOpenChat(task._id)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all relative">
                                                       <MessageSquare className="w-4 h-4" />
                                                       {hasUnreadInternMessage(task) && (
@@ -723,7 +733,8 @@ export default function InternDashboard() {
                                                    )}
                                                    <button onClick={() => {
                                                       setUpdatePostData({
-                                                         contentId: task.contentId,
+                                                         taskId: task._id,
+                                                         contentId: task.contentId || "",
                                                          finalLink: task.marketingData?.postTracker?.finalLink || "",
                                                          postedLink: task.marketingData?.postTracker?.postedLink || "",
                                                          status: task.marketingData?.postTracker?.status || "Pending",
@@ -839,7 +850,8 @@ export default function InternDashboard() {
                                                    )}
                                                    <button onClick={() => {
                                                       setUpdatePostData({
-                                                         contentId: task.contentId,
+                                                         taskId: task._id,
+                                                         contentId: task.contentId || "",
                                                          finalLink: task.marketingData?.postTracker?.finalLink || "",
                                                          postedLink: task.marketingData?.postTracker?.postedLink || "",
                                                          status: task.marketingData?.postTracker?.status || "Pending",
@@ -936,7 +948,8 @@ export default function InternDashboard() {
                                                 )}
                                                 <button onClick={() => {
                                                    setUpdatePostData({
-                                                      contentId: task.contentId,
+                                                      taskId: task._id,
+                                                      contentId: task.contentId || "",
                                                       finalLink: task.marketingData?.postTracker?.finalLink || "",
                                                       postedLink: task.marketingData?.postTracker?.postedLink || "",
                                                       status: task.marketingData?.postTracker?.status || "Pending",
@@ -1125,7 +1138,8 @@ export default function InternDashboard() {
                                           {task.contentId && (
                                              <button onClick={() => {
                                                 setUpdatePostData({
-                                                   contentId: task.contentId,
+                                                   taskId: task._id,
+                                                   contentId: task.contentId || "",
                                                    finalLink: task.marketingData?.postTracker?.finalLink || "",
                                                    postedLink: task.marketingData?.postTracker?.postedLink || "",
                                                    status: task.marketingData?.postTracker?.status || "Pending",
@@ -1273,13 +1287,13 @@ export default function InternDashboard() {
                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mb-12">Updating details for "{selectedTask.title}"</p>
 
                      <div className="space-y-12">
-                        {(selectedTask.marketingData || user.department !== 'Digital Marketing' || true) && (
-                           <div className="space-y-4">
+                        <div className="space-y-4">
                               <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Asset Links & Updates</label>
- <input type="url" value={marketingForm.rawLink} onChange={e => setMarketingForm({ ...marketingForm, rawLink: e.target.value })} placeholder="Raw Asset Link (Drive)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
- <input type="url" value={marketingForm.editedLink} onChange={e => setMarketingForm({ ...marketingForm, editedLink: e.target.value })} placeholder="Final Output Link (Drive/Canva)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
+                              <input type="url" value={marketingForm.rawLink} onChange={e => setMarketingForm({ ...marketingForm, rawLink: e.target.value })} placeholder="Raw Asset Link (Drive)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
+                              <input type="url" value={marketingForm.editedLink} onChange={e => setMarketingForm({ ...marketingForm, editedLink: e.target.value })} placeholder="Final Output Link (Drive/Canva)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
+                              <input type="url" value={marketingForm.postedLink || ""} onChange={e => setMarketingForm({ ...marketingForm, postedLink: e.target.value })} placeholder="Live Posted Link (Insta/FB/LinkedIn)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
                               {user.department === 'Digital Marketing' && (
- <select value={marketingForm.editorStatus} onChange={e => setMarketingForm({ ...marketingForm, editorStatus: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white appearance-none cursor-pointer">
+                                 <select value={marketingForm.editorStatus} onChange={e => setMarketingForm({ ...marketingForm, editorStatus: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white appearance-none cursor-pointer">
                                     <option value="">Select Editor Remarks...</option>
                                     <option value="Editing in process">Editing in process</option>
                                     <option value="1st Edit Completed">1st Edit Completed</option>
@@ -1287,7 +1301,6 @@ export default function InternDashboard() {
                                  </select>
                               )}
                            </div>
-                        )}
                         <div className="space-y-4">
                            <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Choose Status</label>
                            <div className="grid grid-cols-2 gap-4">

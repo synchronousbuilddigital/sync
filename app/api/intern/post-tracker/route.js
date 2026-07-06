@@ -14,26 +14,39 @@ export async function PUT(req) {
 
     const data = await req.json();
 
-    if (!data.contentId) {
-      return Response.json({ success: false, message: "Content ID is required to update post tracker" }, { status: 400 });
+    if (!data.contentId && !data.taskId) {
+      return Response.json({ success: false, message: "Content ID or Task ID is required to update post tracker" }, { status: 400 });
+    }
+
+    let query = {};
+    if (data.taskId && data.contentId) {
+      query = { $or: [{ _id: data.taskId }, { contentId: data.contentId }] };
+    } else if (data.taskId) {
+      query = { _id: data.taskId };
+    } else {
+      query = { contentId: data.contentId };
+    }
+
+    const setFields = {
+      "marketingData.postTracker.postingTime": data.postingTime !== undefined ? data.postingTime : "",
+      "marketingData.postTracker.finalLink": data.finalLink !== undefined ? data.finalLink : "",
+      "marketingData.postTracker.postedLink": data.postedLink !== undefined ? data.postedLink : "",
+      "marketingData.postTracker.status": data.status !== undefined ? data.status : "",
+      "marketingData.postTracker.clientRemarks": data.clientRemarks !== undefined ? data.clientRemarks : ""
+    };
+    if (data.postedLink) {
+      setFields["marketingData.postedLink"] = data.postedLink;
+      setFields["liveLink"] = data.postedLink;
     }
 
     const updatedTask = await Task.findOneAndUpdate(
-      { contentId: data.contentId },
-      {
-        $set: {
-          "marketingData.postTracker.postingTime": data.postingTime !== undefined ? data.postingTime : "",
-          "marketingData.postTracker.finalLink": data.finalLink !== undefined ? data.finalLink : "",
-          "marketingData.postTracker.postedLink": data.postedLink !== undefined ? data.postedLink : "",
-          "marketingData.postTracker.status": data.status !== undefined ? data.status : "",
-          "marketingData.postTracker.clientRemarks": data.clientRemarks !== undefined ? data.clientRemarks : ""
-        }
-      },
+      query,
+      { $set: setFields },
       { new: true }
     );
 
     if (!updatedTask) {
-      return Response.json({ success: false, message: `No task found with Content ID: ${data.contentId}` }, { status: 404 });
+      return Response.json({ success: false, message: `No task found with ID: ${data.contentId || data.taskId}` }, { status: 404 });
     }
 
     return Response.json({ success: true, message: "Post tracker updated natively successfully" });

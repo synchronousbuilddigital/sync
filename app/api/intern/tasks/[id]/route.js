@@ -27,6 +27,12 @@ export async function PATCH(req, { params }) {
       for (const [key, value] of Object.entries(marketingData)) {
         updateData[`marketingData.${key}`] = value;
       }
+      if (marketingData.postedLink || marketingData.liveLink) {
+        const pLink = marketingData.postedLink || marketingData.liveLink;
+        updateData[`marketingData.postTracker.postedLink`] = pLink;
+        updateData[`marketingData.postedLink`] = pLink;
+        updateData[`liveLink`] = pLink;
+      }
     }
 
     if (status === "Need Meeting") {

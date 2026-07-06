@@ -80,12 +80,20 @@ export default function AdminDashboard() {
         return !isPostPosted && !["Done", "Completed", "Complete"].includes(t.status) && dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
       });
       if (overduePosts.length > 0) {
-        const itemNames = overduePosts.slice(0, 3).map(t => t.marketingData?.postTracker?.companyName ? `${t.marketingData.postTracker.companyName} (${t.marketingData.postTracker.contentId || t.title})` : t.title).join(", ");
-        const suffix = overduePosts.length > 3 ? ` +${overduePosts.length - 3} more` : "";
-        const alertTitle = overduePosts.length === 1 ? `⚠️ Overdue: ${itemNames}` : `⚠️ Overdue: ${overduePosts.length} Items`;
-        const alertMsg = overduePosts.length === 1 ? `Post/Task "${itemNames}" is past due!` : `Overdue: ${itemNames}${suffix} are past scheduled date!`;
-        if (showToast) showToast(alertMsg, "error");
-        triggerNativeAlert(alertTitle, alertMsg, "overdue-posts-admin");
+        const notifiedOverdueKey = "notified_overdue_posts_admin";
+        const alreadyNotifiedOverdue = JSON.parse(localStorage.getItem(notifiedOverdueKey) || "[]");
+        const newOverduePosts = overduePosts.filter(t => !alreadyNotifiedOverdue.includes(t._id));
+        
+        if (newOverduePosts.length > 0) {
+          const itemNames = newOverduePosts.slice(0, 3).map(t => t.marketingData?.postTracker?.companyName ? `${t.marketingData.postTracker.companyName} (${t.marketingData.postTracker.contentId || t.title})` : t.title).join(", ");
+          const suffix = newOverduePosts.length > 3 ? ` +${newOverduePosts.length - 3} more` : "";
+          const alertTitle = newOverduePosts.length === 1 ? `⚠️ Overdue: ${itemNames}` : `⚠️ Overdue: ${newOverduePosts.length} Items`;
+          const alertMsg = newOverduePosts.length === 1 ? `Post/Task "${itemNames}" is past due!` : `Overdue: ${itemNames}${suffix} are past scheduled date!`;
+          if (showToast) showToast(alertMsg, "error");
+          triggerNativeAlert(alertTitle, alertMsg, "overdue-posts-admin");
+          const updatedNotified = [...new Set([...alreadyNotifiedOverdue, ...newOverduePosts.map(t => t._id)])];
+          localStorage.setItem(notifiedOverdueKey, JSON.stringify(updatedNotified));
+        }
       }
       return;
     }
@@ -96,13 +104,21 @@ export default function AdminDashboard() {
     
     const newlyCompleted = currentCompletedTasks.filter(t => !prevCompletedIdsRef.current.has(t._id));
     if (newlyCompleted.length > 0) {
-      newlyCompleted.forEach(t => {
-        const memberName = t.internId?.name || "A team member";
-        const postName = t.marketingData?.postTracker?.companyName ? `${t.marketingData.postTracker.companyName} (${t.marketingData.postTracker.contentId || t.title})` : t.title;
-        const msg = `🎉 ${memberName} completed "${postName}"!`;
-        if (showToast) showToast(msg, "success");
-        triggerNativeAlert(`🎉 Completed by ${memberName}`, msg, `completed-${t._id}`);
-      });
+      const notifiedCompletedKey = "notified_completed_tasks_admin";
+      const alreadyNotifiedCompleted = JSON.parse(localStorage.getItem(notifiedCompletedKey) || "[]");
+      const unnotifiedCompleted = newlyCompleted.filter(t => !alreadyNotifiedCompleted.includes(t._id));
+
+      if (unnotifiedCompleted.length > 0) {
+        unnotifiedCompleted.forEach(t => {
+          const memberName = t.internId?.name || "A team member";
+          const postName = t.marketingData?.postTracker?.companyName ? `${t.marketingData.postTracker.companyName} (${t.marketingData.postTracker.contentId || t.title})` : t.title;
+          const msg = `🎉 ${memberName} completed "${postName}"!`;
+          if (showToast) showToast(msg, "success");
+          triggerNativeAlert(`🎉 Completed by ${memberName}`, msg, `completed-${t._id}`);
+        });
+        const updatedCompleted = [...new Set([...alreadyNotifiedCompleted, ...unnotifiedCompleted.map(t => t._id)])];
+        localStorage.setItem(notifiedCompletedKey, JSON.stringify(updatedCompleted));
+      }
     }
     
     setPrevAdminUnreadCount(unreadCount);
@@ -291,6 +307,7 @@ export default function AdminDashboard() {
   const tabLabels = {
     interns: "Team",
     tasks: "Tasks",
+    post_tracker: "Post Tracker",
     sheet: "Spreadsheet",
     holidays: "Time Off",
     portfolio: "Projects",
@@ -851,6 +868,7 @@ export default function AdminDashboard() {
         {[
           { id: "interns", icon: Users },
           { id: "tasks", icon: ClipboardList },
+          { id: "post_tracker", icon: Clock },
           { id: "sheet", icon: Table },
           { id: "holidays", icon: Calendar },
           { id: "portfolio", icon: Briefcase },
@@ -1149,6 +1167,7 @@ export default function AdminDashboard() {
                   <div className={selectedTaskColumn === "all" ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"}>
                     <AnimatePresence mode="popLayout">
                       {taskBuckets[column.key].map((task) => {
+                        const isBlocked = ["Need Credentials", "Need Meeting", "Blocked"].includes(task.status);
                         const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate || task.timeline?.end;
                         const isPostPosted = task.marketingData?.postTracker?.status?.includes("Posted") || task.marketingData?.postTracker?.status?.includes("Client Review");
                         const isOverdue = !isPostPosted && !["Done", "Completed", "Complete"].includes(task.status) && dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
@@ -1320,6 +1339,157 @@ export default function AdminDashboard() {
 
         {activeTab === "sheet" && (
           <AdminSpreadsheet tasks={tasks} companies={companies} interns={interns} />
+        )}
+
+        {activeTab === "post_tracker" && (
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 bg-gradient-to-r from-slate-900 via-[#120f1c] to-slate-900 p-6 sm:p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#F05E23]/20 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F05E23]/20 text-[#FF8C61] border border-[#F05E23]/30 text-[0.6rem] font-black uppercase tracking-widest mb-3">
+                  <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '10s' }} /> Live Schedule & Time Clock
+                </div>
+                <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tighter text-white">Upcoming <span className="text-[#F05E23]">Post Tracker</span></h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time surveillance of scheduled content, posting times, and live links</p>
+              </div>
+              <button
+                onClick={() => setIsAddingPost(true)}
+                className="relative z-10 bg-gradient-to-r from-[#F05E23] to-amber-500 hover:from-amber-500 hover:to-[#F05E23] text-white px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shrink-0"
+              >
+                <span>+ Add Tracked Post</span>
+              </button>
+            </div>
+
+            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-4 sm:p-6 shadow-xl">
+              <div className="overflow-x-auto overflow-y-auto max-h-[480px] sm:max-h-[560px] pr-1">
+                <table className="w-full text-left border-collapse">
+                  <thead className="sticky top-0 bg-white dark:bg-[#120f1c] z-20 shadow-sm">
+                    <tr className="border-b border-black/10 dark:border-white/10 text-[0.6rem] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                      <th className="py-3 px-3">Company / Brand</th>
+                      <th className="py-3 px-3">Content ID & Title</th>
+                      <th className="py-3 px-3">Scheduled Date</th>
+                      <th className="py-3 px-3">Posting Time</th>
+                      <th className="py-3 px-3">Type</th>
+                      <th className="py-3 px-3">Assigned To</th>
+                      <th className="py-3 px-3">Status</th>
+                      <th className="py-3 px-3">Live Asset</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs sm:text-sm font-bold">
+                    {(tasks || [])
+                      .filter(t => t.marketingData?.postTracker || t.contentId)
+                      .sort((a, b) => {
+                        const dateA = new Date(a.marketingData?.postTracker?.scheduledDate || a.dueDate || 0);
+                        const dateB = new Date(b.marketingData?.postTracker?.scheduledDate || b.dueDate || 0);
+                        return dateA - dateB;
+                      })
+                      .map(task => {
+                        const pt = task.marketingData?.postTracker || {};
+                        const dueDateVal = pt.scheduledDate || task.dueDate;
+                        const isPosted = pt.status?.includes("Posted") || pt.status?.includes("Client Review") || task.status?.includes("Done") || task.status?.includes("Completed");
+                        
+                        let dateDisplay = "TBA";
+                        let isOverdue = false;
+                        if (dueDateVal) {
+                          const d = new Date(dueDateVal);
+                          if (!isNaN(d.getTime())) {
+                            dateDisplay = d.toLocaleDateString();
+                            isOverdue = !isPosted && d < new Date(new Date().setHours(0,0,0,0));
+                          } else {
+                            dateDisplay = dueDateVal;
+                          }
+                        }
+
+                        const resolveCompany = (val) => {
+                          if (!val) return "";
+                          if (typeof val === "object") return val.name || val.projectName || val.companyName || "";
+                          const foundComp = companies?.find(c => c._id === val || c.name === val);
+                          if (foundComp) return foundComp.name;
+                          const foundProj = adminClientProjects?.find(p => p._id === val || p.projectName === val);
+                          if (foundProj) return foundProj.projectName || foundProj.name;
+                          return val;
+                        };
+
+                        const companyDisplay = resolveCompany(pt.companyName)
+                          || resolveCompany(pt.company)
+                          || resolveCompany(task.marketingData?.companyId)
+                          || resolveCompany(task.marketingData?.companyName)
+                          || resolveCompany(task.marketingData?.company)
+                          || resolveCompany(task.clientProjectId)
+                          || resolveCompany(task.companyId)
+                          || resolveCompany(task.companyName)
+                          || resolveCompany(task.company)
+                          || resolveCompany(task.clientId)
+                          || resolveCompany(task.brand)
+                          || "Unassigned";
+                        
+                        const liveLinkVal = pt.postedLink || pt.liveLink || task.marketingData?.postedLink || task.marketingData?.liveLink || task.marketingData?.editedLink || task.marketingData?.rawLink || task.liveLink || task.link;
+
+                        return (
+                          <tr key={task._id} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${isOverdue ? 'bg-red-500/5' : ''}`}>
+                            <td className="py-2.5 px-3 font-black text-slate-900 dark:text-white text-xs">
+                              {companyDisplay}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="text-[#F05E23] font-black text-xs">{task.contentId || "N/A"}</span>
+                              <p className="text-[0.6rem] text-slate-500 dark:text-slate-400 truncate max-w-[160px]">{task.title}</p>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className={`text-xs ${isOverdue ? "text-red-500 font-black animate-pulse" : ""}`}>
+                                {dateDisplay}
+                              </span>
+                              {pt.day && <p className="text-[0.55rem] text-slate-400 uppercase">{pt.day}</p>}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[0.65rem] font-black whitespace-nowrap">
+                                <Clock className="w-3 h-3" /> {pt.postingTime || "TBA"}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 uppercase text-[0.65rem] text-slate-600 dark:text-slate-300 font-bold">
+                              {pt.postType || "Post"}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              {task.internId?.name ? (
+                                <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[0.65rem] font-bold whitespace-nowrap">{task.internId.name}</span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[0.65rem]">Unassigned</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[0.6rem] font-black uppercase tracking-wider whitespace-nowrap ${
+                                isPosted
+                                  ? "bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30"
+                                  : isOverdue
+                                  ? "bg-red-500 text-white animate-pulse"
+                                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                              }`}>
+                                {isOverdue ? "⚠️ Overdue" : (pt.status || task.status || "Pending")}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              {liveLinkVal ? (
+                                <a href={liveLinkVal} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[0.6rem] font-black uppercase tracking-wider shadow-sm transition-all whitespace-nowrap">
+                                  Live Link <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              ) : (
+                                <button onClick={() => setChatTaskId(task._id)} className="text-[0.6rem] text-slate-400 hover:text-[#F05E23] underline font-bold whitespace-nowrap">
+                                  + Add Link
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+                {(tasks || []).filter(t => t.marketingData?.postTracker || t.contentId).length === 0 && (
+                  <div className="text-center py-12 text-slate-400 font-bold uppercase tracking-widest text-xs">
+                    No tracked posts yet. Click "+ Add Tracked Post" above to start scheduling!
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {activeTab === "brands" && (
