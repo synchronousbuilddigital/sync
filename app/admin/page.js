@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/AuthContext";
 import AdminSpreadsheet from "../../components/AdminSpreadsheet";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +27,7 @@ export default function AdminDashboard() {
     companies, addCompany, updateCompany, deleteCompany,
     brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion
   } = useAuth();
+  const searchParams = useSearchParams();
 
   const hasUnreadAdminMessage = (task) => {
     if (!task || task._id === chatTaskId) return false;
@@ -126,6 +127,35 @@ export default function AdminDashboard() {
   }, [tasks]);
 
   const [activeTab, setActiveTab] = useState("interns");
+
+  // Handle notification deep-link navigation
+  useEffect(() => {
+    if (!tasks || tasks.length === 0 || !searchParams) return;
+    const notifTask = searchParams.get('notif_task');
+    const notifAction = searchParams.get('notif_action');
+    const notifSection = searchParams.get('notif_section');
+    if (notifTask) {
+      const task = tasks.find(t => t._id === notifTask);
+      if (task) {
+        setActiveTab('tasks');
+        if (notifAction === 'chat') {
+          setChatTaskId(notifTask);
+          if (markChatRead) markChatRead(notifTask);
+        }
+      }
+      // Clear the params from URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('notif_task');
+      url.searchParams.delete('notif_action');
+      window.history.replaceState({}, '', url.toString());
+    }
+    if (notifSection === 'leave') {
+      setActiveTab('holidays');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('notif_section');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [tasks, searchParams]);
   const [taskCompanyFilter, setTaskCompanyFilter] = useState("");
   const [taskDepartmentFilter, setTaskDepartmentFilter] = useState("");
   const [taskTeamMemberFilter, setTaskTeamMemberFilter] = useState("");

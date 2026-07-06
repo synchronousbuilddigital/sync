@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, Zap, Sun, Moon } from "lucide-react";
+import { Menu, X, ArrowRight, Zap, Sun, Moon, Bell, CheckCircle2, Clock, MessageSquare, ExternalLink, Calendar, Activity } from "lucide-react";
 import { useTheme } from './ThemeContext';
 import { useAuth } from "./AuthContext";
 import PWAInstallButton from "./PWAInstallButton";
@@ -21,10 +21,25 @@ const navLinks = [
 
 export default function Header() {
   const { isDark, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, notifications = [], unreadNotifCount = 0, markAllNotificationsRead } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleNotifClick = (n) => {
+    if (n.unread) markAllNotificationsRead();
+    setNotifOpen(false);
+    if (n.taskId) {
+      const dashPath = user?.role === 'admin' ? '/admin' : '/intern';
+      const action = n.type === 'chat' ? 'chat' : 'update';
+      router.push(`${dashPath}?notif_task=${n.taskId}&notif_action=${action}`);
+    } else if (n.type === 'leave') {
+      const dashPath = user?.role === 'admin' ? '/admin' : '/intern';
+      router.push(`${dashPath}?notif_section=leave`);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -88,6 +103,28 @@ export default function Header() {
 
         {/* Action Button Section Area */}
         <div className="hidden md:flex items-center gap-2 lg:gap-4">
+          {/* Notification Bell */}
+          {user && (
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                title="Notifications"
+                className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${
+                  isDark
+                    ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
+                    : 'bg-black/5 border-black/5 text-slate-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
+                }`}
+              >
+                <Bell className="w-4 h-4" />
+                {unreadNotifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#F05E23] text-white text-[0.55rem] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-[#F05E23]/50">
+                    {unreadNotifCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
+
           {/* Dark/Light Mode Toggle */}
           <button
             onClick={toggleTheme}
@@ -132,6 +169,23 @@ export default function Header() {
 
         {/* Mobile Menu Toggle Area */}
         <div className="md:hidden flex items-center gap-2">
+          {user && (
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${
+                  isDark ? 'text-white bg-white/5' : 'text-slate-700 bg-black/5'
+                }`}
+              >
+                <Bell className="w-5 h-5" />
+                {unreadNotifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#F05E23] text-white text-[0.55rem] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-[#F05E23]/50">
+                    {unreadNotifCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
           <button
             onClick={toggleTheme}
             className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${
@@ -151,6 +205,73 @@ export default function Header() {
         </div>
       </motion.nav>
       </div>
+
+      {/* Glassmorphic Notification Dropdown Panel */}
+      <AnimatePresence>
+        {notifOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="fixed top-16 sm:top-20 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-96 max-h-[75vh] bg-white dark:bg-[#0A0A0E] rounded-[2rem] shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden z-[1000] flex flex-col backdrop-blur-3xl"
+          >
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-[#F05E23] to-[#ff7e47] text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <Bell className="w-5 h-5" />
+                <h3 className="text-sm sm:text-base font-black uppercase tracking-wider italic">Notifications</h3>
+                {unreadNotifCount > 0 && (
+                  <span className="bg-white text-[#F05E23] px-2 py-0.5 rounded-full text-[0.6rem] font-black">{unreadNotifCount} New</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {unreadNotifCount > 0 && (
+                  <button
+                    onClick={markAllNotificationsRead}
+                    className="text-[0.6rem] font-black uppercase tracking-widest bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl transition-all"
+                  >
+                    Mark Read
+                  </button>
+                )}
+                <button onClick={() => setNotifOpen(false)} className="hover:bg-white/20 p-1.5 rounded-xl transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="overflow-y-auto divide-y divide-black/5 dark:divide-white/5 max-h-[60vh] p-2 space-y-1">
+              {notifications.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs flex flex-col items-center justify-center gap-2">
+                  <CheckCircle2 className="w-8 h-8 opacity-40" />
+                  No new notifications
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => handleNotifClick(n)}
+                    className={`p-3.5 sm:p-4 rounded-2xl transition-all cursor-pointer flex items-start gap-3 ${
+                      n.unread ? "bg-[#F05E23]/10 dark:bg-[#F05E23]/15 border border-[#F05E23]/20" : "hover:bg-slate-50 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${n.type === 'task' ? 'bg-amber-500/10 text-amber-500' : n.type === 'link' ? 'bg-blue-500/10 text-blue-500' : n.type === 'chat' ? 'bg-purple-500/10 text-purple-500' : 'bg-green-500/10 text-green-500'}`}>
+                      {n.type === 'task' ? <Activity className="w-4 h-4" /> : n.type === 'link' ? <ExternalLink className="w-4 h-4" /> : n.type === 'chat' ? <MessageSquare className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs font-black uppercase tracking-wide truncate text-slate-900 dark:text-white">{n.title}</h4>
+                        <span className="text-[0.55rem] font-bold text-slate-400 shrink-0 flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5" />
+                          {new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-[0.65rem] font-bold text-slate-600 dark:text-slate-300 mt-1 line-clamp-2 leading-relaxed">{n.desc}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>

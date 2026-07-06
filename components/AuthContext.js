@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import NotificationToaster from "./NotificationToaster";
 
@@ -882,6 +882,76 @@ export function AuthProvider({ children }) {
     }
   }, [token, fetchClientProject]);
 
+  const [readNotifIds, setReadNotifIds] = useState([]);
+  useEffect(() => {
+    if (user) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(`sync_read_notifs_${user._id}`) || "[]");
+        setReadNotifIds(stored);
+      } catch (e) {}
+    }
+  }, [user]);
+
+  const notifications = useMemo(() => {
+    if (!user) return [];
+    const list = [];
+    if (user.role === "admin") {
+      (tasks || []).forEach(t => {
+        if (t.status === "Complete" || t.status === "Need Meeting" || t.status === "Need Credentials" || t.status === "Blocked") {
+          list.push({ id: `task-${t._id}-${t.status}`, title: `Task ${t.status}`, desc: `${t.assignedTo || 'Intern'} updated "${t.title}" to ${t.status}`, time: t.updatedAt || t.createdAt || Date.now(), type: 'task', taskId: t._id });
+        }
+        if (t.marketingData?.rawLink || t.marketingData?.editedLink || t.marketingData?.postedLink) {
+          list.push({ id: `link-${t._id}`, title: "Asset Links Updated", desc: `Links submitted for "${t.title}"`, time: t.updatedAt || t.createdAt || Date.now(), type: 'link', taskId: t._id });
+        }
+        if ((t.discussion || []).length > 0) {
+          const lastMsg = t.discussion[t.discussion.length - 1];
+          if (lastMsg.sender === "intern") {
+            list.push({ id: `chat-${t._id}-${lastMsg.timestamp}`, title: "Mission Log Message", desc: `${lastMsg.senderName || 'Intern'}: "${lastMsg.content}"`, time: lastMsg.timestamp || Date.now(), type: 'chat', taskId: t._id });
+          }
+        }
+      });
+      (leaves || []).forEach(l => {
+        if (l.status === "Pending") {
+          list.push({ id: `leave-${l._id}`, title: "New Leave Request", desc: `${l.internName || 'Intern'} requested leave (${l.startDate} to ${l.endDate})`, time: l.createdAt || Date.now(), type: 'leave' });
+        }
+      });
+    } else if (user.role === "intern") {
+      (tasks || []).forEach(t => {
+        if (t.status === "Pending") {
+          list.push({ id: `assign-${t._id}`, title: "New Task Assigned", desc: `Admin HQ assigned "${t.title}"`, time: t.createdAt || Date.now(), type: 'task', taskId: t._id });
+        }
+        if (t.marketingData?.editorStatus) {
+          list.push({ id: `editor-${t._id}-${t.marketingData.editorStatus}`, title: "Editor Status Update", desc: `Remarks on "${t.title}": ${t.marketingData.editorStatus}`, time: t.updatedAt || t.createdAt || Date.now(), type: 'task', taskId: t._id });
+        }
+        if ((t.discussion || []).length > 0) {
+          const lastMsg = t.discussion[t.discussion.length - 1];
+          if (lastMsg.sender === "admin") {
+            list.push({ id: `chat-${t._id}-${lastMsg.timestamp}`, title: "Admin Reply in Mission Log", desc: `Admin HQ: "${lastMsg.content}"`, time: lastMsg.timestamp || Date.now(), type: 'chat', taskId: t._id });
+          }
+        }
+      });
+      (leaves || []).forEach(l => {
+        if (l.status === "Approved" || l.status === "Rejected") {
+          list.push({ id: `leave-${l._id}-${l.status}`, title: `Leave ${l.status}`, desc: `Your leave request for ${l.startDate} was ${l.status.toLowerCase()}`, time: l.updatedAt || l.createdAt || Date.now(), type: 'leave' });
+        }
+      });
+    }
+    list.sort((a, b) => new Date(b.time) - new Date(a.time));
+    return list.slice(0, 20).map(n => ({ ...n, unread: !readNotifIds.includes(n.id) }));
+  }, [user, tasks, leaves, readNotifIds]);
+
+  const unreadNotifCount = useMemo(() => notifications.filter(n => n.unread).length, [notifications]);
+
+  const markAllNotificationsRead = useCallback(() => {
+    if (!user) return;
+    const allIds = notifications.map(n => n.id);
+    const combined = Array.from(new Set([...readNotifIds, ...allIds]));
+    setReadNotifIds(combined);
+    try {
+      localStorage.setItem(`sync_read_notifs_${user._id}`, JSON.stringify(combined));
+    } catch (e) {}
+  }, [user, notifications, readNotifIds]);
+
   return (
     <AuthContext.Provider value={{ 
       user, token, loading, login, logout, changePassword, showToast, requestNotificationPermission,
@@ -893,7 +963,8 @@ export function AuthProvider({ children }) {
       generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions,
       generateBrandIntel, markFeedbackAsRead, brandManagerReviewTask,
       companies, addCompany, updateCompany, deleteCompany,
-      brandManagers, removeBrandManager
+      brandManagers, removeBrandManager,
+      notifications, unreadNotifCount, markAllNotificationsRead
     }}>
       {children}
       <NotificationToaster statusMsg={globalToast} onClose={() => setGlobalToast({ type: "", msg: "" })} />

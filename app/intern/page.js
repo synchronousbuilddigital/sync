@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -16,6 +17,7 @@ import NotificationToaster from "../../components/NotificationToaster";
 
 export default function InternDashboard() {
    const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData, markChatRead, showToast, token } = useAuth();
+   const searchParams = useSearchParams();
    
    const hasUnreadInternMessage = (task) => {
      if (!task || task._id === chatTaskId) return false;
@@ -126,6 +128,42 @@ export default function InternDashboard() {
    const [fromDate, setFromDate] = useState("");
    const [toDate, setToDate] = useState("");
    const { getAIBlockerSuggestion } = useAuth();
+
+   // Handle notification deep-link navigation
+   useEffect(() => {
+     if (!tasks || tasks.length === 0 || !searchParams) return;
+     const notifTask = searchParams.get('notif_task');
+     const notifAction = searchParams.get('notif_action');
+     const notifSection = searchParams.get('notif_section');
+     if (notifTask) {
+       const task = tasks.find(t => t._id === notifTask);
+       if (task) {
+         if (notifAction === 'chat') {
+           setChatTaskId(notifTask);
+           if (markChatRead) markChatRead(notifTask);
+         } else {
+           setSelectedTaskId(notifTask);
+           setNote(task.note || '');
+           setMarketingForm({
+             editedLink: task.marketingData?.editedLink || '',
+             rawLink: task.marketingData?.rawLink || '',
+             postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || '',
+             editorStatus: task.marketingData?.editorStatus || ''
+           });
+         }
+       }
+       const url = new URL(window.location.href);
+       url.searchParams.delete('notif_task');
+       url.searchParams.delete('notif_action');
+       window.history.replaceState({}, '', url.toString());
+     }
+     if (notifSection === 'leave') {
+       setIsLeaveModalOpen(true);
+       const url = new URL(window.location.href);
+       url.searchParams.delete('notif_section');
+       window.history.replaceState({}, '', url.toString());
+     }
+   }, [tasks, searchParams]);
 
    const handleUpdatePost = async (e) => {
       e.preventDefault();
@@ -1278,22 +1316,26 @@ export default function InternDashboard() {
          {/* Modals */}
          <AnimatePresence mode="wait">
             {selectedTask && (
-               <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
-                  <motion.div key="task-update-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-xl bg-white dark:bg-[#0A0A0E] rounded-[4rem] p-12 shadow-2xl border border-white/10">
-                     <div className="bg-[#F05E23] w-20 h-20 rounded-[2.5rem] flex items-center justify-center mb-10 shadow-2xl shadow-[#F05E23]/30">
-                        <Activity className="w-10 h-10 text-white" />
+               <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 backdrop-blur-3xl bg-black/80 overflow-y-auto">
+                  <motion.div key="task-update-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-8 shadow-2xl border border-white/10 my-auto max-h-[90vh] overflow-y-auto">
+                     <div className="flex items-center gap-3.5 mb-5 border-b border-black/5 dark:border-white/10 pb-4">
+                        <div className="bg-gradient-to-br from-[#F05E23] to-[#ff7e47] w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-[#F05E23]/25 shrink-0">
+                           <Activity className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                           <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight leading-none italic">Update <span className="text-[#F05E23]">Status</span></h2>
+                           <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mt-1 truncate">"{selectedTask.title}"</p>
+                        </div>
                      </div>
-                     <h2 className="text-5xl font-black uppercase tracking-tighter mb-4 leading-none italic">Update <span className="text-[#F05E23]">Status</span></h2>
-                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mb-12">Updating details for "{selectedTask.title}"</p>
 
-                     <div className="space-y-12">
-                        <div className="space-y-4">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Asset Links & Updates</label>
-                              <input type="url" value={marketingForm.rawLink} onChange={e => setMarketingForm({ ...marketingForm, rawLink: e.target.value })} placeholder="Raw Asset Link (Drive)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
-                              <input type="url" value={marketingForm.editedLink} onChange={e => setMarketingForm({ ...marketingForm, editedLink: e.target.value })} placeholder="Final Output Link (Drive/Canva)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
-                              <input type="url" value={marketingForm.postedLink || ""} onChange={e => setMarketingForm({ ...marketingForm, postedLink: e.target.value })} placeholder="Live Posted Link (Insta/FB/LinkedIn)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white" />
+                     <div className="space-y-5">
+                        <div className="space-y-2.5">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-[#F05E23] pl-1">Asset Links & Updates</label>
+                              <input type="url" value={marketingForm.rawLink} onChange={e => setMarketingForm({ ...marketingForm, rawLink: e.target.value })} placeholder="Raw Asset Link (Drive)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
+                              <input type="url" value={marketingForm.editedLink} onChange={e => setMarketingForm({ ...marketingForm, editedLink: e.target.value })} placeholder="Final Output Link (Drive/Canva)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
+                              <input type="url" value={marketingForm.postedLink || ""} onChange={e => setMarketingForm({ ...marketingForm, postedLink: e.target.value })} placeholder="Live Posted Link (Insta/FB/LinkedIn)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
                               {user.department === 'Digital Marketing' && (
-                                 <select value={marketingForm.editorStatus} onChange={e => setMarketingForm({ ...marketingForm, editorStatus: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 dark:text-white appearance-none cursor-pointer">
+                                 <select value={marketingForm.editorStatus} onChange={e => setMarketingForm({ ...marketingForm, editorStatus: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white appearance-none cursor-pointer">
                                     <option value="">Select Editor Remarks...</option>
                                     <option value="Editing in process">Editing in process</option>
                                     <option value="1st Edit Completed">1st Edit Completed</option>
@@ -1301,19 +1343,19 @@ export default function InternDashboard() {
                                  </select>
                               )}
                            </div>
-                        <div className="space-y-4">
-                           <label className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] pl-2">Choose Status</label>
-                           <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2.5">
+                           <label className="text-[9px] font-black uppercase tracking-widest text-[#F05E23] pl-1">Choose Status</label>
+                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                               {["Pending", "Complete", "Need Credentials", "Need Meeting", "Blocked"].map((status) => (
-                                 <button key={status} onClick={() => handleUpdateTask(selectedTask._id, status)} disabled={submitting} className={`py-6 px-6 rounded-3xl text-[0.7rem] font-black uppercase tracking-widest border-2 transition-all ${selectedTask.status === status ? 'border-[#F05E23] bg-[#F05E23]/10 text-[#F05E23]' : 'border-black/5 dark:border-white/5 hover:border-[#F05E23]/30'}`}>
+                                 <button key={status} onClick={() => handleUpdateTask(selectedTask._id, status)} disabled={submitting} className={`py-3 px-3 rounded-xl text-[0.65rem] font-black uppercase tracking-wider border transition-all truncate ${selectedTask.status === status ? 'border-[#F05E23] bg-[#F05E23]/15 text-[#F05E23] shadow-md shadow-[#F05E23]/10' : 'border-black/5 dark:border-white/10 hover:border-[#F05E23]/40 text-slate-700 dark:text-slate-300'}`}>
                                     {status}
                                  </button>
                               ))}
                            </div>
                         </div>
-                        <div className="flex gap-5">
-                           <button onClick={() => setSelectedTaskId(null)} className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-[0.65rem] border-2 border-black/5 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-all italic">Cancel</button>
-                           <button onClick={() => handleUpdateTask(selectedTask._id, selectedTask.status)} disabled={submitting} className="flex-[2] bg-black dark:bg-white text-white dark:text-black py-6 rounded-2xl font-black uppercase tracking-widest text-[0.65rem] transition-all hover:opacity-90 shadow-2xl">{submitting ? "SAVING..." : "SAVE"}</button>
+                        <div className="flex gap-3 pt-2">
+                           <button onClick={() => setSelectedTaskId(null)} className="flex-1 py-3.5 rounded-xl font-black uppercase tracking-widest text-xs border border-black/10 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-slate-500 dark:text-slate-400">Cancel</button>
+                           <button onClick={() => handleUpdateTask(selectedTask._id, selectedTask.status)} disabled={submitting} className="flex-[2] bg-gradient-to-r from-[#F05E23] to-[#ff7e47] text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-xs transition-all hover:opacity-95 shadow-lg shadow-[#F05E23]/20">{submitting ? "SAVING..." : "SAVE"}</button>
                         </div>
                      </div>
                   </motion.div>
@@ -1321,8 +1363,8 @@ export default function InternDashboard() {
             )}
 
             {chatTask && (
-               <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 backdrop-blur-3xl bg-black/80">
-                  <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[4rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[85vh] max-h-[700px]">
+               <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 backdrop-blur-3xl bg-black/80 overflow-y-auto">
+                  <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[4rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[85vh] max-h-[700px] my-auto">
                      <div className="p-5 sm:p-8 bg-[#F05E23] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
                         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
                            <div className="p-2.5 sm:p-3 bg-white/20 rounded-2xl shrink-0 mt-0.5 sm:mt-0"><MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" /></div>
@@ -1394,27 +1436,27 @@ export default function InternDashboard() {
             )}
 
             {isLeaveModalOpen && (
-               <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
-                  <motion.div key="leave-request-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-xl bg-white dark:bg-[#0A0A0E] rounded-[4rem] p-12 shadow-2xl border border-white/10">
-                     <h2 className="text-5xl font-black uppercase tracking-tighter mb-10 italic">Request <span className="text-[#F05E23]">Leave</span></h2>
-                     <form onSubmit={handleApplyLeave} className="space-y-8">
-                        <div className="grid grid-cols-2 gap-8">
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black uppercase text-[#F05E23] pl-2 tracking-widest">Start Date</label>
-                              <input type="date" required value={leaveReq.startDate} onChange={e => setLeaveReq({ ...leaveReq, startDate: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-6 outline-none font-black italic text-sm" />
+               <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 backdrop-blur-3xl bg-black/80 overflow-y-auto">
+                  <motion.div key="leave-request-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-8 shadow-2xl border border-white/10 my-auto max-h-[90vh] overflow-y-auto">
+                     <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter mb-5 sm:mb-6 italic">Request <span className="text-[#F05E23]">Leave</span></h2>
+                     <form onSubmit={handleApplyLeave} className="space-y-5">
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">Start Date</label>
+                              <input type="date" required value={leaveReq.startDate} onChange={e => setLeaveReq({ ...leaveReq, startDate: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold text-xs" />
                            </div>
-                           <div className="space-y-3">
-                              <label className="text-[10px] font-black uppercase text-[#F05E23] pl-2 tracking-widest">End Date</label>
-                              <input type="date" required value={leaveReq.endDate} onChange={e => setLeaveReq({ ...leaveReq, endDate: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-6 outline-none font-black italic text-sm" />
+                           <div className="space-y-2">
+                              <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">End Date</label>
+                              <input type="date" required value={leaveReq.endDate} onChange={e => setLeaveReq({ ...leaveReq, endDate: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold text-xs" />
                            </div>
                         </div>
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-black uppercase text-[#F05E23] pl-2 tracking-widest">Reason</label>
-                           <textarea rows={4} required value={leaveReq.reason} onChange={e => setLeaveReq({ ...leaveReq, reason: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-6 outline-none font-bold placeholder:opacity-20 italic text-sm" placeholder="Tell us why you need leave..." />
+                        <div className="space-y-2">
+                           <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">Reason</label>
+                           <textarea rows={3} required value={leaveReq.reason} onChange={e => setLeaveReq({ ...leaveReq, reason: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold placeholder:opacity-40 text-xs" placeholder="Tell us why you need leave..." />
                         </div>
-                        <div className="flex gap-5 pt-6">
-                           <button type="submit" disabled={submitting} className="flex-grow bg-[#F05E23] text-white py-6 rounded-2xl font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-[#F05E23]/30 italic">{submitting ? "Sending..." : "Send Request"}</button>
-                           <button type="button" onClick={() => setIsLeaveModalOpen(false)} className="px-10 border-2 border-black/5 dark:border-white/10 rounded-2xl font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all italic text-sm">Cancel</button>
+                        <div className="flex gap-3 pt-2">
+                           <button type="button" onClick={() => setIsLeaveModalOpen(false)} className="flex-1 py-3.5 border border-black/10 dark:border-white/10 rounded-xl font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-xs">Cancel</button>
+                           <button type="submit" disabled={submitting} className="flex-[2] bg-gradient-to-r from-[#F05E23] to-[#ff7e47] text-white py-3.5 rounded-xl font-black uppercase tracking-widest hover:opacity-95 transition-all shadow-lg shadow-[#F05E23]/20 text-xs">{submitting ? "Sending..." : "Send Request"}</button>
                         </div>
                      </form>
                   </motion.div>
@@ -1425,8 +1467,8 @@ export default function InternDashboard() {
          <NotificationToaster statusMsg={statusMsg} onClose={() => setStatusMsg({ type: "", msg: "" })} />
 
          {isUpdatingPost && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1a1a1a] rounded-3xl p-8 max-w-xl w-full border border-white/10 shadow-2xl relative overflow-hidden">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 z-[1000] overflow-y-auto">
+               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1a1a1a] rounded-[2rem] sm:rounded-3xl p-6 sm:p-8 max-w-xl w-full border border-white/10 shadow-2xl relative overflow-y-auto max-h-[90vh] my-auto">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#F05E23]/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
                   <div className="flex justify-between items-center mb-8 relative z-10">
                      <div>
