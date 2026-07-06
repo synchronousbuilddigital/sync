@@ -245,23 +245,23 @@ export default function AdminDashboard() {
 
   const uniqueTaskCompanies = useMemo(() => {
     const set = new Set();
-    companies.forEach(c => set.add(c.name));
-    return Array.from(set).sort();
+    companies.forEach(c => { if (c.name) set.add(c.name); });
+    return Array.from(set).filter(Boolean).sort();
   }, [companies]);
 
   const uniqueTaskDepartments = useMemo(() => {
     const set = new Set();
     companies.forEach(c => {
       if (taskCompanyFilter && c.name !== taskCompanyFilter) return;
-      c.departments?.forEach(d => set.add(d.name));
+      c.departments?.forEach(d => { if (d.name) set.add(d.name); });
     });
-    return Array.from(set).sort();
+    return Array.from(set).filter(Boolean).sort();
   }, [companies, taskCompanyFilter]);
 
   const uniqueTaskTeamMembers = useMemo(() => {
     const set = new Set();
-    interns.forEach(i => set.add(i.name));
-    return Array.from(set).sort();
+    interns.forEach(i => { if (i.name) set.add(i.name); });
+    return Array.from(set).filter(Boolean).sort();
   }, [interns]);
 
   const uniqueTeamDepartments = useMemo(() => {
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
     interns.forEach(i => {
       if (i.department) set.add(i.department);
     });
-    return Array.from(set).sort();
+    return Array.from(set).filter(Boolean).sort();
   }, [interns]);
 
   const filteredTasks = useMemo(() => {
@@ -1729,7 +1729,7 @@ export default function AdminDashboard() {
       {/* Modals */}
       <AnimatePresence>
         {isBroadcasting && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+          <div key="modal-broadcasting" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -1769,7 +1769,7 @@ export default function AdminDashboard() {
         )}
 
         {isAddingClient && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+          <div key="modal-adding-client" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -2110,7 +2110,7 @@ export default function AdminDashboard() {
         )}
 
         {isAddingIntern && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+          <div key="modal-adding-intern" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -2189,7 +2189,7 @@ export default function AdminDashboard() {
           };
 
           return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div key="modal-adding-post" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-[#1E1E1E] rounded-3xl p-8 max-w-xl w-full max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/5 shadow-2xl">
               <div className="flex justify-between items-center mb-8">
                 <div>
@@ -2276,7 +2276,7 @@ export default function AdminDashboard() {
         })()}
 
         {isAssigningTask && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/60">
+          <div key="modal-assigning-task" className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/60">
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -2299,9 +2299,29 @@ export default function AdminDashboard() {
               <form onSubmit={handleAssignTask} className="space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-8">
+                    {/* 1. Select Main Department First */}
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">1. Select Department</label>
+                      <select
+                        value={selectedMainDept}
+                        onChange={e => {
+                          setSelectedMainDept(e.target.value);
+                          setNewTask({ ...newTask, internId: "" });
+                          setSelectedDept("");
+                          setSelectedTaskType("");
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800 appearance-none cursor-pointer"
+                      >
+                        <option value="">Select Department...</option>
+                        <option value="Tech">Tech</option>
+                        <option value="Digital Marketing">Digital Marketing</option>
+                      </select>
+                    </div>
+
+                    {/* 2. Assign To Unit (Team Member filtered according to department) */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Assign To Unit</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">2. Assign To Unit</label>
                         <button
                           type="button"
                           onClick={async () => {
@@ -2311,6 +2331,8 @@ export default function AdminDashboard() {
                             if (res.success) {
                               setAiRecommendation(res.recommendation);
                               setNewTask({ ...newTask, internId: res.recommendation.recommendedInternId });
+                              const recIntern = interns.find(i => i._id === res.recommendation.recommendedInternId);
+                              if (recIntern) setSelectedMainDept(recIntern.department);
                             }
                           }}
                           className="text-[8px] font-black uppercase tracking-widest text-[#F05E23] flex items-center gap-2 hover:opacity-70 transition-all"
@@ -2326,19 +2348,30 @@ export default function AdminDashboard() {
                       <select
                         required
                         value={newTask.internId}
-                        onChange={e => setNewTask({ ...newTask, internId: e.target.value })}
+                        onChange={e => {
+                          const internId = e.target.value;
+                          setNewTask({ ...newTask, internId });
+                          const internObj = interns.find(i => i._id === internId);
+                          if (internObj && !selectedMainDept) {
+                            setSelectedMainDept(internObj.department);
+                          }
+                        }}
                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 outline-none focus:border-[#F05E23]/30 transition-all font-black uppercase text-[0.7rem] tracking-widest text-slate-800 appearance-none"
                       >
                         <option value="">Select team member...</option>
-                        {interns.map(i => <option key={i._id} value={i._id}>{i.name}</option>)}
+                        {interns
+                          .filter(i => !selectedMainDept || i.department === selectedMainDept)
+                          .map(i => (
+                            <option key={i._id} value={i._id}>{i.name} ({i.department})</option>
+                          ))}
                       </select>
                     </div>
 
 
-                    {/* ── CASCADING: Company → Department → Task Type ── */}
-                    {newTask.internId && (() => {
+                    {/* ── CASCADING: Company → Sub Department → Task Type ── */}
+                    {(selectedMainDept || newTask.internId) && (() => {
                       const selectedInternObj = interns.find(i => i._id === newTask.internId);
-                      const isTech = selectedInternObj?.department === 'Tech';
+                      const isTech = selectedMainDept === 'Tech' || selectedInternObj?.department === 'Tech';
                       const textAccentColor = isTech ? 'text-blue-500' : 'text-[#F05E23]';
                       const bgAccentColor = isTech ? 'bg-blue-500' : 'bg-[#F05E23]';
                       const hoverAccentColor = isTech ? 'hover:bg-blue-600' : 'hover:bg-[#d9531e]';
@@ -2346,13 +2379,13 @@ export default function AdminDashboard() {
 
                       return (
                         <div className="space-y-4 pt-4 border-t border-slate-100">
-                          <label className={`text-[10px] font-black uppercase tracking-widest pl-2 ${textAccentColor}`}>Company</label>
+                          <label className={`text-[10px] font-black uppercase tracking-widest pl-2 ${textAccentColor}`}>3. Company</label>
 
                           {/* Company Dropdown */}
                           <div className="flex gap-2 items-center">
                             <select
                               value={selectedCompany}
-                              onChange={e => { setSelectedCompany(e.target.value); setSelectedMainDept(""); setSelectedDept(""); setSelectedTaskType(""); }}
+                              onChange={e => { setSelectedCompany(e.target.value); setSelectedDept(""); setSelectedTaskType(""); }}
                               className={`flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 outline-none ${focusBorderColor} font-black uppercase text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer`}
                             >
                               <option value="">Select Company...</option>
@@ -2373,26 +2406,10 @@ export default function AdminDashboard() {
                             </div>
                           )}
 
-                          {/* Main Department Dropdown */}
+                          {/* Sub-Department Dropdown */}
                           {selectedCompany && (
                             <>
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block pt-2">Main Department</label>
-                              <select
-                                value={selectedMainDept}
-                                onChange={e => { setSelectedMainDept(e.target.value); setSelectedDept(""); setSelectedTaskType(""); }}
-                                className={`w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 outline-none ${focusBorderColor} font-black uppercase text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer`}
-                              >
-                                <option value="">Select Main Department...</option>
-                                <option value="Tech">Tech</option>
-                                <option value="Digital Marketing">Digital Marketing</option>
-                              </select>
-                            </>
-                          )}
-
-                          {/* Sub-Department Dropdown */}
-                          {selectedMainDept && (
-                            <>
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block pt-2">Sub Department</label>
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block pt-2">4. Sub Department</label>
                               <div className="flex gap-2 items-center">
                                 <select
                                   value={selectedDept}
@@ -2400,9 +2417,17 @@ export default function AdminDashboard() {
                                   className={`flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 outline-none ${focusBorderColor} font-black uppercase text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer`}
                                 >
                                   <option value="">Select Sub Department...</option>
-                                  {(companies.find(c => c._id === selectedCompany)?.departments || []).filter(d => (d.mainDepartment || "Digital Marketing") === selectedMainDept).map(d => (
-                                    <option key={d._id} value={d._id}>{d.name}</option>
-                                  ))}
+                                  {(companies.find(c => c._id === selectedCompany)?.departments || [])
+                                    .filter(d => {
+                                      const dMain = d.mainDepartment || "Digital Marketing";
+                                      if (!selectedMainDept || dMain === selectedMainDept) return true;
+                                      if (selectedMainDept === "Tech" && /tech|dev|web|app|software|code|system|it|ui|ux|frontend|backend|fullstack|qa|design|data|cloud/i.test(d.name)) return true;
+                                      if (selectedMainDept === "Digital Marketing" && /image|video|seo|social|media|content|ads|marketing|copy|brand|post/i.test(d.name)) return true;
+                                      return false;
+                                    })
+                                    .map(d => (
+                                      <option key={d._id} value={d._id}>{d.name}</option>
+                                    ))}
                                 </select>
                                 <button type="button" onClick={() => setShowAddDept(!showAddDept)} className={`p-3 text-white rounded-xl transition-all ${bgAccentColor} ${hoverAccentColor}`}>
                                   <Plus className="w-4 h-4" />
@@ -2413,7 +2438,7 @@ export default function AdminDashboard() {
  <input value={addingDeptName} onChange={e => setAddingDeptName(e.target.value)} placeholder="New department name..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-5 outline-none text-xs font-bold " />
                                   <button type="button" onClick={async () => {
                                     if (!addingDeptName.trim()) return;
-                                    await updateCompany(selectedCompany, { addDepartment: addingDeptName.trim(), mainDepartment: selectedMainDept });
+                                    await updateCompany(selectedCompany, { addDepartment: addingDeptName.trim(), mainDepartment: selectedMainDept || "Tech" });
                                     setAddingDeptName(""); setShowAddDept(false);
                                   }} className="px-6 bg-green-500 text-white rounded-xl text-xs font-black uppercase hover:bg-green-600 transition-all">Add</button>
                                 </div>
@@ -2424,7 +2449,7 @@ export default function AdminDashboard() {
                           {/* Task Type Dropdown */}
                           {selectedDept && (
                             <>
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block pt-2">Task Type</label>
+                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2 block pt-2">5. Task Type</label>
                               <div className="flex gap-2 items-center">
                                 <select
                                   value={selectedTaskType}
@@ -2617,7 +2642,7 @@ export default function AdminDashboard() {
           </div>
         )}
         {chatTaskId && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 backdrop-blur-xl bg-black/60">
+          <div key="modal-chat-task" className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 backdrop-blur-xl bg-black/60">
             <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[2rem] sm:rounded-[3rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[85vh] max-h-[700px]">
               <div className="p-5 sm:p-8 bg-[#F05E23] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
                 <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
@@ -2690,7 +2715,7 @@ export default function AdminDashboard() {
         )}
 
         {reviewingTask && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
+          <div key="modal-reviewing-task" className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-lg bg-white dark:bg-[#0A0A0E] rounded-[3rem] p-12 shadow-2xl border border-white/10">
               <button onClick={() => setReviewingTask(null)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"><X className="w-5 h-5 text-slate-500" /></button>
               <div className="mb-10">
@@ -2716,7 +2741,7 @@ export default function AdminDashboard() {
         )}
 
         {isAddingProject && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+          <div key="modal-adding-project" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -2757,7 +2782,7 @@ export default function AdminDashboard() {
         )}
 
         {isEditingCredentials && selectedCredentialProject && (
-          <div className="fixed inset-0 z-110 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+          <div key="modal-editing-credentials" className="fixed inset-0 z-110 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -2899,7 +2924,7 @@ export default function AdminDashboard() {
         )}
 
         {isAddingBrandManager && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+          <div key="modal-adding-brand-manager" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -2983,7 +3008,7 @@ export default function AdminDashboard() {
         )}
 
         {editingTaskModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div key="modal-editing-task" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-black/10 dark:border-white/10 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6 border-b border-black/5 dark:border-white/10 pb-4">
                 <div>
@@ -3106,8 +3131,8 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <NotificationToaster statusMsg={statusMsg} onClose={() => setStatusMsg({ type: "", msg: "" })} />
       </AnimatePresence>
+      <NotificationToaster statusMsg={statusMsg} onClose={() => setStatusMsg({ type: "", msg: "" })} />
     </div>
   );
 }

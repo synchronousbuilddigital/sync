@@ -6,9 +6,26 @@ import { RefreshCw, ArrowDown } from "lucide-react";
 export default function PullToRefresh() {
   const [pullDistance, setPullDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const threshold = 65;
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const checkStandalone = () => {
+        const standalone =
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.matchMedia("(display-mode: fullscreen)").matches ||
+          window.matchMedia("(display-mode: minimal-ui)").matches ||
+          window.navigator.standalone === true;
+        setIsStandalone(standalone);
+      };
+      checkStandalone();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isStandalone) return;
+
     let startY = 0;
     let isPulling = false;
 
@@ -63,9 +80,9 @@ export default function PullToRefresh() {
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [pullDistance, refreshing]);
+  }, [pullDistance, refreshing, isStandalone]);
 
-  if (pullDistance <= 5 && !refreshing) return null;
+  if (!isStandalone || (pullDistance <= 5 && !refreshing)) return null;
 
   return (
     <div
