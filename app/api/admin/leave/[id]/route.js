@@ -1,7 +1,9 @@
 import dbConnect from "@/lib/mongodb";
 import Leave from "@/models/Leave";
+import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
 import { sendLeaveStatusEmail } from "@/lib/mail";
+import { sendPushToOneUser } from "@/lib/webpush";
 
 export async function PATCH(req, { params }) {
   try {
@@ -30,6 +32,20 @@ export async function PATCH(req, { params }) {
       await sendLeaveStatusEmail(leave.internId.email, leave.internId.name, status, adminNote);
     } catch (mailErr) {
       console.error("Failed to send leave update email", mailErr);
+    }
+
+    // Send Web Push to intern (works even when app is closed)
+    try {
+      const internWithSubs = await User.findById(leave.internId._id).select('pushSubscriptions');
+      const emoji = status === 'Approved' ? '✅' : '❌';
+      await sendPushToOneUser(internWithSubs, {
+        title: `${emoji} Leave ${status}`,
+        body: `Your leave request for ${leave.startDate} to ${leave.endDate} has been ${status.toLowerCase()} by Admin HQ.`,
+        url: `/intern?notif_section=leave`,
+        tag: `leave-${id}-${status}`
+      });
+    } catch (pushErr) {
+      console.error("Failed to send push for leave:", pushErr);
     }
 
     return Response.json({ success: true, leave });

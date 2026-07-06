@@ -11,6 +11,13 @@ const UserSchema = new mongoose.Schema({
   mustChangePassword: { type: Boolean, default: true },
   resetToken: { type: String, default: null },
   resetTokenExpiry: { type: Date, default: null },
+  pushSubscriptions: [{
+    endpoint: { type: String, required: true },
+    keys: {
+      p256dh: { type: String, required: true },
+      auth: { type: String, required: true }
+    }
+  }]
 }, { timestamps: true });
 
 // Hash password before saving

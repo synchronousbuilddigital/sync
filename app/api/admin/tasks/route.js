@@ -7,6 +7,7 @@ import ClientProject from "@/models/ClientProject";
 import { verifyToken } from "@/lib/auth";
 import { sendTaskAssignmentEmail } from "@/lib/mail";
 import { fetchPostTrackerData } from "@/lib/googleSheets";
+import { sendPushToOneUser } from "@/lib/webpush";
 
 export const dynamic = 'force-dynamic';
 
@@ -115,7 +116,19 @@ export async function POST(req) {
       });
     } catch (mailErr) {
        console.error("Failed to send task assignment email:", mailErr);
-       // We don't return error here because the task was already created successfully
+    }
+
+    // Send Web Push notification to intern (works even when app is closed)
+    try {
+      const internWithSubs = await User.findById(internId).select('pushSubscriptions');
+      await sendPushToOneUser(internWithSubs, {
+        title: `🚀 New Task: ${title}`,
+        body: `Admin HQ assigned you a ${priority || 'Medium'} priority task. Tap to view.`,
+        url: `/intern?notif_task=${task._id}&notif_action=update`,
+        tag: `new-task-${task._id}`
+      });
+    } catch (pushErr) {
+      console.error("Failed to send push notification:", pushErr);
     }
 
     return Response.json({ success: true, task });

@@ -3,6 +3,7 @@ import Task from "@/models/Task";
 import User from "@/models/User";
 import { verifyToken } from "@/lib/auth";
 import { sendMeetingRequestEmail } from "@/lib/mail";
+import { sendPushToAdmins } from "@/lib/webpush";
 
 export async function PATCH(req, { params }) {
   try {
@@ -61,6 +62,34 @@ export async function PATCH(req, { params }) {
       } catch (err) {
         console.error("Failed to notify admin of meeting:", err);
       }
+    }
+
+    // Send Web Push to admins for important status updates (works even when app is closed)
+    try {
+      const intern = await User.findById(decoded.id).select('name');
+      const internName = intern?.name || 'An intern';
+      const statusEmojis = {
+        'Complete': '🎉',
+        'Need Meeting': '📅',
+        'Need Credentials': '🔑',
+        'Blocked': '🚫',
+        'Pending': '⏳'
+      };
+      const emoji = statusEmojis[status] || '📋';
+      const hasLinks = marketingData?.rawLink || marketingData?.editedLink || marketingData?.postedLink;
+
+      if (['Complete', 'Need Meeting', 'Need Credentials', 'Blocked'].includes(status) || hasLinks) {
+        await sendPushToAdmins(User, {
+          title: `${emoji} ${internName}: Task ${status}`,
+          body: hasLinks
+            ? `Links submitted for "${task.title}"`
+            : `"${task.title}" marked as ${status}`,
+          url: `/admin?notif_task=${task._id}&notif_action=${status === 'Complete' ? 'update' : 'chat'}`,
+          tag: `task-status-${task._id}-${status}`
+        });
+      }
+    } catch (pushErr) {
+      console.error("Failed to send push for task update:", pushErr);
     }
 
     return Response.json({ success: true, task });

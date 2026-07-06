@@ -9,7 +9,28 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [globalToast, setGlobalToast] = useState({ type: "", msg: "" });
 
-  const requestNotificationPermission = useCallback(async () => {
+  const subscribeToPush = useCallback(async (authToken) => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const existing = await reg.pushManager.getSubscription();
+      const subscription = existing || await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      });
+      if (subscription && authToken) {
+        await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${authToken}` },
+          body: JSON.stringify({ subscription })
+        });
+      }
+    } catch (e) {
+      console.warn("[WebPush] Subscribe failed:", e);
+    }
+  }, []);
+
+  const requestNotificationPermission = useCallback(async (authToken) => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
         try {
@@ -23,16 +44,20 @@ export function AuthProvider({ children }) {
                 vibrate: [200, 100, 200]
               });
             });
+            await subscribeToPush(authToken);
           }
           return perm;
         } catch (e) {
           console.warn("Notification permission error:", e);
         }
+      } else if (Notification.permission === "granted") {
+        // Already granted — ensure push subscription is saved
+        await subscribeToPush(authToken);
       }
       return Notification.permission;
     }
     return "unsupported";
-  }, []);
+  }, [subscribeToPush]);
 
   const showToast = useCallback((msg, type = "success") => {
     setGlobalToast({ type, msg });
@@ -367,6 +392,8 @@ export function AuthProvider({ children }) {
       }, 10000);
 
       setLoading(false);
+      // Re-subscribe to web push on every page load so subscriptions stay fresh
+      setTimeout(() => requestNotificationPermission(storedToken), 2000);
       return () => clearInterval(pollInterval);
     }
     setLoading(false);
@@ -386,7 +413,7 @@ export function AuthProvider({ children }) {
         setToken(data.token);
         localStorage.setItem("sync_user", JSON.stringify(data.user));
         localStorage.setItem("sync_token", data.token);
-        setTimeout(() => requestNotificationPermission(), 1500);
+        setTimeout(() => requestNotificationPermission(data.token), 1500);
         
         if (data.user.mustChangePassword) {
           router.push("/change-password");
