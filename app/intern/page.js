@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,7 +16,6 @@ import NotificationToaster from "../../components/NotificationToaster";
 
 export default function InternDashboard() {
    const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData, markChatRead, showToast, token } = useAuth();
-   const searchParams = useSearchParams();
    
    const hasUnreadInternMessage = (task) => {
      if (!task || task._id === chatTaskId) return false;
@@ -131,10 +129,13 @@ export default function InternDashboard() {
 
    // Handle notification deep-link navigation
    useEffect(() => {
-     if (!tasks || tasks.length === 0 || !searchParams) return;
-     const notifTask = searchParams.get('notif_task');
-     const notifAction = searchParams.get('notif_action');
-     const notifSection = searchParams.get('notif_section');
+     if (!tasks || tasks.length === 0) return;
+     const search = typeof window !== 'undefined' ? window.location.search : '';
+     if (!search) return;
+     const params = new URLSearchParams(search);
+     const notifTask = params.get('notif_task');
+     const notifAction = params.get('notif_action');
+     const notifSection = params.get('notif_section');
      if (notifTask) {
        const task = tasks.find(t => t._id === notifTask);
        if (task) {
@@ -163,7 +164,7 @@ export default function InternDashboard() {
        url.searchParams.delete('notif_section');
        window.history.replaceState({}, '', url.toString());
      }
-   }, [tasks, searchParams]);
+   }, [tasks]);
 
    const handleUpdatePost = async (e) => {
       e.preventDefault();

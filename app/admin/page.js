@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthContext";
 import AdminSpreadsheet from "../../components/AdminSpreadsheet";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,7 +27,6 @@ export default function AdminDashboard() {
     companies, addCompany, updateCompany, deleteCompany,
     brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion
   } = useAuth();
-  const searchParams = useSearchParams();
 
   const hasUnreadAdminMessage = (task) => {
     if (!task || task._id === chatTaskId) return false;
@@ -130,10 +129,13 @@ export default function AdminDashboard() {
 
   // Handle notification deep-link navigation
   useEffect(() => {
-    if (!tasks || tasks.length === 0 || !searchParams) return;
-    const notifTask = searchParams.get('notif_task');
-    const notifAction = searchParams.get('notif_action');
-    const notifSection = searchParams.get('notif_section');
+    if (!tasks || tasks.length === 0) return;
+    const search = typeof window !== 'undefined' ? window.location.search : '';
+    if (!search) return;
+    const params = new URLSearchParams(search);
+    const notifTask = params.get('notif_task');
+    const notifAction = params.get('notif_action');
+    const notifSection = params.get('notif_section');
     if (notifTask) {
       const task = tasks.find(t => t._id === notifTask);
       if (task) {
@@ -143,7 +145,6 @@ export default function AdminDashboard() {
           if (markChatRead) markChatRead(notifTask);
         }
       }
-      // Clear the params from URL without reload
       const url = new URL(window.location.href);
       url.searchParams.delete('notif_task');
       url.searchParams.delete('notif_action');
@@ -155,7 +156,7 @@ export default function AdminDashboard() {
       url.searchParams.delete('notif_section');
       window.history.replaceState({}, '', url.toString());
     }
-  }, [tasks, searchParams]);
+  }, [tasks]);
   const [taskCompanyFilter, setTaskCompanyFilter] = useState("");
   const [taskDepartmentFilter, setTaskDepartmentFilter] = useState("");
   const [taskTeamMemberFilter, setTaskTeamMemberFilter] = useState("");
