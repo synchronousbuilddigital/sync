@@ -86,6 +86,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [interns, setInterns] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [taskStore, setTaskStore] = useState({ role: null, ownerId: null });
@@ -145,6 +146,8 @@ export function AuthProvider({ children }) {
     } catch (e) {
       console.error("Failed to fetch tasks", e);
       setTasks([]);
+    } finally {
+      setDataLoading(false);
     }
   }, []);
 
@@ -397,6 +400,7 @@ export function AuthProvider({ children }) {
       return () => clearInterval(pollInterval);
     }
     setLoading(false);
+    setDataLoading(false); // No stored session — nothing to load
   }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers]);
 
   const login = async (email, password) => {
@@ -413,6 +417,7 @@ export function AuthProvider({ children }) {
         setToken(data.token);
         localStorage.setItem("sync_user", JSON.stringify(data.user));
         localStorage.setItem("sync_token", data.token);
+        setDataLoading(true); // Reset — fresh data fetch incoming after login
         setTimeout(() => requestNotificationPermission(data.token), 1500);
         
         if (data.user.mustChangePassword) {
@@ -912,8 +917,10 @@ export function AuthProvider({ children }) {
   const [readNotifIds, setReadNotifIds] = useState([]);
   useEffect(() => {
     if (user) {
+      const userId = user.id || user._id;
+      if (!userId) return;
       try {
-        const stored = JSON.parse(localStorage.getItem(`sync_read_notifs_${user._id}`) || "[]");
+        const stored = JSON.parse(localStorage.getItem(`sync_read_notifs_${userId}`) || "[]");
         setReadNotifIds(stored);
       } catch (e) {}
     }
@@ -962,6 +969,21 @@ export function AuthProvider({ children }) {
           list.push({ id: `leave-${l._id}-${l.status}`, title: `Leave ${l.status}`, desc: `Your leave request for ${l.startDate} was ${l.status.toLowerCase()}`, time: l.updatedAt || l.createdAt || Date.now(), type: 'leave' });
         }
       });
+    } else if (user.role === "brand_manager" || user.role === "client") {
+      (tasks || []).forEach(t => {
+        if (t.status === "Review" || t.status === "Complete") {
+          list.push({ id: `task-${t._id}-${t.status}`, title: `Task ${t.status}`, desc: `"${t.title}" is ready for your review`, time: t.updatedAt || t.createdAt || Date.now(), type: 'task', taskId: t._id });
+        }
+        if (t.marketingData?.rawLink || t.marketingData?.editedLink || t.marketingData?.postedLink) {
+          list.push({ id: `link-${t._id}`, title: "Asset Links Submitted", desc: `New asset links available for "${t.title}"`, time: t.updatedAt || t.createdAt || Date.now(), type: 'link', taskId: t._id });
+        }
+        if ((t.discussion || []).length > 0) {
+          const lastMsg = t.discussion[t.discussion.length - 1];
+          if (lastMsg.sender !== user.role) {
+            list.push({ id: `chat-${t._id}-${lastMsg.timestamp}`, title: "Mission Log Message", desc: `${lastMsg.senderName || 'Team'}: "${lastMsg.content}"`, time: lastMsg.timestamp || Date.now(), type: 'chat', taskId: t._id });
+          }
+        }
+      });
     }
     list.sort((a, b) => new Date(b.time) - new Date(a.time));
     return list.slice(0, 20).map(n => ({ ...n, unread: !readNotifIds.includes(n.id) }));
@@ -971,17 +993,19 @@ export function AuthProvider({ children }) {
 
   const markAllNotificationsRead = useCallback(() => {
     if (!user) return;
+    const userId = user.id || user._id;
+    if (!userId) return;
     const allIds = notifications.map(n => n.id);
     const combined = Array.from(new Set([...readNotifIds, ...allIds]));
     setReadNotifIds(combined);
     try {
-      localStorage.setItem(`sync_read_notifs_${user._id}`, JSON.stringify(combined));
+      localStorage.setItem(`sync_read_notifs_${userId}`, JSON.stringify(combined));
     } catch (e) {}
   }, [user, notifications, readNotifIds]);
 
   return (
     <AuthContext.Provider value={{ 
-      user, token, loading, login, logout, changePassword, showToast, requestNotificationPermission,
+      user, token, loading, dataLoading, login, logout, changePassword, showToast, requestNotificationPermission,
       interns, tasks, taskStore, fetchTasks, fetchInterns, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, refreshAdminData, refreshInternData, refreshBrandData, refreshClientData, companyName, leaves, projects, addIntern, removeIntern, assignTask, 
       updateTaskStatus, deleteTask, updateTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,

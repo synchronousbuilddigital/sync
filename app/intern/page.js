@@ -15,7 +15,7 @@ import {
 import NotificationToaster from "../../components/NotificationToaster";
 
 export default function InternDashboard() {
-   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, refreshInternData, markChatRead, showToast, token } = useAuth();
+   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, dataLoading, refreshInternData, markChatRead, showToast, token } = useAuth();
    
    const hasUnreadInternMessage = (task) => {
      if (!task || task._id === chatTaskId) return false;
@@ -264,7 +264,7 @@ export default function InternDashboard() {
      return true;
    });
 
-   if (loading) return (
+   if (loading || dataLoading) return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
             <Clock className="w-12 h-12 text-[#F05E23]" />

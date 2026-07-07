@@ -1,6 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import Task from "@/models/Task";
 import User from "@/models/User";
+import Company from "@/models/Company";
 import mongoose from "mongoose";
 import { verifyToken } from "@/lib/auth";
 import { fetchPostTrackerData } from "@/lib/googleSheets";

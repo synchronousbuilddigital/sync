@@ -23,7 +23,7 @@ export default function AdminDashboard() {
     approveLeave, announceToAll, addProject, updateProject, deleteProject,
     adminClientProjects, createClient, createClientProject, updateClientProject,
     purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed,
-    markFeedbackAsRead, loading, token,
+    markFeedbackAsRead, loading, dataLoading, token,
     companies, addCompany, updateCompany, deleteCompany,
     brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion
   } = useAuth();
@@ -487,7 +487,7 @@ export default function AdminDashboard() {
     calculateFeasibility();
   }, [selectedSteps, customTasks, newTask.internId, tasks]);
 
-  if (loading) return (
+  if (loading || dataLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#050505]">
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
         <Clock className="w-12 h-12 text-[#F05E23]" />
