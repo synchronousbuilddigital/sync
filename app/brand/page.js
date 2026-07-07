@@ -25,6 +25,32 @@ export default function BrandManagerDashboard() {
   // Ownership-Stamped State guard: Only display tasks if memory is explicitly stamped for brand_manager identity!
   // Also allow through if still loading (dataLoading=true means fetch is in-flight, don't show empty yet)
   const tasks = dataLoading ? [] : ((taskStore?.role === "brand_manager") ? (contextTasks || []) : []);
+
+  // Handle notification deep-link navigation
+  useEffect(() => {
+    const handleNotifNav = () => {
+      if (!tasks || tasks.length === 0) return;
+      const search = typeof window !== 'undefined' ? window.location.search : '';
+      if (!search) return;
+      const params = new URLSearchParams(search);
+      const notifTask = params.get('notif_task');
+      if (notifTask) {
+        const task = tasks.find(t => t._id === notifTask);
+        if (task) {
+          setCalendarSelectedTask(task);
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.delete('notif_task');
+        url.searchParams.delete('notif_action');
+        window.history.replaceState({}, '', url.toString());
+      }
+    };
+
+    handleNotifNav();
+    window.addEventListener('notif_navigation', handleNotifNav);
+    return () => window.removeEventListener('notif_navigation', handleNotifNav);
+  }, [tasks]);
+
   const { isDark } = useTheme();
   const [expandedTask, setExpandedTask] = useState(null);
   const [activeTab, setActiveTab] = useState("All");

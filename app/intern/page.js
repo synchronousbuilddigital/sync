@@ -129,42 +129,48 @@ export default function InternDashboard() {
 
    // Handle notification deep-link navigation
    useEffect(() => {
-     if (!tasks || tasks.length === 0) return;
-     const search = typeof window !== 'undefined' ? window.location.search : '';
-     if (!search) return;
-     const params = new URLSearchParams(search);
-     const notifTask = params.get('notif_task');
-     const notifAction = params.get('notif_action');
-     const notifSection = params.get('notif_section');
-     if (notifTask) {
-       const task = tasks.find(t => t._id === notifTask);
-       if (task) {
-         if (notifAction === 'chat') {
-           setChatTaskId(notifTask);
-           if (markChatRead) markChatRead(notifTask);
-         } else {
-           setSelectedTaskId(notifTask);
-           setNote(task.note || '');
-           setMarketingForm({
-             editedLink: task.marketingData?.editedLink || '',
-             rawLink: task.marketingData?.rawLink || '',
-             postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || '',
-             editorStatus: task.marketingData?.editorStatus || ''
-           });
+     const handleNotifNav = () => {
+       if (!tasks || tasks.length === 0) return;
+       const search = typeof window !== 'undefined' ? window.location.search : '';
+       if (!search) return;
+       const params = new URLSearchParams(search);
+       const notifTask = params.get('notif_task');
+       const notifAction = params.get('notif_action');
+       const notifSection = params.get('notif_section');
+       if (notifTask) {
+         const task = tasks.find(t => t._id === notifTask);
+         if (task) {
+           if (notifAction === 'chat') {
+             setChatTaskId(notifTask);
+             if (markChatRead) markChatRead(notifTask);
+           } else {
+             setSelectedTaskId(notifTask);
+             setNote(task.note || '');
+             setMarketingForm({
+               editedLink: task.marketingData?.editedLink || '',
+               rawLink: task.marketingData?.rawLink || '',
+               postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || '',
+               editorStatus: task.marketingData?.editorStatus || ''
+             });
+           }
          }
+         const url = new URL(window.location.href);
+         url.searchParams.delete('notif_task');
+         url.searchParams.delete('notif_action');
+         window.history.replaceState({}, '', url.toString());
        }
-       const url = new URL(window.location.href);
-       url.searchParams.delete('notif_task');
-       url.searchParams.delete('notif_action');
-       window.history.replaceState({}, '', url.toString());
-     }
-     if (notifSection === 'leave') {
-       setIsLeaveModalOpen(true);
-       const url = new URL(window.location.href);
-       url.searchParams.delete('notif_section');
-       window.history.replaceState({}, '', url.toString());
-     }
-   }, [tasks]);
+       if (notifSection === 'leave') {
+         setIsLeaveModalOpen(true);
+         const url = new URL(window.location.href);
+         url.searchParams.delete('notif_section');
+         window.history.replaceState({}, '', url.toString());
+       }
+     };
+
+     handleNotifNav();
+     window.addEventListener('notif_navigation', handleNotifNav);
+     return () => window.removeEventListener('notif_navigation', handleNotifNav);
+   }, [tasks, markChatRead]);
 
    const handleUpdatePost = async (e) => {
       e.preventDefault();

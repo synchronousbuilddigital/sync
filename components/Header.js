@@ -32,12 +32,24 @@ export default function Header() {
     if (n.unread) markAllNotificationsRead();
     setNotifOpen(false);
     if (n.taskId) {
-      const dashPath = user?.role === 'admin' ? '/admin' : '/intern';
+      const dashPath = user?.role === 'admin' ? '/admin' : (user?.role === 'brand_manager' ? '/brand' : (user?.role === 'client' ? '/client' : '/intern'));
       const action = n.type === 'chat' ? 'chat' : 'update';
-      router.push(`${dashPath}?notif_task=${n.taskId}&notif_action=${action}`);
+      const targetUrl = `${dashPath}?notif_task=${n.taskId}&notif_action=${action}`;
+      if (pathname === dashPath) {
+        window.history.pushState({}, '', targetUrl);
+        window.dispatchEvent(new Event('notif_navigation'));
+      } else {
+        router.push(targetUrl);
+      }
     } else if (n.type === 'leave') {
       const dashPath = user?.role === 'admin' ? '/admin' : '/intern';
-      router.push(`${dashPath}?notif_section=leave`);
+      const targetUrl = `${dashPath}?notif_section=leave`;
+      if (pathname === dashPath) {
+        window.history.pushState({}, '', targetUrl);
+        window.dispatchEvent(new Event('notif_navigation'));
+      } else {
+        router.push(targetUrl);
+      }
     }
   };
 

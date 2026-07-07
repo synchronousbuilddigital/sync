@@ -129,34 +129,39 @@ export default function AdminDashboard() {
 
   // Handle notification deep-link navigation
   useEffect(() => {
-    if (!tasks || tasks.length === 0) return;
-    const search = typeof window !== 'undefined' ? window.location.search : '';
-    if (!search) return;
-    const params = new URLSearchParams(search);
-    const notifTask = params.get('notif_task');
-    const notifAction = params.get('notif_action');
-    const notifSection = params.get('notif_section');
-    if (notifTask) {
-      const task = tasks.find(t => t._id === notifTask);
-      if (task) {
-        setActiveTab('tasks');
-        if (notifAction === 'chat') {
+    const handleNotifNav = () => {
+      if (!tasks || tasks.length === 0) return;
+      const search = typeof window !== 'undefined' ? window.location.search : '';
+      if (!search) return;
+      const params = new URLSearchParams(search);
+      const notifTask = params.get('notif_task');
+      const notifAction = params.get('notif_action');
+      const notifSection = params.get('notif_section');
+      if (notifTask) {
+        const task = tasks.find(t => t._id === notifTask);
+        if (task) {
           setChatTaskId(notifTask);
-          if (markChatRead) markChatRead(notifTask);
+          if (markChatRead && notifAction === 'chat') {
+            markChatRead(notifTask);
+          }
         }
+        const url = new URL(window.location.href);
+        url.searchParams.delete('notif_task');
+        url.searchParams.delete('notif_action');
+        window.history.replaceState({}, '', url.toString());
       }
-      const url = new URL(window.location.href);
-      url.searchParams.delete('notif_task');
-      url.searchParams.delete('notif_action');
-      window.history.replaceState({}, '', url.toString());
-    }
-    if (notifSection === 'leave') {
-      setActiveTab('holidays');
-      const url = new URL(window.location.href);
-      url.searchParams.delete('notif_section');
-      window.history.replaceState({}, '', url.toString());
-    }
-  }, [tasks]);
+      if (notifSection === 'leave') {
+        setActiveTab('holidays');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('notif_section');
+        window.history.replaceState({}, '', url.toString());
+      }
+    };
+
+    handleNotifNav();
+    window.addEventListener('notif_navigation', handleNotifNav);
+    return () => window.removeEventListener('notif_navigation', handleNotifNav);
+  }, [tasks, markChatRead]);
   const [taskCompanyFilter, setTaskCompanyFilter] = useState("");
   const [taskDepartmentFilter, setTaskDepartmentFilter] = useState("");
   const [taskTeamMemberFilter, setTaskTeamMemberFilter] = useState("");

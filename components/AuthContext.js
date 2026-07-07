@@ -931,16 +931,18 @@ export function AuthProvider({ children }) {
     const list = [];
     if (user.role === "admin") {
       (tasks || []).forEach(t => {
-        if (t.status === "Complete" || t.status === "Need Meeting" || t.status === "Need Credentials" || t.status === "Blocked") {
-          list.push({ id: `task-${t._id}-${t.status}`, title: `Task ${t.status}`, desc: `${t.assignedTo || 'Intern'} updated "${t.title}" to ${t.status}`, time: t.updatedAt || t.createdAt || Date.now(), type: 'task', taskId: t._id });
+        const memberName = t.internId?.name || t.assignedTo || 'Team Member';
+        if (t.status === "Complete" || t.status === "Working" || t.status === "Review" || t.status === "Need Meeting" || t.status === "Need Credentials" || t.status === "Blocked") {
+          list.push({ id: `task-${t._id}-${t.status}`, title: `${memberName} • ${t.status}`, desc: `${memberName} updated "${t.title}" to ${t.status}`, time: t.updatedAt || t.createdAt || Date.now(), type: 'task', taskId: t._id });
         }
         if (t.marketingData?.rawLink || t.marketingData?.editedLink || t.marketingData?.postedLink) {
-          list.push({ id: `link-${t._id}`, title: "Asset Links Updated", desc: `Links submitted for "${t.title}"`, time: t.updatedAt || t.createdAt || Date.now(), type: 'link', taskId: t._id });
+          list.push({ id: `link-${t._id}`, title: `${memberName} • Links Updated`, desc: `${memberName} submitted asset links for "${t.title}"`, time: t.updatedAt || t.createdAt || Date.now(), type: 'link', taskId: t._id });
         }
         if ((t.discussion || []).length > 0) {
           const lastMsg = t.discussion[t.discussion.length - 1];
           if (lastMsg.sender === "intern") {
-            list.push({ id: `chat-${t._id}-${lastMsg.timestamp}`, title: "Mission Log Message", desc: `${lastMsg.senderName || 'Intern'}: "${lastMsg.content}"`, time: lastMsg.timestamp || Date.now(), type: 'chat', taskId: t._id });
+            const senderName = lastMsg.senderName || memberName;
+            list.push({ id: `chat-${t._id}-${lastMsg.timestamp}`, title: `${senderName} • Mission Log`, desc: `${senderName}: "${lastMsg.content}" on "${t.title}"`, time: lastMsg.timestamp || Date.now(), type: 'chat', taskId: t._id });
           }
         }
       });
@@ -971,16 +973,18 @@ export function AuthProvider({ children }) {
       });
     } else if (user.role === "brand_manager" || user.role === "client") {
       (tasks || []).forEach(t => {
+        const memberName = t.internId?.name || t.assignedTo || 'Team Member';
         if (t.status === "Review" || t.status === "Complete") {
-          list.push({ id: `task-${t._id}-${t.status}`, title: `Task ${t.status}`, desc: `"${t.title}" is ready for your review`, time: t.updatedAt || t.createdAt || Date.now(), type: 'task', taskId: t._id });
+          list.push({ id: `task-${t._id}-${t.status}`, title: `${memberName} • Task ${t.status}`, desc: `${memberName} marked "${t.title}" ready for review`, time: t.updatedAt || t.createdAt || Date.now(), type: 'task', taskId: t._id });
         }
         if (t.marketingData?.rawLink || t.marketingData?.editedLink || t.marketingData?.postedLink) {
-          list.push({ id: `link-${t._id}`, title: "Asset Links Submitted", desc: `New asset links available for "${t.title}"`, time: t.updatedAt || t.createdAt || Date.now(), type: 'link', taskId: t._id });
+          list.push({ id: `link-${t._id}`, title: `${memberName} • Links Submitted`, desc: `${memberName} submitted asset links for "${t.title}"`, time: t.updatedAt || t.createdAt || Date.now(), type: 'link', taskId: t._id });
         }
         if ((t.discussion || []).length > 0) {
           const lastMsg = t.discussion[t.discussion.length - 1];
           if (lastMsg.sender !== user.role) {
-            list.push({ id: `chat-${t._id}-${lastMsg.timestamp}`, title: "Mission Log Message", desc: `${lastMsg.senderName || 'Team'}: "${lastMsg.content}"`, time: lastMsg.timestamp || Date.now(), type: 'chat', taskId: t._id });
+            const senderName = lastMsg.senderName || memberName;
+            list.push({ id: `chat-${t._id}-${lastMsg.timestamp}`, title: `${senderName} • Mission Log`, desc: `${senderName}: "${lastMsg.content}" on "${t.title}"`, time: lastMsg.timestamp || Date.now(), type: 'chat', taskId: t._id });
           }
         }
       });
