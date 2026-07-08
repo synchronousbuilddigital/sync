@@ -93,6 +93,9 @@ export function AuthProvider({ children }) {
   const [companyName, setCompanyName] = useState("");
   const [leaves, setLeaves] = useState([]); // Holiday/Leave records
   const [projects, setProjects] = useState([]); // Portfolio projects
+  const [productionItems, setProductionItems] = useState([]);
+  const [partnerLogos, setPartnerLogos] = useState([]);
+  const [productionCategories, setProductionCategories] = useState([]);
   const [clientProject, setClientProject] = useState(null); // High-level Brand workflow
   const [adminClientProjects, setAdminClientProjects] = useState([]); // All brands (for admin)
   const [internProjects, setInternProjects] = useState([]); // Projects assigned to intern
@@ -122,7 +125,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setInterns(data.interns);
     } catch (e) {
-      console.error("Failed to fetch interns", e);
+      console.warn("Failed to fetch interns:", e.message);
     }
   }, []);
 
@@ -144,7 +147,7 @@ export function AuthProvider({ children }) {
         setCompanyName("");
       }
     } catch (e) {
-      console.error("Failed to fetch tasks", e);
+      console.warn("Failed to fetch tasks:", e.message);
       setTasks([]);
     } finally {
       setDataLoading(false);
@@ -160,7 +163,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setLeaves(data.leaves);
     } catch (e) {
-      console.error("Failed to fetch leaves", e);
+      console.warn("Failed to fetch leaves:", e.message);
     }
   }, []);
 
@@ -170,7 +173,21 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setProjects(data.projects);
     } catch (e) {
-      console.error("Failed to fetch projects", e);
+      console.warn("Failed to fetch projects:", e.message);
+    }
+  }, []);
+
+  const fetchProductionData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/public/production", { cache: "no-store" });
+      const data = await res.json();
+      if (data.success) {
+        setProductionItems(data.productionItems || []);
+        setPartnerLogos(data.partnerLogos || []);
+        setProductionCategories(data.productionCategories || []);
+      }
+    } catch (e) {
+      console.warn("Failed to fetch production data:", e.message);
     }
   }, []);
 
@@ -183,7 +200,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setClientProject(data.project);
     } catch (e) {
-      console.error("Failed to fetch client project", e);
+      console.warn("Failed to fetch client project:", e.message);
     }
   }, []);
 
@@ -196,7 +213,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setAdminClientProjects(data.projects);
     } catch (e) {
-      console.error("Failed to fetch admin client projects", e);
+      console.warn("Failed to fetch admin client projects:", e.message);
     }
   }, []);
 
@@ -209,7 +226,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setInternProjects(data.projects);
     } catch (e) {
-      console.error("Failed to fetch intern projects", e);
+      console.warn("Failed to fetch intern projects:", e.message);
     }
   }, []);
 
@@ -222,7 +239,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setCompanies(data.companies);
     } catch (e) {
-      console.error("Failed to fetch companies", e);
+      console.warn("Failed to fetch companies:", e.message);
     }
   }, []);
 
@@ -235,7 +252,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setBrandManagers(data.clients);
     } catch (e) {
-      console.error("Failed to fetch brand managers", e);
+      console.warn("Failed to fetch brand managers:", e.message);
     }
   }, []);
 
@@ -358,6 +375,7 @@ export function AuthProvider({ children }) {
     const storedToken = localStorage.getItem("sync_token");
 
     fetchProjects(); // Publicly fetch projects
+    fetchProductionData(); // Publicly fetch production data
 
     if (storedUser && storedToken) {
       const parsedUser = JSON.parse(storedUser);
@@ -382,6 +400,7 @@ export function AuthProvider({ children }) {
         fetchTasks(parsedUser.role, storedToken);
         fetchLeaves(storedToken);
         fetchProjects();
+        fetchProductionData();
         if (parsedUser.role === "admin") {
           fetchInterns(storedToken);
           fetchAdminClientProjects(storedToken);
@@ -401,7 +420,7 @@ export function AuthProvider({ children }) {
     }
     setLoading(false);
     setDataLoading(false); // No stored session — nothing to load
-  }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers]);
+  }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers, fetchProductionData]);
 
   const login = async (email, password) => {
     try {
@@ -770,6 +789,124 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const addProductionItem = async (itemData) => {
+    const res = await fetch("/api/admin/production/items", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(itemData)
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
+  const updateProductionItem = async (id, itemData) => {
+    const res = await fetch(`/api/admin/production/items/${id}`, {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(itemData)
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
+  const deleteProductionItem = async (id) => {
+    const res = await fetch(`/api/admin/production/items/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
+  const addPartnerLogo = async (logoData) => {
+    const res = await fetch("/api/admin/production/logos", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(logoData)
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
+  const updatePartnerLogo = async (id, logoData) => {
+    const res = await fetch(`/api/admin/production/logos/${id}`, {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(logoData)
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
+  const deletePartnerLogo = async (id) => {
+    const res = await fetch(`/api/admin/production/logos/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
+  const addProductionCategory = async (categoryData) => {
+    const res = await fetch("/api/admin/production/categories", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(categoryData)
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
+  const updateProductionCategory = async (id, categoryData, oldName) => {
+    const res = await fetch("/api/admin/production/categories", {
+      method: "PATCH",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ id, ...categoryData, oldName })
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
+  const deleteProductionCategory = async (id, name) => {
+    const res = await fetch("/api/admin/production/categories", {
+      method: "DELETE",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ id, name })
+    });
+    const data = await res.json();
+    if (data.success) fetchProductionData();
+    return data;
+  };
+
   const updateClientInfo = async (updateData) => {
     const res = await fetch("/api/client/project", {
       method: "PATCH",
@@ -891,8 +1028,9 @@ export function AuthProvider({ children }) {
       fetchCompanies(token);
       fetchBrandManagers(token);
       fetchProjects();
+      fetchProductionData();
     }
-  }, [token, fetchInterns, fetchTasks, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, fetchProjects]);
+  }, [token, fetchInterns, fetchTasks, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, fetchProjects, fetchProductionData]);
 
   const refreshInternData = useCallback(() => {
     if (token) {
@@ -1013,6 +1151,7 @@ export function AuthProvider({ children }) {
       interns, tasks, taskStore, fetchTasks, fetchInterns, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, refreshAdminData, refreshInternData, refreshBrandData, refreshClientData, companyName, leaves, projects, addIntern, removeIntern, assignTask, 
       updateTaskStatus, deleteTask, updateTask, reassignTask, approveLeave,
       announceToAll, addProject, updateProject, deleteProject,
+      productionItems, partnerLogos, productionCategories, addProductionItem, updateProductionItem, deleteProductionItem, addPartnerLogo, updatePartnerLogo, deletePartnerLogo, addProductionCategory, updateProductionCategory, deleteProductionCategory,
       clientProject, adminClientProjects, internProjects, createClient, createClientProject, 
       updateClientProject, purgeClientProject, sendClientMessage, sendClientFeed, sendAdminFeed, sendDiscussion, markChatRead, updateClientInfo, generateRoadmap,
       generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions,

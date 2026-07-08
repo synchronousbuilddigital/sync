@@ -10,7 +10,7 @@ import {
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
   ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText,
-  Globe, ChevronRight, Trophy, Table
+  Globe, ChevronRight, Trophy, Table, Film
 } from "lucide-react";
 import AdminHiring from "../../components/AdminHiring";
 import NotificationToaster from "../../components/NotificationToaster";
@@ -25,7 +25,8 @@ export default function AdminDashboard() {
     purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed,
     markFeedbackAsRead, loading, dataLoading, token,
     companies, addCompany, updateCompany, deleteCompany,
-    brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion
+    brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion,
+    productionItems, partnerLogos, productionCategories, addProductionItem, updateProductionItem, deleteProductionItem, addPartnerLogo, updatePartnerLogo, deletePartnerLogo, addProductionCategory, updateProductionCategory, deleteProductionCategory
   } = useAuth();
 
   const hasUnreadAdminMessage = (task) => {
@@ -209,6 +210,18 @@ export default function AdminDashboard() {
   const [editingProject, setEditingProject] = useState(null);
   const [editingTaskModal, setEditingTaskModal] = useState(null);
 
+  const [isAddingReel, setIsAddingReel] = useState(false);
+  const [editingReel, setEditingReel] = useState(null);
+  const [reelForm, setReelForm] = useState({ title: "", category: "", videoUrl: "", description: "", index: 0 });
+
+  const [isAddingLogo, setIsAddingLogo] = useState(false);
+  const [editingLogo, setEditingLogo] = useState(null);
+  const [logoForm, setLogoForm] = useState({ name: "", logoUrl: "", index: 0 });
+
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryForm, setCategoryForm] = useState({ name: "", image: "", index: 0 });
+
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [newIntern, setNewIntern] = useState({ name: "", email: "", password: "", department: "" });
   const [newTask, setNewTask] = useState({
@@ -347,6 +360,7 @@ export default function AdminDashboard() {
     sheet: "Spreadsheet",
     holidays: "Time Off",
     portfolio: "Projects",
+    production: "Production HQ",
     brands: "Clients",
     hiring: "Hiring",
     overview: "Overview"
@@ -690,6 +704,122 @@ export default function AdminDashboard() {
     setIsAddingProject(true);
   };
 
+  const handleReelSubmit = async (e) => {
+    e.preventDefault();
+    let res;
+    if (editingReel) {
+      res = await updateProductionItem(editingReel._id, reelForm);
+    } else {
+      res = await addProductionItem(reelForm);
+    }
+
+    if (res.success) {
+      setStatusMsg({ type: "success", msg: `Reel ${editingReel ? 'updated' : 'deployed'} successfully.` });
+      setIsAddingReel(false);
+      setEditingReel(null);
+      setReelForm({ title: "", category: "", videoUrl: "", description: "", index: 0 });
+    } else {
+      setStatusMsg({ type: "error", msg: res.message });
+    }
+  };
+
+  const handleEditReel = (reel) => {
+    setEditingReel(reel);
+    setReelForm({
+      title: reel.title,
+      category: reel.category,
+      videoUrl: reel.videoUrl,
+      description: reel.description || "",
+      index: reel.index || 0
+    });
+    setIsAddingReel(true);
+  };
+
+  const handleLogoSubmit = async (e) => {
+    e.preventDefault();
+    let res;
+    if (editingLogo) {
+      res = await updatePartnerLogo(editingLogo._id, logoForm);
+    } else {
+      res = await addPartnerLogo(logoForm);
+    }
+
+    if (res.success) {
+      setStatusMsg({ type: "success", msg: `Logo ${editingLogo ? 'updated' : 'deployed'} successfully.` });
+      setIsAddingLogo(false);
+      setEditingLogo(null);
+      setLogoForm({ name: "", logoUrl: "", index: 0 });
+    } else {
+      setStatusMsg({ type: "error", msg: res.message });
+    }
+  };
+
+  const handleEditLogo = (logo) => {
+    setEditingLogo(logo);
+    setLogoForm({
+      name: logo.name,
+      logoUrl: logo.logoUrl,
+      index: logo.index || 0
+    });
+    setIsAddingLogo(true);
+  };
+
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault();
+    let res;
+    if (editingCategory) {
+      res = await updateProductionCategory(editingCategory._id, categoryForm, editingCategory.name);
+    } else {
+      res = await addProductionCategory(categoryForm);
+    }
+
+    if (res.success) {
+      setStatusMsg({ type: "success", msg: `Category ${editingCategory ? 'updated' : 'deployed'} successfully.` });
+      setIsAddingCategory(false);
+      setEditingCategory(null);
+      setCategoryForm({ name: "", image: "", index: 0 });
+    } else {
+      setStatusMsg({ type: "error", msg: res.message });
+    }
+  };
+
+  const handleEditCategory = (cat) => {
+    setEditingCategory(cat);
+    setCategoryForm({
+      name: cat.name,
+      image: cat.image,
+      index: cat.index || 0
+    });
+    setIsAddingCategory(true);
+  };
+
+  const handleFileUpload = async (file, onUploadSuccess) => {
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    try {
+      const authToken = token || localStorage.getItem("sync_token") || "";
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${authToken}`
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        onUploadSuccess(data.url);
+        showToast("File uploaded successfully!", "success");
+      } else {
+        showToast(data.message || "Upload failed", "error");
+      }
+    } catch (e) {
+      showToast(e.message, "error");
+    }
+  };
+
   const adminStats = {
     totalInterns: displayedInterns.length,
     activeTasks: filteredTasks.filter(t => t.status !== "Complete").length,
@@ -908,6 +1038,7 @@ export default function AdminDashboard() {
           { id: "sheet", icon: Table },
           { id: "holidays", icon: Calendar },
           { id: "portfolio", icon: Briefcase },
+          { id: "production", icon: Film },
           { id: "brands", icon: Shield },
           { id: "hiring", icon: UserPlus },
           { id: "overview", icon: TrendingUp }
@@ -1627,6 +1758,159 @@ export default function AdminDashboard() {
                   <p className="text-xs text-slate-500 dark:text-white/40 mt-4 leading-relaxed line-clamp-2">{project.description}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "production" && (
+          <div className="space-y-12">
+            {/* Reels Section */}
+            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[3rem] shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="text-2xl font-black uppercase tracking-tighter italic">Production <span className="text-[#F05E23]">Reels</span></h3>
+                  <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mt-1">Manage categorized reels and videos</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingReel(null);
+                    setReelForm({ title: "", category: "", videoUrl: "", description: "", index: 0 });
+                    setIsAddingReel(true);
+                  }}
+                  className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Reel
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-black/10 dark:border-white/10 text-[0.6rem] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                      <th className="py-3 px-4">Index</th>
+                      <th className="py-3 px-4">Title</th>
+                      <th className="py-3 px-4">Category</th>
+                      <th className="py-3 px-4">Video Link</th>
+                      <th className="py-3 px-4">Description</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs sm:text-sm font-bold">
+                    {(productionItems || []).map((reel) => (
+                      <tr key={reel._id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                        <td className="py-3 px-4 text-[#F05E23]">{reel.index || 0}</td>
+                        <td className="py-3 px-4 text-slate-900 dark:text-white font-extrabold">{reel.title}</td>
+                        <td className="py-3 px-4">
+                          <span className="bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20 px-2 py-0.5 rounded text-[0.65rem] font-black uppercase tracking-widest">{reel.category}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <a href={reel.videoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
+                            Link <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </td>
+                        <td className="py-3 px-4 text-slate-500 dark:text-slate-400 font-normal truncate max-w-[200px]" title={reel.description}>
+                          {reel.description || "-"}
+                        </td>
+                        <td className="py-3 px-4 text-right flex justify-end gap-2">
+                          <button onClick={() => handleEditReel(reel)} className="p-2 bg-amber-500/10 text-amber-500 rounded-lg hover:bg-amber-500 hover:text-white transition-all"><Edit className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => { if(confirm("Are you sure you want to delete this reel?")) deleteProductionItem(reel._id); }} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                    {(productionItems || []).length === 0 && (
+                      <tr>
+                        <td colSpan="6" className="text-center py-8 text-slate-400 font-bold uppercase tracking-widest text-xs">No reels added yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Categories Section */}
+            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[3rem] shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="text-2xl font-black uppercase tracking-tighter italic">Production <span className="text-[#F05E23]">Categories</span></h3>
+                  <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mt-1">Manage categories (renaming updates all reels in that category)</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingCategory(null);
+                    setCategoryForm({ name: "", image: "", index: 0 });
+                    setIsAddingCategory(true);
+                  }}
+                  className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Category
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                {(productionCategories || []).map((cat) => {
+                  const count = (productionItems || []).filter(item => item.category.toLowerCase() === cat.name.toLowerCase()).length;
+                  return (
+                    <div key={cat._id} className="bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 flex flex-col items-center relative group">
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
+                        <button onClick={() => handleEditCategory(cat)} className="p-1.5 bg-amber-500 text-white rounded-lg hover:scale-105 transition-transform"><Edit className="w-3 h-3" /></button>
+                        <button onClick={() => { if(confirm(`Are you sure you want to delete category "${cat.name}"? This will delete all reels in this category!`)) deleteProductionCategory(cat._id, cat.name); }} className="p-1.5 bg-red-500 text-white rounded-lg hover:scale-105 transition-transform"><Trash2 className="w-3 h-3" /></button>
+                      </div>
+                      <div className="h-24 w-full rounded-xl overflow-hidden bg-slate-900 flex items-center justify-center mb-3 relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={cat.image} alt={cat.name} className="h-full w-full object-cover filter brightness-75 group-hover:scale-105 transition-transform duration-300" onError={(e) => { e.target.style.display = 'none'; }} />
+                        <div className="absolute bottom-2 left-2 text-[0.55rem] font-black uppercase tracking-widest text-white bg-black/60 px-2 py-0.5 rounded">
+                          {count} {count === 1 ? 'Reel' : 'Reels'}
+                        </div>
+                      </div>
+                      <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-800 dark:text-white truncate max-w-full">{cat.name}</span>
+                      <span className="text-[0.55rem] text-slate-400 font-bold mt-1">Idx: {cat.index || 0}</span>
+                    </div>
+                  );
+                })}
+                {(productionCategories || []).length === 0 && (
+                  <div className="col-span-full text-center py-8 text-slate-400 font-bold uppercase tracking-widest text-xs">No categories added yet.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Logos Section */}
+            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[3rem] shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="text-2xl font-black uppercase tracking-tighter italic">Partner <span className="text-[#F05E23]">Logos</span></h3>
+                  <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mt-1">Worked-with companies (infinite scrolling carousel)</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingLogo(null);
+                    setLogoForm({ name: "", logoUrl: "", index: 0 });
+                    setIsAddingLogo(true);
+                  }}
+                  className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Logo
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
+                {(partnerLogos || []).map((logo) => (
+                  <div key={logo._id} className="bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 flex flex-col items-center relative group">
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
+                      <button onClick={() => handleEditLogo(logo)} className="p-1 bg-amber-500 text-white rounded"><Edit className="w-3 h-3" /></button>
+                      <button onClick={() => { if(confirm("Are you sure you want to delete this logo?")) deletePartnerLogo(logo._id); }} className="p-1 bg-red-500 text-white rounded"><Trash2 className="w-3 h-3" /></button>
+                    </div>
+                    <div className="h-16 w-full flex items-center justify-center mb-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={logo.logoUrl} alt={logo.name} className="max-h-full max-w-full object-contain filter dark:brightness-200" onError={(e) => { e.target.style.display = 'none'; }} />
+                    </div>
+                    <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-800 dark:text-white truncate max-w-full">{logo.name}</span>
+                    <span className="text-[0.55rem] text-slate-400 font-bold mt-1">Idx: {logo.index || 0}</span>
+                  </div>
+                ))}
+                {(partnerLogos || []).length === 0 && (
+                  <div className="col-span-full text-center py-8 text-slate-400 font-bold uppercase tracking-widest text-xs">No partner logos added yet.</div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -3017,6 +3301,188 @@ export default function AdminDashboard() {
                 </div>
                 <button onClick={() => submitReview()} className="w-full bg-[#F05E23] text-white py-6 rounded-2xl font-black uppercase tracking-widest text-[0.7rem] transition-all hover:bg-[#d9531e] shadow-xl">Submit Review</button>
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {isAddingReel && (
+          <div key="modal-adding-reel" className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-2xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide animate-in fade-in zoom-in duration-200"
+            >
+              <button onClick={() => setIsAddingReel(false)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"><X className="w-5 h-5 text-slate-500" /></button>
+              <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900 dark:text-white">{editingReel ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Production Reel</span></h2>
+              <form onSubmit={handleReelSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Title</label>
+                    <input type="text" required value={reelForm.title} onChange={e => setReelForm({ ...reelForm, title: e.target.value })} placeholder="Title" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Category (e.g. Commercials, Reels)</label>
+                    <input type="text" required value={reelForm.category} onChange={e => setReelForm({ ...reelForm, category: e.target.value })} placeholder="Category" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Video File</label>
+                  {reelForm.videoUrl ? (
+                    <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-white truncate max-w-[280px]" title={reelForm.videoUrl}>
+                          {reelForm.videoUrl.split('/').pop()}
+                        </span>
+                      </div>
+                      <label className="cursor-pointer bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-black dark:hover:bg-slate-100 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all">
+                        Replace File
+                        <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, videoUrl: url }))} />
+                      </label>
+                    </div>
+                  ) : (
+                    <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                      <Film className="w-8 h-8 text-[#F05E23] mb-2 animate-bounce" />
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Reel Video File</span>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">MP4, MOV, WEBM (Max 50MB)</span>
+                      <input type="file" required accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, videoUrl: url }))} />
+                    </label>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Thumbnail Image (optional)</label>
+                    {reelForm.thumbnailUrl ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={reelForm.thumbnailUrl} alt="Thumbnail Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                        <label className="relative z-10 cursor-pointer bg-black/85 hover:bg-black text-white hover:text-[#F05E23] px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
+                          Replace Image
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, thumbnailUrl: url }))} />
+                        </label>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                        <Plus className="w-6 h-6 text-slate-400 mb-1" />
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Photo</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, thumbnailUrl: url }))} />
+                      </label>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index (optional)</label>
+                    <input type="number" value={reelForm.index} onChange={e => setReelForm({ ...reelForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Description (optional)</label>
+                  <textarea rows={3} value={reelForm.description || ""} onChange={e => setReelForm({ ...reelForm, description: e.target.value })} placeholder="Short info about this production item..." className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white resize-none" />
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setIsAddingReel(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
+                  <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Reel</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {isAddingLogo && (
+          <div key="modal-adding-logo" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide animate-in fade-in zoom-in duration-200"
+            >
+              <button onClick={() => setIsAddingLogo(false)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"><X className="w-5 h-5 text-slate-500" /></button>
+              <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900 dark:text-white">{editingLogo ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Partner Logo</span></h2>
+              <form onSubmit={handleLogoSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Company Name</label>
+                  <input type="text" required value={logoForm.name} onChange={e => setLogoForm({ ...logoForm, name: e.target.value })} placeholder="e.g. Nike, Google" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Logo Image</label>
+                    {logoForm.logoUrl ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={logoForm.logoUrl} alt="Logo Preview" className="max-h-full max-w-full object-contain p-4 filter brightness-200 contrast-200" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
+                            Replace Logo
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, logoUrl: url }))} />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                        <Plus className="w-6 h-6 text-slate-400 mb-1" />
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Logo File</span>
+                        <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, logoUrl: url }))} />
+                      </label>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index</label>
+                    <input type="number" value={logoForm.index} onChange={e => setLogoForm({ ...logoForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                  </div>
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setIsAddingLogo(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
+                  <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Logo</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {isAddingCategory && (
+          <div key="modal-adding-category" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide animate-in fade-in zoom-in duration-200"
+            >
+              <button onClick={() => setIsAddingCategory(false)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"><X className="w-5 h-5 text-slate-500" /></button>
+              <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900 dark:text-white">{editingCategory ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Category</span></h2>
+              <form onSubmit={handleCategorySubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Category Name</label>
+                  <input type="text" required value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })} placeholder="e.g. Commercials, Social Media" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Category Image (Photo)</label>
+                    {categoryForm.image ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={categoryForm.image} alt="Category Preview" className="h-full w-full object-cover filter brightness-75 group-hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
+                            Replace Photo
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm({ ...categoryForm, image: url }))} />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                        <Plus className="w-6 h-6 text-slate-400 mb-1" />
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Category Image</span>
+                        <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm({ ...categoryForm, image: url }))} />
+                      </label>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index</label>
+                    <input type="number" value={categoryForm.index} onChange={e => setCategoryForm({ ...categoryForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                  </div>
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setIsAddingCategory(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
+                  <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Category</button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
