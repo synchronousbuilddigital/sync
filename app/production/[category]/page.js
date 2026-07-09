@@ -88,6 +88,56 @@ export default function CategoryProductionPage() {
     );
   }
 
+  function renderCardVideo(url) {
+    if (!url) return null;
+
+    const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i);
+    if (ytMatch) {
+      const videoId = ytMatch[1];
+      return (
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`}
+          className="absolute inset-0 w-full h-full border-none pointer-events-none scale-125 object-cover opacity-60 group-hover:opacity-75 transition-opacity"
+          allow="autoplay; encrypted-media"
+        />
+      );
+    }
+
+    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/i);
+    if (vimeoMatch) {
+      const videoId = vimeoMatch[1];
+      return (
+        <iframe
+          src={`https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=1&background=1&controls=0`}
+          className="absolute inset-0 w-full h-full border-none pointer-events-none scale-125 object-cover opacity-60 group-hover:opacity-75 transition-opacity"
+          allow="autoplay; fullscreen"
+        />
+      );
+    }
+
+    if (url.includes("instagram.com")) {
+      const cleanUrl = url.split("?")[0];
+      const embedUrl = cleanUrl.endsWith("/") ? `${cleanUrl}embed` : `${cleanUrl}/embed`;
+      return (
+        <iframe
+          src={embedUrl}
+          className="absolute inset-0 w-full h-full border-none pointer-events-none opacity-60"
+        />
+      );
+    }
+
+    return (
+      <video
+        src={url}
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-60 group-hover:opacity-75"
+      />
+    );
+  }
+
   return (
     <main className={`min-h-screen selection:bg-[#F05E23]/20 overflow-x-hidden transition-colors duration-700 pb-20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FDFDFD]'}`}>
       {/* Grid Pattern */}
@@ -138,51 +188,45 @@ export default function CategoryProductionPage() {
       <section className="max-w-7xl mx-auto px-6 relative z-10 mt-8">
         {reels.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {reels.map((reel, idx) => (
-              <motion.div
-                key={reel._id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1, duration: 0.5 }}
-                className={`group rounded-[2rem] border overflow-hidden transition-all duration-500 ${
-                  isDark ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10' : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-2xl hover:shadow-[#F05E23]/5'
-                }`}
-              >
-                {/* Media Container */}
-                <div
-                  onClick={() => setActiveVideo(reel)}
-                  className="relative h-56 bg-slate-950 flex items-center justify-center cursor-pointer overflow-hidden group"
+            {reels.map((reel, idx) => {
+              return (
+                <motion.div
+                  key={reel._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1, duration: 0.5 }}
+                  className={`group rounded-[2rem] border overflow-hidden transition-all duration-500 ${
+                    isDark ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10' : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-2xl hover:shadow-[#F05E23]/5'
+                  }`}
                 >
-                  {reel.thumbnailUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={reel.thumbnailUrl} alt={reel.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-70" />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#1a121c] to-slate-950 flex flex-col items-center justify-center">
-                      <Film className="w-12 h-12 text-[#F05E23]/40 mb-2 group-hover:scale-110 transition-transform duration-500" />
-                      <span className="text-[0.55rem] font-black uppercase tracking-widest text-[#F05E23]/60">Click to Play</span>
-                    </div>
-                  )}
+                  {/* Media Container */}
+                  <div
+                    onClick={() => setActiveVideo(reel)}
+                    className="relative h-56 bg-slate-950 flex items-center justify-center cursor-pointer overflow-hidden group"
+                  >
+                    {renderCardVideo(reel.videoUrl)}
 
-                  {/* Play Overlay */}
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-[#F05E23] flex items-center justify-center text-white shadow-xl shadow-[#F05E23]/30 group-hover:scale-110 transition-transform duration-300">
-                      <Play className="w-6 h-6 fill-white ml-1" />
+                    {/* Play Overlay */}
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-[#F05E23] flex items-center justify-center text-white shadow-xl shadow-[#F05E23]/30 group-hover:scale-110 transition-transform duration-300 relative z-10">
+                        <Play className="w-4 h-4 fill-white ml-0.5" />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Content details */}
-                <div className="p-8 space-y-4">
-                  <span className="text-[0.6rem] font-black text-[#F05E23] uppercase tracking-[0.2em]">Index: {reel.index || 0}</span>
-                  <h3 className={`text-xl font-black uppercase tracking-tight italic ${isDark ? 'text-white' : 'text-[#111]'}`}>{reel.title}</h3>
-                  {reel.description && (
-                    <p className="text-xs text-slate-500 dark:text-white/40 leading-relaxed font-semibold">
-                      {reel.description}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                  {/* Content details */}
+                  <div className="p-8 space-y-4">
+                    <span className="text-[0.6rem] font-black text-[#F05E23] uppercase tracking-[0.2em]">Index: {reel.index || 0}</span>
+                    <h3 className={`text-xl font-black uppercase tracking-tight italic ${isDark ? 'text-white' : 'text-[#111]'}`}>{reel.title}</h3>
+                    {reel.description && (
+                      <p className="text-xs text-slate-500 dark:text-white/40 leading-relaxed font-semibold">
+                        {reel.description}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-24 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[3rem]">

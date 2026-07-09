@@ -10,7 +10,7 @@ import {
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
   ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText,
-  Globe, ChevronRight, Trophy, Table, Film
+  Globe, ChevronRight, Trophy, Table, Film, Video
 } from "lucide-react";
 import AdminHiring from "../../components/AdminHiring";
 import NotificationToaster from "../../components/NotificationToaster";
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
     markFeedbackAsRead, loading, dataLoading, token,
     companies, addCompany, updateCompany, deleteCompany,
     brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion,
-    productionItems, partnerLogos, productionCategories, addProductionItem, updateProductionItem, deleteProductionItem, addPartnerLogo, updatePartnerLogo, deletePartnerLogo, addProductionCategory, updateProductionCategory, deleteProductionCategory
+    productionItems, partnerLogos, productionCategories, productionGalleryItems, addProductionItem, updateProductionItem, deleteProductionItem, addPartnerLogo, updatePartnerLogo, deletePartnerLogo, addProductionCategory, updateProductionCategory, deleteProductionCategory, addProductionGalleryItem, updateProductionGalleryItem, deleteProductionGalleryItem
   } = useAuth();
 
   const hasUnreadAdminMessage = (task) => {
@@ -298,6 +298,10 @@ export default function AdminDashboard() {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [categoryForm, setCategoryForm] = useState({ name: "", image: "", index: 0, description: "" });
+
+  const [isAddingGalleryItem, setIsAddingGalleryItem] = useState(false);
+  const [editingGalleryItem, setEditingGalleryItem] = useState(null);
+  const [galleryItemForm, setGalleryItemForm] = useState({ title: "", type: "photo", mediaUrl: "", thumbnailUrl: "", index: 0 });
 
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [newIntern, setNewIntern] = useState({ name: "", email: "", password: "", department: "" });
@@ -884,6 +888,41 @@ export default function AdminDashboard() {
       description: cat.description || ""
     });
     setIsAddingCategory(true);
+  };
+
+  const handleGalleryItemSubmit = async (e) => {
+    e.preventDefault();
+    if (!galleryItemForm.title || !galleryItemForm.type || !galleryItemForm.mediaUrl) {
+      showToast("Title, Type, and Media File are required.", "error");
+      return;
+    }
+    let res;
+    if (editingGalleryItem) {
+      res = await updateProductionGalleryItem(editingGalleryItem._id, galleryItemForm);
+    } else {
+      res = await addProductionGalleryItem(galleryItemForm);
+    }
+
+    if (res.success) {
+      showToast(`Gallery item ${editingGalleryItem ? 'updated' : 'added'} successfully.`, "success");
+      setIsAddingGalleryItem(false);
+      setEditingGalleryItem(null);
+      setGalleryItemForm({ title: "", type: "photo", mediaUrl: "", thumbnailUrl: "", index: 0 });
+    } else {
+      showToast(res.message, "error");
+    }
+  };
+
+  const handleEditGalleryItem = (item) => {
+    setEditingGalleryItem(item);
+    setGalleryItemForm({
+      title: item.title,
+      type: item.type,
+      mediaUrl: item.mediaUrl,
+      thumbnailUrl: item.thumbnailUrl || "",
+      index: item.index || 0
+    });
+    setIsAddingGalleryItem(true);
   };
 
   const handleFileUpload = async (file, onUploadSuccess) => {
@@ -2165,6 +2204,59 @@ export default function AdminDashboard() {
                 })}
                 {(productionCategories || []).length === 0 && (
                   <div className="col-span-full text-center py-8 text-slate-400 font-bold uppercase tracking-widest text-xs">No categories added yet.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Gallery Showcase Section */}
+            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 rounded-[3rem] shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="text-2xl font-black uppercase tracking-tighter italic">Showcase <span className="text-[#F05E23]">Gallery</span></h3>
+                  <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mt-1">Manage public gallery photos and video reels</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingGalleryItem(null);
+                    setGalleryItemForm({ title: "", type: "photo", mediaUrl: "", thumbnailUrl: "", index: 0 });
+                    setIsAddingGalleryItem(true);
+                  }}
+                  className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Gallery Item
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                {(productionGalleryItems || []).map((item) => (
+                  <div key={item._id} className="bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 flex flex-col items-center relative group">
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
+                      <button onClick={() => handleEditGalleryItem(item)} className="p-1.5 bg-amber-500 text-white rounded-lg hover:scale-105 transition-transform"><Edit className="w-3 h-3" /></button>
+                      <button onClick={() => { if(confirm(`Are you sure you want to delete "${item.title}"?`)) deleteProductionGalleryItem(item._id); }} className="p-1.5 bg-red-500 text-white rounded-lg hover:scale-105 transition-transform"><Trash2 className="w-3 h-3" /></button>
+                    </div>
+                    <div className="h-24 w-full rounded-xl overflow-hidden bg-slate-900 flex items-center justify-center mb-3 relative">
+                      {item.type === "photo" ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={item.mediaUrl} alt={item.title} className="h-full w-full object-cover filter brightness-75 group-hover:scale-105 transition-transform duration-300" onError={(e) => { e.target.style.display = 'none'; }} />
+                      ) : (
+                        <div className="h-full w-full relative flex items-center justify-center bg-slate-950">
+                          {item.thumbnailUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.thumbnailUrl} alt={item.title} className="absolute inset-0 h-full w-full object-cover filter brightness-50 group-hover:scale-105 transition-transform duration-300" />
+                          ) : null}
+                          <Video className="w-8 h-8 text-[#F05E23] relative z-10" />
+                        </div>
+                      )}
+                      <span className="absolute bottom-2 left-2 text-[0.55rem] font-black uppercase tracking-widest text-white bg-black/60 px-2 py-0.5 rounded">
+                        {item.type}
+                      </span>
+                    </div>
+                    <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-800 dark:text-white truncate max-w-full">{item.title}</span>
+                    <span className="text-[0.55rem] text-slate-400 font-bold mt-1">Idx: {item.index || 0}</span>
+                  </div>
+                ))}
+                {(productionGalleryItems || []).length === 0 && (
+                  <div className="col-span-full text-center py-8 text-slate-400 font-bold uppercase tracking-widest text-xs">No gallery items added yet.</div>
                 )}
               </div>
             </div>
@@ -3626,8 +3718,18 @@ export default function AdminDashboard() {
                     <input type="text" required value={reelForm.title} onChange={e => setReelForm({ ...reelForm, title: e.target.value })} placeholder="Title" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Category (e.g. Commercials, Reels)</label>
-                    <input type="text" required value={reelForm.category} onChange={e => setReelForm({ ...reelForm, category: e.target.value })} placeholder="Category" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Category</label>
+                    <select
+                      required
+                      value={reelForm.category}
+                      onChange={e => setReelForm({ ...reelForm, category: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white"
+                    >
+                      <option value="" className="dark:text-black">Select Category</option>
+                      {(productionCategories || []).map(cat => (
+                        <option key={cat._id} value={cat.name} className="dark:text-black">{cat.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -3854,6 +3956,104 @@ export default function AdminDashboard() {
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsAddingCategory(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
                   <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Category</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {isAddingGalleryItem && (
+          <div key="modal-adding-gallery" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-2xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide animate-in fade-in zoom-in duration-200"
+            >
+              <button onClick={() => setIsAddingGalleryItem(false)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"><X className="w-5 h-5 text-slate-500" /></button>
+              <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900 dark:text-white">{editingGalleryItem ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Gallery Item</span></h2>
+              <form onSubmit={handleGalleryItemSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Title</label>
+                    <input type="text" required value={galleryItemForm.title} onChange={e => setGalleryItemForm({ ...galleryItemForm, title: e.target.value })} placeholder="e.g. Nike Campaign Close-up" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Media Type</label>
+                    <select value={galleryItemForm.type} onChange={e => setGalleryItemForm({ ...galleryItemForm, type: e.target.value, mediaUrl: "", thumbnailUrl: "" })} className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white">
+                      <option value="photo" className="dark:text-black">Photo (Image)</option>
+                      <option value="video" className="dark:text-black">Video Reel</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">
+                      {galleryItemForm.type === "photo" ? "Gallery Image File" : "Reel Video File"}
+                    </label>
+                    {galleryItemForm.mediaUrl ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
+                        {galleryItemForm.type === "photo" ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={galleryItemForm.mediaUrl} alt="Gallery Preview" className="h-full w-full object-cover filter brightness-75 group-hover:scale-105 transition-transform duration-300" />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center">
+                            <Video className="w-8 h-8 text-[#F05E23] mb-1" />
+                            <span className="text-[9px] font-black text-white/60 truncate max-w-full px-4">{galleryItemForm.mediaUrl.split('/').pop()}</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
+                            Replace File
+                            <input type="file" accept={galleryItemForm.type === "photo" ? "image/*" : "video/*"} className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, mediaUrl: url }))} />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                        <Plus className="w-6 h-6 text-slate-400 mb-1" />
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">
+                          Upload {galleryItemForm.type === "photo" ? "Photo" : "Video"}
+                        </span>
+                        <input type="file" accept={galleryItemForm.type === "photo" ? "image/*" : "video/*"} className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, mediaUrl: url }))} />
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index</label>
+                    <input type="number" value={galleryItemForm.index} onChange={e => setGalleryItemForm({ ...galleryItemForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                  </div>
+                </div>
+
+                {galleryItemForm.type === "video" && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Video Thumbnail Image (Optional)</label>
+                    {galleryItemForm.thumbnailUrl ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={galleryItemForm.thumbnailUrl} alt="Thumbnail Preview" className="h-full w-full object-cover filter brightness-75 group-hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
+                            Replace
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, thumbnailUrl: url }))} />
+                          </label>
+                          <button type="button" onClick={() => setGalleryItemForm({ ...galleryItemForm, thumbnailUrl: "" })} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">Remove</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                        <Plus className="w-6 h-6 text-slate-400 mb-1" />
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Thumbnail Photo</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, thumbnailUrl: url }))} />
+                      </label>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setIsAddingGalleryItem(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
+                  <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Item</button>
                 </div>
               </form>
             </motion.div>

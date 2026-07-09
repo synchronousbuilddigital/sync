@@ -11,9 +11,9 @@ export default function CTA() {
     const pathname = usePathname();
     const [subValue, setSubValue] = useState("");
 
-  const isDashboardRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/intern') || pathname?.startsWith('/brand') || pathname?.startsWith('/client');
+  const shouldHideCTA = pathname?.startsWith('/admin') || pathname?.startsWith('/intern') || pathname?.startsWith('/brand') || pathname?.startsWith('/client') || pathname?.startsWith('/production');
 
-    if (isDashboardRoute) return null;
+    if (shouldHideCTA) return null;
 
     return (
         <section className={`w-full relative py-20 sm:py-32 overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
