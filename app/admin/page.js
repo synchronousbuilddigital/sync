@@ -926,6 +926,13 @@ export default function AdminDashboard() {
 
   const handleFileUpload = async (file, onUploadSuccess) => {
     if (!file) return;
+
+    // Enforce Vercel's 4.5MB upload limit on non-local domains
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (!isLocal && file.size > 4.5 * 1024 * 1024) {
+      showToast("Upload failed: File exceeds Vercel's 4.5MB limit. Please compress the file or link an external URL.", "error");
+      return;
+    }
     
     const formData = new FormData();
     formData.append("file", file);
@@ -939,7 +946,20 @@ export default function AdminDashboard() {
         },
         body: formData
       });
-      const data = await res.json();
+      
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        if (res.status === 413 || text.includes("Too Large")) {
+          showToast("Upload failed: File exceeds Vercel's 4.5MB limit. Please compress the file or use an external URL link.", "error");
+        } else {
+          showToast(`Upload failed: Server returned status ${res.status}`, "error");
+        }
+        return;
+      }
+
       if (data.success) {
         onUploadSuccess(data.url);
         showToast("File uploaded successfully!", "success");
@@ -3725,7 +3745,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Video File</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Video (File Upload or URL Link)</label>
                   {reelForm.videoUrl ? (
                     <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -3734,19 +3754,25 @@ export default function AdminDashboard() {
                           {reelForm.videoUrl.split('/').pop()}
                         </span>
                       </div>
-                      <label className="cursor-pointer bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-black dark:hover:bg-slate-100 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all">
-                        Replace File
-                        <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, videoUrl: url }))} />
-                      </label>
+                      <button type="button" onClick={() => setReelForm({ ...reelForm, videoUrl: "" })} className="text-xs font-black uppercase text-red-500 hover:underline">Clear</button>
                     </div>
                   ) : (
                     <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
                       <Film className="w-8 h-8 text-[#F05E23] mb-2 animate-bounce" />
                       <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Reel Video File</span>
-                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">MP4, MOV, WEBM (Max 50MB)</span>
-                      <input type="file" required accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, videoUrl: url }))} />
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">MP4, MOV, WEBM (Max 4.5MB on Vercel)</span>
+                      <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, videoUrl: url }))} />
                     </label>
                   )}
+                  <div className="relative mt-2">
+                    <input
+                      type="text"
+                      value={reelForm.videoUrl}
+                      onChange={e => setReelForm({ ...reelForm, videoUrl: e.target.value })}
+                      placeholder="Or paste external video URL (YouTube, Vimeo, direct link, etc.)"
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -3918,7 +3944,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="sm:col-span-2 space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">
-                      {galleryItemForm.type === "photo" ? "Gallery Image File" : "Reel Video File"}
+                      {galleryItemForm.type === "photo" ? "Gallery Image" : "Reel Video"} (File Upload or URL Link)
                     </label>
                     {galleryItemForm.mediaUrl ? (
                       <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
@@ -3931,11 +3957,8 @@ export default function AdminDashboard() {
                             <span className="text-[9px] font-black text-white/60 truncate max-w-full px-4">{galleryItemForm.mediaUrl.split('/').pop()}</span>
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
-                            Replace File
-                            <input type="file" accept={galleryItemForm.type === "photo" ? "image/*" : "video/*"} className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, mediaUrl: url }))} />
-                          </label>
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button type="button" onClick={() => setGalleryItemForm({ ...galleryItemForm, mediaUrl: "" })} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">Clear</button>
                         </div>
                       </div>
                     ) : (
@@ -3947,6 +3970,15 @@ export default function AdminDashboard() {
                         <input type="file" accept={galleryItemForm.type === "photo" ? "image/*" : "video/*"} className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, mediaUrl: url }))} />
                       </label>
                     )}
+                    <div className="relative mt-2">
+                      <input
+                        type="text"
+                        value={galleryItemForm.mediaUrl}
+                        onChange={e => setGalleryItemForm({ ...galleryItemForm, mediaUrl: e.target.value })}
+                        placeholder={`Or paste external ${galleryItemForm.type === 'photo' ? 'image' : 'video'} link`}
+                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
