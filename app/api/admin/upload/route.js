@@ -18,8 +18,10 @@ export async function POST(req) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create uploads directory in public if it doesn't exist
-    const uploadsDir = join(process.cwd(), "public", "uploads");
+    // Create uploads directory (use writable /tmp/uploads in read-only serverless envs)
+    const uploadsDir = (process.env.VERCEL || process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV)
+      ? "/tmp/uploads"
+      : join(process.cwd(), "public", "uploads");
     await mkdir(uploadsDir, { recursive: true });
 
     // Define unique file name

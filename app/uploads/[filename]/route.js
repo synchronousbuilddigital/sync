@@ -10,7 +10,11 @@ export async function GET(req, { params }) {
       return new Response("Invalid filename", { status: 400 });
     }
 
-    const filePath = join(process.cwd(), "public", "uploads", filename);
+    const uploadsDir = (process.env.VERCEL || process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV)
+      ? "/tmp/uploads"
+      : join(process.cwd(), "public", "uploads");
+
+    const filePath = join(uploadsDir, filename);
     const fileBuffer = await readFile(filePath);
 
     // MIME type mapping
