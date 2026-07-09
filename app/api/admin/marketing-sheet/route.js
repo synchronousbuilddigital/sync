@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import jwt from 'jsonwebtoken';
+import { getGoogleAuth } from '@/lib/googleSheets';
 
 export async function GET(req) {
   try {
@@ -15,10 +16,7 @@ export async function GET(req) {
       return NextResponse.json({ success: false, message: "Access Denied." }, { status: 403 });
     }
 
-    const auth = new google.auth.GoogleAuth({
-      keyFile: "/Users/vaasu/Desktop/ultra-path-500205-p2-f9728ef6fbce.json",
-      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-    });
+    const auth = getGoogleAuth();
 
     const sheets = google.sheets({ version: "v4", auth });
     
