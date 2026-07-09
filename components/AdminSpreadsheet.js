@@ -5,16 +5,43 @@ const parseFlexibleDate = (val) => {
   if (!val) return null;
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
   const str = String(val).trim();
-  let d = new Date(str);
-  if (!isNaN(d.getTime())) return d;
-  const parts = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-  if (parts) {
-    let year = parseInt(parts[3], 10);
-    if (year < 100) year += 2000;
-    d = new Date(year, parseInt(parts[2], 10) - 1, parseInt(parts[1], 10));
-    if (!isNaN(d.getTime())) return d;
+
+  // 1. Check for YYYY-MM-DD
+  const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (ymd) {
+    return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3]));
   }
-  return null;
+
+  // 2. Check for DD-MM-YYYY or DD/MM/YYYY (e.g. 10-06-2026 or 24/06/2026)
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (dmy) {
+    let first = parseInt(dmy[1]);
+    let second = parseInt(dmy[2]);
+    let y = parseInt(dmy[3]);
+    if (y < 100) y += 2000;
+
+    if (second > 12) {
+      return new Date(y, first - 1, second);
+    } else {
+      return new Date(y, second - 1, first);
+    }
+  }
+
+  // 3. Check for DD-MMM-YY or DD Month YYYY (e.g. 10-Jun-26 or 08 June 2026)
+  const dmm = str.match(/^(\d{1,2})[\/\-\s]+([A-Za-z]{3,})[\/\-\s]*(\d{0,4})$/);
+  if (dmm) {
+    const day = parseInt(dmm[1]);
+    const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const mIdx = monthNames.findIndex(m => dmm[2].toLowerCase().startsWith(m));
+    if (mIdx !== -1) {
+      let y = dmm[3] ? parseInt(dmm[3]) : new Date().getFullYear();
+      if (y < 100) y += 2000;
+      return new Date(y, mIdx, day);
+    }
+  }
+
+  let d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
 };
 
 export default function AdminSpreadsheet({ tasks, companies = [], interns = [] }) {

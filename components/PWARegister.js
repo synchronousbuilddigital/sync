@@ -77,9 +77,15 @@ export default function PWARegister() {
     // --- 2. SERVICE WORKER REGISTRATION (For PWA) ---
     if ("serviceWorker" in navigator) {
       let refreshing = false;
+      let hadInitialController = Boolean(navigator.serviceWorker.controller);
+      const pageLoadTime = Date.now();
 
-      // Force instant reload when new service worker takes over
+      // Prevent double-refresh on startup: only reload when an existing controller updates after the initial page load window
       navigator.serviceWorker.addEventListener("controllerchange", async () => {
+        if (!hadInitialController || Date.now() - pageLoadTime < 3000) {
+          hadInitialController = true;
+          return;
+        }
         if (!refreshing) {
           refreshing = true;
           console.log("[PWA] Controller changed! Purging old cache and reloading...");

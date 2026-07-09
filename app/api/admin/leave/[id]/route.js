@@ -37,9 +37,8 @@ export async function PATCH(req, { params }) {
     // Send Web Push to intern (works even when app is closed)
     try {
       const internWithSubs = await User.findById(leave.internId._id).select('pushSubscriptions');
-      const emoji = status === 'Approved' ? '✅' : '❌';
       await sendPushToOneUser(internWithSubs, {
-        title: `${emoji} Leave ${status}`,
+        title: `Leave ${status}`,
         body: `Your leave request for ${leave.startDate} to ${leave.endDate} has been ${status.toLowerCase()} by Admin HQ.`,
         url: `/intern?notif_section=leave`,
         tag: `leave-${id}-${status}`

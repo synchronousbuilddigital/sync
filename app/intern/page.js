@@ -14,6 +14,49 @@ import {
 } from "lucide-react";
 import NotificationToaster from "../../components/NotificationToaster";
 
+const parseCustomDate = (val) => {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  const str = String(val).trim();
+
+  // 1. Check for YYYY-MM-DD
+  const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (ymd) {
+    return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3]));
+  }
+
+  // 2. Check for DD-MM-YYYY or DD/MM/YYYY (e.g. 10-06-2026 or 24/06/2026)
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (dmy) {
+    let first = parseInt(dmy[1]);
+    let second = parseInt(dmy[2]);
+    let y = parseInt(dmy[3]);
+    if (y < 100) y += 2000;
+
+    if (second > 12) {
+      return new Date(y, first - 1, second);
+    } else {
+      return new Date(y, second - 1, first);
+    }
+  }
+
+  // 3. Check for DD-MMM-YY or DD Month YYYY (e.g. 10-Jun-26 or 08 June 2026)
+  const dmm = str.match(/^(\d{1,2})[\/\-\s]+([A-Za-z]{3,})[\/\-\s]*(\d{0,4})$/);
+  if (dmm) {
+    const day = parseInt(dmm[1]);
+    const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const mIdx = monthNames.findIndex(m => dmm[2].toLowerCase().startsWith(m));
+    if (mIdx !== -1) {
+      let y = dmm[3] ? parseInt(dmm[3]) : new Date().getFullYear();
+      if (y < 100) y += 2000;
+      return new Date(y, mIdx, day);
+    }
+  }
+
+  let d = new Date(str);
+  return isNaN(d?.getTime()) ? null : d;
+};
+
 export default function InternDashboard() {
    const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, dataLoading, refreshInternData, markChatRead, showToast, token } = useAuth();
    
@@ -109,6 +152,7 @@ export default function InternDashboard() {
       setChatTaskId(id);
       if (id && markChatRead) markChatRead(id);
    };
+
    const [note, setNote] = useState("");
    const [marketingForm, setMarketingForm] = useState({ editedLink: "", rawLink: "", postedLink: "", editorStatus: "" });
    const [chatMsg, setChatMsg] = useState("");
@@ -126,6 +170,18 @@ export default function InternDashboard() {
    const [fromDate, setFromDate] = useState("");
    const [toDate, setToDate] = useState("");
    const { getAIBlockerSuggestion } = useAuth();
+
+   useEffect(() => {
+      if (typeof window !== "undefined") {
+         const anyModalOpen = chatTaskId || selectedTaskId || isUpdatingPost || isLeaveModalOpen;
+         document.body.style.overflow = anyModalOpen ? "hidden" : "unset";
+      }
+      return () => {
+         if (typeof window !== "undefined") {
+            document.body.style.overflow = "unset";
+         }
+      };
+   }, [chatTaskId, selectedTaskId, isUpdatingPost, isLeaveModalOpen]);
 
    // Handle notification deep-link navigation
    useEffect(() => {
@@ -167,9 +223,49 @@ export default function InternDashboard() {
        }
      };
 
+     const handleSwMessage = (event) => {
+       if (event.data && event.data.type === 'PUSH_NOTIFICATION_CLICK' && event.data.url) {
+         try {
+           const params = new URLSearchParams(event.data.url.split('?')[1] || '');
+           const notifTask = params.get('notif_task');
+           const notifAction = params.get('notif_action');
+           const notifSection = params.get('notif_section');
+           if (notifTask) {
+             const task = tasks.find(t => t._id === notifTask);
+             if (task) {
+               if (notifAction === 'chat') {
+                 setChatTaskId(notifTask);
+                 if (markChatRead) markChatRead(notifTask);
+               } else {
+                 setSelectedTaskId(notifTask);
+                 setNote(task.note || '');
+                 setMarketingForm({
+                   editedLink: task.marketingData?.editedLink || '',
+                   rawLink: task.marketingData?.rawLink || '',
+                   postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || '',
+                   editorStatus: task.marketingData?.editorStatus || ''
+                 });
+               }
+             }
+           }
+           if (notifSection === 'leave') {
+             setIsLeaveModalOpen(true);
+           }
+         } catch (e) {}
+       }
+     };
+
      handleNotifNav();
      window.addEventListener('notif_navigation', handleNotifNav);
-     return () => window.removeEventListener('notif_navigation', handleNotifNav);
+     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+       navigator.serviceWorker.addEventListener('message', handleSwMessage);
+     }
+     return () => {
+       window.removeEventListener('notif_navigation', handleNotifNav);
+       if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+         navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+       }
+     };
    }, [tasks, markChatRead]);
 
    const handleUpdatePost = async (e) => {
@@ -212,21 +308,7 @@ export default function InternDashboard() {
 
      if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
        const dStr = t.dueDate || t.marketingData?.postTracker?.scheduledDate || t.createdAt;
-       let d = null;
-       if (dStr) {
-         d = new Date(dStr);
-         if (isNaN(d.getTime())) {
-           const parts = String(dStr).trim().match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-           if (parts) {
-             let year = parseInt(parts[3], 10);
-             if (year < 100) year += 2000;
-             d = new Date(year, parseInt(parts[2], 10) - 1, parseInt(parts[1], 10));
-             if (isNaN(d.getTime())) d = null;
-           } else {
-             d = null;
-           }
-         }
-       }
+       let d = parseCustomDate(dStr);
        const sheetMonth = t.marketingData?.postTracker?.month || "";
 
        if (monthFilter !== "") {
@@ -270,7 +352,7 @@ export default function InternDashboard() {
      return true;
    });
 
-   if (loading || dataLoading) return (
+   if ((loading || dataLoading) && !user) return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
             <Clock className="w-12 h-12 text-[#F05E23]" />
@@ -702,7 +784,8 @@ export default function InternDashboard() {
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               {safeTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).map((task) => {
                                  const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
-                                 const isOverdue = dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
+                                 const dObj = parseCustomDate(dueDateVal);
+                                 const isOverdue = dObj && dObj < new Date(new Date().setHours(0,0,0,0));
                                  return (
                                   <div key={task._id} className={`bg-white dark:bg-white/5 border ${isOverdue ? 'border-red-500/60 bg-red-500/5' : 'border-black/5 dark:border-white/10'} rounded-[3rem] p-10`}>
                                      <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
@@ -717,7 +800,7 @@ export default function InternDashboard() {
                                            )}
                                            {isOverdue && (
                                               <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white animate-pulse">
-                                                 🚨 DEADLINE MISSED ({new Date(dueDateVal).toLocaleDateString()})
+                                                 🚨 DEADLINE MISSED ({dObj ? dObj.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : dueDateVal})
                                               </div>
                                            )}
                                         </div>
@@ -726,7 +809,7 @@ export default function InternDashboard() {
                                      <p className="text-xs text-slate-500 font-bold italic mb-4">&quot;{task.description}&quot;</p>
                                      {task.dueDate && (
                                         <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-6 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded-lg text-[0.65rem] font-black uppercase tracking-widest">
-                                           <span>Due Date: {new Date(task.dueDate).toLocaleDateString()}</span>
+                                           <span>Due Date: {(() => { const pd = parseCustomDate(task.dueDate); return pd ? pd.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : task.dueDate; })()}</span>
                                         </div>
                                      )}
                                     {task.marketingData && (
@@ -824,7 +907,8 @@ export default function InternDashboard() {
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                               {safeTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').map((task) => {
                                  const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
-                                 const isOverdue = dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
+                                 const dObj = parseCustomDate(dueDateVal);
+                                 const isOverdue = dObj && dObj < new Date(new Date().setHours(0,0,0,0));
                                  return (
                                   <div key={task._id} className={`bg-white dark:bg-white/5 border ${isOverdue ? 'border-red-500/60 bg-red-500/5' : 'border-black/5 dark:border-white/10'} rounded-[3rem] p-10`}>
                                      <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
@@ -839,7 +923,7 @@ export default function InternDashboard() {
                                            )}
                                            {isOverdue && (
                                               <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white animate-pulse">
-                                                 🚨 DEADLINE MISSED ({new Date(dueDateVal).toLocaleDateString()})
+                                                 🚨 DEADLINE MISSED ({dObj ? dObj.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : dueDateVal})
                                               </div>
                                            )}
                                         </div>
@@ -1370,48 +1454,48 @@ export default function InternDashboard() {
             )}
 
             {chatTask && (
-               <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 backdrop-blur-3xl bg-black/80 overflow-y-auto">
-                  <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[4rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[85vh] max-h-[700px] my-auto">
-                     <div className="p-5 sm:p-8 bg-[#F05E23] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
-                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
-                           <div className="p-2.5 sm:p-3 bg-white/20 rounded-2xl shrink-0 mt-0.5 sm:mt-0"><MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" /></div>
+               <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 backdrop-blur-3xl bg-black/80 overflow-y-auto overscroll-contain">
+                  <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[2.5rem] p-0 shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[82vh] max-h-[650px] my-auto">
+                     {/* Compact & Sleek Orange Header with Cross at Top Right Corner */}
+                     <div className="relative p-4 sm:p-5 bg-gradient-to-r from-[#F05E23] to-amber-500 text-white flex flex-col gap-3 shrink-0 pr-14 sm:pr-16">
+                        {/* Cross Option Strictly at Top Right Corner */}
+                        <button
+                          onClick={() => setChatTaskId(null)}
+                          title="Close Modal"
+                          className="absolute top-3.5 sm:top-4 right-3.5 sm:right-4 p-2 sm:p-2.5 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all shadow-md active:scale-95 z-20"
+                        >
+                          <X className="w-5 h-5 sm:w-5 sm:h-5" />
+                        </button>
+
+                        {/* Main Task Title & Badges */}
+                        <div className="flex items-start gap-3 min-w-0">
+                           <div className="p-2 sm:p-2.5 bg-white/20 rounded-xl shrink-0 mt-0.5 shadow-sm"><MessageSquare className="w-5 h-5" /></div>
                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                 <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight truncate">Mission <span className="opacity-60">Log</span></h2>
+                              <div className="flex items-center gap-2 flex-wrap pr-4">
+                                 <h2 className="text-base sm:text-lg font-black uppercase tracking-tight truncate leading-tight">{chatTask?.title || "Mission Log"}</h2>
                                  <span className="px-2 py-0.5 bg-white/20 rounded-md text-[0.55rem] font-black uppercase tracking-widest">{chatTask?.status || "Pending"}</span>
                                  <span className="px-2 py-0.5 bg-black/20 rounded-md text-[0.55rem] font-black uppercase tracking-widest">{chatTask?.priority || "Normal"}</span>
                               </div>
-                              <p className="text-[0.65rem] sm:text-xs font-bold uppercase tracking-wide text-white/90 truncate mt-1">Task: {chatTask?.title}</p>
-                              {chatTask?.marketingData && (
-                                <div className="flex flex-col gap-2 mt-2 bg-black/20 p-2.5 rounded-xl w-full">
-                                  <div className="flex flex-wrap gap-2">
-                                    {chatTask.marketingData.rawLink && (
-                                      <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
-                                        <ExternalLink className="w-3 h-3" /> Raw Asset
-                                      </a>
-                                    )}
-                                    {chatTask.marketingData.editedLink && (
-                                      <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
-                                        <ExternalLink className="w-3 h-3" /> Edited Output
-                                      </a>
-                                    )}
-                                  </div>
-                                  {chatTask.marketingData.postTracker && (
-                                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10 text-[0.55rem] font-black uppercase tracking-widest text-white">
-                                      <span className="bg-white/10 px-2 py-1 rounded">📌 {chatTask.marketingData.postTracker.companyName || "Company"}: <span className="text-amber-300">{chatTask.marketingData.postTracker.scheduledDate || "TBA"}</span> @ <span className="text-amber-300">{chatTask.marketingData.postTracker.postingTime || "TBA"}</span></span>
-                                      <span className="bg-white/10 px-2 py-1 rounded">Status: <span className={chatTask.marketingData.postTracker.status?.includes('Posted') ? 'text-green-300' : 'text-amber-300'}>{chatTask.marketingData.postTracker.status || "Pending"}</span></span>
-                                      {chatTask.marketingData.postTracker.postedLink && (
-                                        <a href={chatTask.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600/80 px-2 py-1 rounded hover:bg-blue-600 underline flex items-center gap-1">
-                                          <ExternalLink className="w-3 h-3" /> Live Link
-                                        </a>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                           </div>
+                        </div>
+
+                        {/* Compact Details & Links Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/20 text-[0.55rem] font-black uppercase tracking-widest">
+                           <div className="flex flex-wrap items-center gap-1.5">
+                              {chatTask?.marketingData?.postTracker?.companyName && (
+                                <span className="bg-black/20 px-2 py-1 rounded-md">📌 {chatTask.marketingData.postTracker.companyName}: <span className="text-amber-200">{chatTask.marketingData.postTracker.scheduledDate || "TBA"}</span></span>
+                              )}
+                              {chatTask?.marketingData?.rawLink && (
+                                <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Raw Asset</a>
+                              )}
+                              {chatTask?.marketingData?.editedLink && (
+                                <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Edited Output</a>
+                              )}
+                              {chatTask?.marketingData?.postTracker?.postedLink && (
+                                <a href={chatTask.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600/80 hover:bg-blue-600 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Live Link</a>
                               )}
                            </div>
                         </div>
-                        <button onClick={() => setChatTaskId(null)} className="p-2 sm:p-3 hover:bg-white/20 rounded-2xl transition-all self-end sm:self-auto"><Plus className="w-6 h-6 sm:w-8 sm:h-8 rotate-45" /></button>
                      </div>
                      <div className="flex-grow p-4 sm:p-8 overflow-y-auto space-y-4 sm:space-y-6 scrollbar-hide bg-slate-50 dark:bg-transparent">
                         {(chatTask.discussion || []).map((msg, idx) => (

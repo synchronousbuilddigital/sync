@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
             body: msg,
             icon: "/logo.png"
           });
-        } catch (e) {}
+        } catch (e) { }
       }
     }
   }, []);
@@ -125,7 +125,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setInterns(data.interns);
     } catch (e) {
-      console.warn("Failed to fetch interns:", e.message);
+      console.error("Failed to fetch interns", e);
     }
   }, []);
 
@@ -137,17 +137,18 @@ export function AuthProvider({ children }) {
         cache: "no-store"
       });
       const data = await res.json();
-      if (data.success) {
+      if (data.success && Array.isArray(data.tasks)) {
         setTasks(data.tasks);
         setTaskStore({ role, ownerId: role === "brand_manager" ? "brand_manager" : role });
         if (data.companyName) setCompanyName(data.companyName);
       } else {
-        setTasks([]);
-        setTaskStore({ role: null, ownerId: null });
-        setCompanyName("");
+        // Do not wipe tasks or taskStore during background polling if we already have loaded tasks
+        setTasks(prev => Array.isArray(prev) && prev.length > 0 ? prev : []);
+        setTaskStore(prev => prev?.role ? prev : { role: null, ownerId: null });
+        setCompanyName(prev => prev || "");
       }
     } catch (e) {
-      console.warn("Failed to fetch tasks:", e.message);
+      console.error("Failed to fetch tasks", e);
       setTasks([]);
     } finally {
       setDataLoading(false);
@@ -163,7 +164,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setLeaves(data.leaves);
     } catch (e) {
-      console.warn("Failed to fetch leaves:", e.message);
+      console.error("Failed to fetch leaves", e);
     }
   }, []);
 
@@ -173,7 +174,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setProjects(data.projects);
     } catch (e) {
-      console.warn("Failed to fetch projects:", e.message);
+      console.error("Failed to fetch projects", e);
     }
   }, []);
 
@@ -187,7 +188,7 @@ export function AuthProvider({ children }) {
         setProductionCategories(data.productionCategories || []);
       }
     } catch (e) {
-      console.warn("Failed to fetch production data:", e.message);
+      console.error("Failed to fetch production data", e);
     }
   }, []);
 
@@ -200,7 +201,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setClientProject(data.project);
     } catch (e) {
-      console.warn("Failed to fetch client project:", e.message);
+      console.error("Failed to fetch client project", e);
     }
   }, []);
 
@@ -213,7 +214,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setAdminClientProjects(data.projects);
     } catch (e) {
-      console.warn("Failed to fetch admin client projects:", e.message);
+      console.error("Failed to fetch admin client projects", e);
     }
   }, []);
 
@@ -226,7 +227,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setInternProjects(data.projects);
     } catch (e) {
-      console.warn("Failed to fetch intern projects:", e.message);
+      console.error("Failed to fetch intern projects", e);
     }
   }, []);
 
@@ -239,7 +240,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setCompanies(data.companies);
     } catch (e) {
-      console.warn("Failed to fetch companies:", e.message);
+      console.error("Failed to fetch companies", e);
     }
   }, []);
 
@@ -252,14 +253,14 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       if (data.success) setBrandManagers(data.clients);
     } catch (e) {
-      console.warn("Failed to fetch brand managers:", e.message);
+      console.error("Failed to fetch brand managers", e);
     }
   }, []);
 
   const createClient = async (name, email, password, companyId) => {
     const res = await fetch("/api/admin/clients", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -283,7 +284,7 @@ export function AuthProvider({ children }) {
   const createClientProject = async (projectData) => {
     const res = await fetch("/api/admin/client-projects", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -297,7 +298,7 @@ export function AuthProvider({ children }) {
   const updateClientProject = async (id, updateData) => {
     const res = await fetch(`/api/admin/client-projects/${id}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -331,7 +332,7 @@ export function AuthProvider({ children }) {
   const sendClientMessage = async (message) => {
     const res = await fetch("/api/client/project", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -345,7 +346,7 @@ export function AuthProvider({ children }) {
   const sendClientFeed = async (feed) => {
     const res = await fetch("/api/client/project", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -359,7 +360,7 @@ export function AuthProvider({ children }) {
   const sendAdminFeed = async (id, feed) => {
     const res = await fetch(`/api/admin/client-projects/${id}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -375,15 +376,18 @@ export function AuthProvider({ children }) {
     const storedToken = localStorage.getItem("sync_token");
 
     fetchProjects(); // Publicly fetch projects
-    fetchProductionData(); // Publicly fetch production data
 
     if (storedUser && storedToken) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
       setToken(storedToken);
       fetchTasks(parsedUser.role, storedToken);
-      fetchLeaves(storedToken);
-      
+
+      if (parsedUser.role !== "brand_manager") {
+        fetchProjects();
+        fetchLeaves(storedToken);
+      }
+
       if (parsedUser.role === "admin") {
         fetchInterns(storedToken);
         fetchAdminClientProjects(storedToken);
@@ -400,7 +404,6 @@ export function AuthProvider({ children }) {
         fetchTasks(parsedUser.role, storedToken);
         fetchLeaves(storedToken);
         fetchProjects();
-        fetchProductionData();
         if (parsedUser.role === "admin") {
           fetchInterns(storedToken);
           fetchAdminClientProjects(storedToken);
@@ -417,10 +420,12 @@ export function AuthProvider({ children }) {
       // Re-subscribe to web push on every page load so subscriptions stay fresh
       setTimeout(() => requestNotificationPermission(storedToken), 2000);
       return () => clearInterval(pollInterval);
+    } else {
+      fetchProjects(); // Publicly fetch projects if no stored session
     }
     setLoading(false);
     setDataLoading(false); // No stored session — nothing to load
-  }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers, fetchProductionData]);
+  }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers]);
 
   const login = async (email, password) => {
     try {
@@ -430,7 +435,7 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      
+
       if (data.success) {
         setUser(data.user);
         setToken(data.token);
@@ -438,13 +443,13 @@ export function AuthProvider({ children }) {
         localStorage.setItem("sync_token", data.token);
         setDataLoading(true); // Reset — fresh data fetch incoming after login
         setTimeout(() => requestNotificationPermission(data.token), 1500);
-        
+
         if (data.user.mustChangePassword) {
           router.push("/change-password");
         } else {
           router.push(data.user.role === "admin" ? "/admin" : (data.user.role === "client" ? "/client" : (data.user.role === "brand_manager" ? "/brand" : "/intern")));
         }
-        
+
         fetchTasks(data.user.role, data.token);
         if (data.user.role === "admin") {
           fetchInterns(data.token);
@@ -459,7 +464,7 @@ export function AuthProvider({ children }) {
         if (data.user.role === "client") {
           fetchClientProject(data.token);
         }
-        
+
         return { success: true };
       } else {
         return { success: false, message: data.message };
@@ -490,7 +495,7 @@ export function AuthProvider({ children }) {
   const changePassword = async (newPassword) => {
     const res = await fetch("/api/intern/change-password", {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -509,7 +514,7 @@ export function AuthProvider({ children }) {
   const addIntern = async (name, email, password, department = "Tech") => {
     const res = await fetch("/api/admin/interns", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -536,7 +541,7 @@ export function AuthProvider({ children }) {
   const assignTask = async (taskData) => {
     const res = await fetch("/api/admin/tasks", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -550,7 +555,7 @@ export function AuthProvider({ children }) {
   const updateTaskStatus = async (taskId, status, note = "", isApproved = undefined, marketingData = undefined) => {
     const res = await fetch(`/api/intern/tasks/${taskId}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -565,7 +570,7 @@ export function AuthProvider({ children }) {
     try {
       const res = await fetch(`/api/tasks/${taskId}/discussion`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
@@ -655,7 +660,7 @@ export function AuthProvider({ children }) {
   const approveLeave = async (id, status, adminNote = "") => {
     const res = await fetch(`/api/admin/leave/${id}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -682,7 +687,7 @@ export function AuthProvider({ children }) {
   const reassignTask = async (taskId, internId) => {
     const res = await fetch(`/api/admin/tasks/${taskId}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -696,7 +701,7 @@ export function AuthProvider({ children }) {
   const updateTask = async (taskId, updateData) => {
     const res = await fetch(`/api/admin/tasks/${taskId}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -754,7 +759,7 @@ export function AuthProvider({ children }) {
   const addProject = async (projectData) => {
     const res = await fetch("/api/admin/projects", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -768,7 +773,7 @@ export function AuthProvider({ children }) {
   const updateProject = async (id, projectData) => {
     const res = await fetch(`/api/admin/projects/${id}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -792,7 +797,7 @@ export function AuthProvider({ children }) {
   const addProductionItem = async (itemData) => {
     const res = await fetch("/api/admin/production/items", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -806,7 +811,7 @@ export function AuthProvider({ children }) {
   const updateProductionItem = async (id, itemData) => {
     const res = await fetch(`/api/admin/production/items/${id}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -830,7 +835,7 @@ export function AuthProvider({ children }) {
   const addPartnerLogo = async (logoData) => {
     const res = await fetch("/api/admin/production/logos", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -844,7 +849,7 @@ export function AuthProvider({ children }) {
   const updatePartnerLogo = async (id, logoData) => {
     const res = await fetch(`/api/admin/production/logos/${id}`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -868,7 +873,7 @@ export function AuthProvider({ children }) {
   const addProductionCategory = async (categoryData) => {
     const res = await fetch("/api/admin/production/categories", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -882,7 +887,7 @@ export function AuthProvider({ children }) {
   const updateProductionCategory = async (id, categoryData, oldName) => {
     const res = await fetch("/api/admin/production/categories", {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -896,7 +901,7 @@ export function AuthProvider({ children }) {
   const deleteProductionCategory = async (id, name) => {
     const res = await fetch("/api/admin/production/categories", {
       method: "DELETE",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -910,7 +915,7 @@ export function AuthProvider({ children }) {
   const updateClientInfo = async (updateData) => {
     const res = await fetch("/api/client/project", {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -924,7 +929,7 @@ export function AuthProvider({ children }) {
   const generateAIStory = async (projectId) => {
     const res = await fetch("/api/client/project/story", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -949,7 +954,7 @@ export function AuthProvider({ children }) {
   const getAIInternRecommendation = async (taskTitle, taskDescription) => {
     const res = await fetch("/api/admin/tasks/ai-recommend", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -961,7 +966,7 @@ export function AuthProvider({ children }) {
   const runAIRiskAnalysis = async (projectId) => {
     const res = await fetch("/api/admin/client-projects/risk-analysis", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -975,7 +980,7 @@ export function AuthProvider({ children }) {
   const getAIFeatureSuggestions = async (projectType, description) => {
     const res = await fetch("/api/client/project/suggest-features", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -987,7 +992,7 @@ export function AuthProvider({ children }) {
   const generateBrandIntel = async (brandData) => {
     const res = await fetch("/api/admin/client-projects/generate-intel", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -1009,7 +1014,7 @@ export function AuthProvider({ children }) {
   const brandManagerReviewTask = async (taskId, reviewStatus, remarks) => {
     const res = await fetch(`/api/client/tasks/${taskId}/review`, {
       method: "PATCH",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
@@ -1060,7 +1065,7 @@ export function AuthProvider({ children }) {
       try {
         const stored = JSON.parse(localStorage.getItem(`sync_read_notifs_${userId}`) || "[]");
         setReadNotifIds(stored);
-      } catch (e) {}
+      } catch (e) { }
     }
   }, [user]);
 
@@ -1142,17 +1147,17 @@ export function AuthProvider({ children }) {
     setReadNotifIds(combined);
     try {
       localStorage.setItem(`sync_read_notifs_${userId}`, JSON.stringify(combined));
-    } catch (e) {}
+    } catch (e) { }
   }, [user, notifications, readNotifIds]);
 
   return (
-    <AuthContext.Provider value={{ 
+    <AuthContext.Provider value={{
       user, token, loading, dataLoading, login, logout, changePassword, showToast, requestNotificationPermission,
-      interns, tasks, taskStore, fetchTasks, fetchInterns, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, refreshAdminData, refreshInternData, refreshBrandData, refreshClientData, companyName, leaves, projects, addIntern, removeIntern, assignTask, 
+      interns, tasks, taskStore, fetchTasks, fetchInterns, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, refreshAdminData, refreshInternData, refreshBrandData, refreshClientData, companyName, leaves, projects, addIntern, removeIntern, assignTask,
       updateTaskStatus, deleteTask, updateTask, reassignTask, approveLeave,
-      announceToAll, addProject, updateProject, deleteProject,
+      announceToAll, addProject, updateProject, deleteProject, fetchProductionData,
       productionItems, partnerLogos, productionCategories, addProductionItem, updateProductionItem, deleteProductionItem, addPartnerLogo, updatePartnerLogo, deletePartnerLogo, addProductionCategory, updateProductionCategory, deleteProductionCategory,
-      clientProject, adminClientProjects, internProjects, createClient, createClientProject, 
+      clientProject, adminClientProjects, internProjects, createClient, createClientProject,
       updateClientProject, purgeClientProject, sendClientMessage, sendClientFeed, sendAdminFeed, sendDiscussion, markChatRead, updateClientInfo, generateRoadmap,
       generateAIStory, getAIBlockerSuggestion, getAIInternRecommendation, runAIRiskAnalysis, getAIFeatureSuggestions,
       generateBrandIntel, markFeedbackAsRead, brandManagerReviewTask,

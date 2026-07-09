@@ -34,17 +34,36 @@ export async function GET(req) {
     const marketingTasks = rows.map(row => {
       // Platform parsing
       const platforms = [];
-      if (row[18] && row[18].toLowerCase() === 'yes') platforms.push('Instagram');
-      if (row[19] && row[19].toLowerCase() === 'yes') platforms.push('FB');
-      if (row[20] && row[20].toLowerCase() === 'yes') platforms.push('LinkedIn');
+      if (row[18] && row[18].toLowerCase() === 'yes' || row[18] === 'TRUE') platforms.push('Instagram');
+      if (row[19] && row[19].toLowerCase() === 'yes' || row[19] === 'TRUE') platforms.push('FB');
+      if (row[20] && row[20].toLowerCase() === 'yes' || row[20] === 'TRUE') platforms.push('LinkedIn');
 
       return {
+        companyName: row[0] || "",
         contentId: row[1] || "",
+        contentType: row[2] || "",
+        contentFor: row[3] || "",
+        creatorName: row[4] || "",
+        creationDate: row[5] || "",
+        creationMonth: row[6] || "",
+        day: row[7] || "",
         topic: row[8] || "",
         rawLink: row[9] || "",
-        platforms: platforms
+        firstEditDate: row[10] || "",
+        editorName: row[11] || "",
+        editorRemarks: row[12] || "",
+        editedLink: row[13] || "",
+        reviewDate: row[14] || "",
+        reviewStatus: row[15] || "",
+        reviewRemarks: row[16] || "",
+        reviewBy: row[17] || "",
+        platforms: platforms,
+        postingStatus: row[21] || "",
+        postedDate: row[22] || "",
+        firstEdit: row[24] || "",
+        finalApproval: row[25] || ""
       };
-    }).filter(t => t.topic !== ""); // filter out empty rows
+    }).filter(t => t.topic !== "" || t.contentId !== "" || t.companyName !== ""); // filter out completely empty rows
 
     return NextResponse.json({ success: true, data: marketingTasks });
   } catch (error) {

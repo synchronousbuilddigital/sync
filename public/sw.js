@@ -131,15 +131,34 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(data.title || 'Synchronous Build Digital', options));
 });
 
-// Notification click event: focus or open app window when mobile notification is tapped
+// Notification click event: focus and deep-link open app window when mobile/desktop push notification is tapped
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // First check if an existing window of our app is already open
       for (let client of clientList) {
-        if (client.url.includes(targetUrl) && 'focus' in client) {
-          return client.focus();
+        try {
+          const clientOrigin = new URL(client.url).origin;
+          const targetOrigin = new URL(targetUrl, self.location.origin).origin;
+          if (clientOrigin === targetOrigin && 'focus' in client) {
+            client.focus();
+            // Send postMessage so active dashboard can pop open the modal without full reload if already on same route
+            client.postMessage({
+              type: 'PUSH_NOTIFICATION_CLICK',
+              url: targetUrl
+            });
+            // Also navigate existing tab to targetUrl if client supports navigate
+            if ('navigate' in client && client.url !== new URL(targetUrl, self.location.origin).href) {
+              return client.navigate(targetUrl);
+            }
+            return client;
+          }
+        } catch (e) {
+          if (client.url.includes(targetUrl) && 'focus' in client) {
+            return client.focus();
+          }
         }
       }
       if (self.clients.openWindow) {

@@ -37,6 +37,8 @@ export async function GET(req) {
 
     const postTrackerData = await fetchPostTrackerData();
 
+    const targetCompany = (company && company.name) ? company.name.trim().toLowerCase() : "";
+
     const tasksWithDeptName = tasks.map(task => {
       const taskObj = task.toObject();
       if (taskObj.marketingData && taskObj.marketingData.departmentId) {
@@ -46,26 +48,67 @@ export async function GET(req) {
           name: departmentMap[deptIdStr] || "Uncategorized"
         };
       }
-       if (taskObj.contentId && postTrackerData[taskObj.contentId]) {
-          taskObj.marketingData = taskObj.marketingData || {};
-          const sheetData = postTrackerData[taskObj.contentId];
-          const nativePT = taskObj.marketingData.postTracker || {};
-          taskObj.marketingData.postTracker = {
-            ...sheetData,
-            ...nativePT,
-            scheduledDate: nativePT.scheduledDate || sheetData.scheduledDate || "",
-            postingTime: nativePT.postingTime || sheetData.postingTime || "",
-            month: nativePT.month || sheetData.month || "",
-            day: nativePT.day || sheetData.day || "",
-            postType: nativePT.postType || sheetData.postType || "",
-            status: nativePT.status || sheetData.status || "Pending",
-            finalLink: nativePT.finalLink || sheetData.finalLink || "",
-            postedLink: nativePT.postedLink || sheetData.postedLink || "",
-            clientRemarks: nativePT.clientRemarks || sheetData.clientRemarks || "",
-          };
-       }
+      const cid = (taskObj.contentId || "").replace(/^#/, "").trim();
+      const sheetData = postTrackerData[cid] || postTrackerData[taskObj.contentId] || Object.values(postTrackerData).find(s => s.contentId && s.contentId.replace(/^#/, "").trim().toLowerCase() === cid.toLowerCase());
+      if (sheetData) {
+        // If Sheet explicitly assigns this content ID to a DIFFERENT company, exclude it!
+        if (targetCompany && sheetData.companyName) {
+          const sheetCompany = sheetData.companyName.trim().toLowerCase();
+          if (sheetCompany && sheetCompany !== targetCompany && !targetCompany.includes(sheetCompany) && !sheetCompany.includes(targetCompany)) {
+            return null;
+          }
+        }
+        taskObj.marketingData = taskObj.marketingData || {};
+        const nativePT = taskObj.marketingData.postTracker || {};
+        taskObj.marketingData.postTracker = {
+          ...nativePT,
+          ...sheetData,
+          scheduledDate: sheetData.scheduledDate || nativePT.scheduledDate || "",
+          postingTime: sheetData.postingTime || nativePT.postingTime || "",
+          month: sheetData.month || nativePT.month || "",
+          day: sheetData.day || nativePT.day || "",
+          postType: sheetData.postType || nativePT.postType || "",
+          status: sheetData.status || nativePT.status || "Pending",
+          finalLink: sheetData.finalLink || nativePT.finalLink || "",
+          postedLink: sheetData.postedLink || nativePT.postedLink || "",
+          clientRemarks: sheetData.clientRemarks || nativePT.clientRemarks || "",
+        };
+      }
       return taskObj;
-    });
+    }).filter(Boolean);
+
+    // Also include any historical or future Post Tracker items directly from the Google Sheet that don't have a MongoDB task entry yet
+    const existingIds = new Set(tasksWithDeptName.map(t => t.contentId?.replace(/^#/, "").trim().toLowerCase()).filter(Boolean));
+    if (targetCompany) {
+      Object.entries(postTrackerData).forEach(([contentId, sheetData]) => {
+        const sheetCompany = (sheetData.companyName || "").trim().toLowerCase();
+        const isMatch = sheetCompany && (
+          targetCompany === sheetCompany ||
+          (sheetCompany.length >= 4 && targetCompany.includes(sheetCompany)) ||
+          (targetCompany.length >= 4 && sheetCompany.includes(targetCompany))
+        );
+        const cleanCid = contentId.replace(/^#/, "").trim().toLowerCase();
+        if (!existingIds.has(cleanCid) && isMatch) {
+          tasksWithDeptName.push({
+            _id: `sheet_pt_${cleanCid}`,
+            contentId: cleanCid,
+            title: `${sheetData.postType || 'Social Post'} (#${cleanCid})`,
+            description: `Post Tracker item from sheet (${sheetData.postType || 'Social Post'})`,
+            status: sheetData.status?.toLowerCase().includes('posted') ? 'Complete' : 'Working',
+            createdAt: sheetData.scheduledDate || new Date().toISOString(),
+            dueDate: sheetData.scheduledDate || "",
+            marketingData: {
+              companyId: user.companyId,
+              departmentId: { _id: "pt_sheet", name: "Social Media" },
+              postTracker: {
+                ...sheetData,
+                companyName: sheetData.companyName || company.name
+              }
+            }
+          });
+        }
+      });
+    }
 
     return Response.json({ success: true, tasks: tasksWithDeptName, companyName: company?.name || "Unknown Company" });
   } catch (err) {

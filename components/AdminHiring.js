@@ -129,7 +129,7 @@ export default function AdminHiring() {
         </button>
       </div>
 
-      {loading ? (
+      {(loading && applications.length === 0 && jobs.length === 0) ? (
         <div className="py-20 flex justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#F05E23]" />
         </div>

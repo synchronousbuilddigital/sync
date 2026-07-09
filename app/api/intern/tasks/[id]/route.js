@@ -68,19 +68,11 @@ export async function PATCH(req, { params }) {
     try {
       const intern = await User.findById(decoded.id).select('name');
       const internName = intern?.name || 'An intern';
-      const statusEmojis = {
-        'Complete': '🎉',
-        'Need Meeting': '📅',
-        'Need Credentials': '🔑',
-        'Blocked': '🚫',
-        'Pending': '⏳'
-      };
-      const emoji = statusEmojis[status] || '📋';
       const hasLinks = marketingData?.rawLink || marketingData?.editedLink || marketingData?.postedLink;
 
       if (['Complete', 'Need Meeting', 'Need Credentials', 'Blocked'].includes(status) || hasLinks) {
         await sendPushToAdmins(User, {
-          title: `${emoji} ${internName}: Task ${status}`,
+          title: `${internName}: Task ${status}`,
           body: hasLinks
             ? `Links submitted for "${task.title}"`
             : `"${task.title}" marked as ${status}`,

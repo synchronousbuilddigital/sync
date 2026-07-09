@@ -15,6 +15,49 @@ import {
 import AdminHiring from "../../components/AdminHiring";
 import NotificationToaster from "../../components/NotificationToaster";
 
+const parseCustomDate = (val) => {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  const str = String(val).trim();
+
+  // 1. Check for YYYY-MM-DD
+  const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (ymd) {
+    return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3]));
+  }
+
+  // 2. Check for DD-MM-YYYY or DD/MM/YYYY (e.g. 10-06-2026 or 24/06/2026)
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (dmy) {
+    let first = parseInt(dmy[1]);
+    let second = parseInt(dmy[2]);
+    let y = parseInt(dmy[3]);
+    if (y < 100) y += 2000;
+
+    if (second > 12) {
+      return new Date(y, first - 1, second);
+    } else {
+      return new Date(y, second - 1, first);
+    }
+  }
+
+  // 3. Check for DD-MMM-YY or DD Month YYYY (e.g. 10-Jun-26 or 08 June 2026)
+  const dmm = str.match(/^(\d{1,2})[\/\-\s]+([A-Za-z]{3,})[\/\-\s]*(\d{0,4})$/);
+  if (dmm) {
+    const day = parseInt(dmm[1]);
+    const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const mIdx = monthNames.findIndex(m => dmm[2].toLowerCase().startsWith(m));
+    if (mIdx !== -1) {
+      let y = dmm[3] ? parseInt(dmm[3]) : new Date().getFullYear();
+      if (y < 100) y += 2000;
+      return new Date(y, mIdx, day);
+    }
+  }
+
+  let d = new Date(str);
+  return isNaN(d?.getTime()) ? null : d;
+};
+
 export default function AdminDashboard() {
   const router = useRouter();
   const {
@@ -78,7 +121,8 @@ export default function AdminDashboard() {
       const overduePosts = (tasks || []).filter(t => {
         const dueDateVal = t.dueDate || t.marketingData?.postTracker?.scheduledDate || t.timeline?.end;
         const isPostPosted = t.marketingData?.postTracker?.status?.includes("Posted") || t.marketingData?.postTracker?.status?.includes("Client Review");
-        return !isPostPosted && !["Done", "Completed", "Complete"].includes(t.status) && dueDateVal && new Date(dueDateVal) < new Date(new Date().setHours(0,0,0,0));
+        const d = parseCustomDate(dueDateVal);
+        return !isPostPosted && !["Done", "Completed", "Complete"].includes(t.status) && d && d < new Date(new Date().setHours(0,0,0,0));
       });
       if (overduePosts.length > 0) {
         const notifiedOverdueKey = "notified_overdue_posts_admin";
@@ -159,9 +203,40 @@ export default function AdminDashboard() {
       }
     };
 
+    const handleSwMessage = (event) => {
+      if (event.data && event.data.type === 'PUSH_NOTIFICATION_CLICK' && event.data.url) {
+        try {
+          const params = new URLSearchParams(event.data.url.split('?')[1] || '');
+          const notifTask = params.get('notif_task');
+          const notifAction = params.get('notif_action');
+          const notifSection = params.get('notif_section');
+          if (notifTask) {
+            const task = tasks.find(t => t._id === notifTask);
+            if (task) {
+              setChatTaskId(notifTask);
+              if (markChatRead && notifAction === 'chat') {
+                markChatRead(notifTask);
+              }
+            }
+          }
+          if (notifSection === 'leave') {
+            setActiveTab('holidays');
+          }
+        } catch (e) {}
+      }
+    };
+
     handleNotifNav();
     window.addEventListener('notif_navigation', handleNotifNav);
-    return () => window.removeEventListener('notif_navigation', handleNotifNav);
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    }
+    return () => {
+      window.removeEventListener('notif_navigation', handleNotifNav);
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+      }
+    };
   }, [tasks, markChatRead]);
   const [taskCompanyFilter, setTaskCompanyFilter] = useState("");
   const [taskDepartmentFilter, setTaskDepartmentFilter] = useState("");
@@ -171,6 +246,8 @@ export default function AdminDashboard() {
   const [dateFilterType, setDateFilterType] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [ptMonthFilter, setPtMonthFilter] = useState("All");
+  const [ptTimeframeFilter, setPtTimeframeFilter] = useState("All");
 
   // Client Management States
   const [isAddingClient, setIsAddingClient] = useState(false);
@@ -352,6 +429,18 @@ export default function AdminDashboard() {
     additional: ""
   });
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const anyModalOpen = chatTaskId || reviewingTask || isAddingPost || isAddingClient || isAddingIntern || isAddingBrandManager || isAddingProject || editingProject || editingTaskModal || isEditingCredentials;
+      document.body.style.overflow = anyModalOpen ? "hidden" : "unset";
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        document.body.style.overflow = "unset";
+      }
+    };
+  }, [chatTaskId, reviewingTask, isAddingPost, isAddingClient, isAddingIntern, isAddingBrandManager, isAddingProject, editingProject, editingTaskModal, isEditingCredentials]);
+
   const chatTask = tasks.find(t => t._id === chatTaskId);
   const tabLabels = {
     interns: "Team",
@@ -506,7 +595,7 @@ export default function AdminDashboard() {
     calculateFeasibility();
   }, [selectedSteps, customTasks, newTask.internId, tasks]);
 
-  if (loading || dataLoading) return (
+  if ((loading || dataLoading) && !user) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#050505]">
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
         <Clock className="w-12 h-12 text-[#F05E23]" />
@@ -1512,156 +1601,354 @@ export default function AdminDashboard() {
           <AdminSpreadsheet tasks={tasks} companies={companies} interns={interns} />
         )}
 
-        {activeTab === "post_tracker" && (
-          <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 bg-gradient-to-r from-slate-900 via-[#120f1c] to-slate-900 p-6 sm:p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
-              <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#F05E23]/20 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F05E23]/20 text-[#FF8C61] border border-[#F05E23]/30 text-[0.6rem] font-black uppercase tracking-widest mb-3">
-                  <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '10s' }} /> Live Schedule & Time Clock
+        {activeTab === "post_tracker" && (() => {
+          const trackedTasks = (tasks || []).filter(t => t.marketingData?.postTracker || t.contentId);
+
+          const resolveCompanyTask = (task) => {
+            const pt = task.marketingData?.postTracker || {};
+            const val = pt.companyName || pt.company || task.marketingData?.companyId || task.marketingData?.companyName || task.marketingData?.company || task.clientProjectId || task.companyId || task.companyName || task.company || task.clientId || task.brand;
+            if (!val) return "Unassigned";
+            if (typeof val === "object") return val.name || val.projectName || val.companyName || "Unassigned";
+            const foundComp = companies?.find(c => c._id === val || c.name === val);
+            if (foundComp) return foundComp.name;
+            const foundProj = adminClientProjects?.find(p => p._id === val || p.projectName === val);
+            if (foundProj) return foundProj.projectName || foundProj.name;
+            return val;
+          };
+
+          const availableMonths = ["All", ...Array.from(new Set(
+            trackedTasks.map(t => {
+              const pt = t.marketingData?.postTracker || {};
+              if (pt.month && pt.month.trim()) return pt.month.trim();
+              const rawDate = pt.scheduledDate || t.dueDate;
+              if (rawDate && rawDate.trim() !== "" && rawDate.trim().toUpperCase() !== "TBA") {
+                const d = parseCustomDate(rawDate);
+                if (d && !isNaN(d.getTime())) {
+                  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                  const yy = String(d.getFullYear()).slice(-2);
+                  return `${monthNames[d.getMonth()]}-${yy}`;
+                }
+              }
+              return "";
+            }).filter(Boolean)
+          ))];
+
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const currentDayOfWeek = (today.getDay() + 6) % 7; // 0 for Mon, 6 for Sun
+          const thisWeekStart = new Date(today);
+          thisWeekStart.setDate(today.getDate() - currentDayOfWeek);
+          const thisWeekEnd = new Date(thisWeekStart);
+          thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+
+          const nextWeekStart = new Date(thisWeekEnd);
+          nextWeekStart.setDate(thisWeekEnd.getDate() + 1);
+          const nextWeekEnd = new Date(nextWeekStart);
+          nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
+
+          const filteredTrackedTasks = trackedTasks.filter(task => {
+            const pt = task.marketingData?.postTracker || {};
+            
+            // 1. Month Filter check
+            if (ptMonthFilter && ptMonthFilter !== "All") {
+              let taskMonth = pt.month ? pt.month.trim() : "";
+              if (!taskMonth && (pt.scheduledDate || task.dueDate)) {
+                const d = parseCustomDate(pt.scheduledDate || task.dueDate);
+                if (d && !isNaN(d.getTime())) {
+                  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                  const yy = String(d.getFullYear()).slice(-2);
+                  taskMonth = `${monthNames[d.getMonth()]}-${yy}`;
+                }
+              }
+              if (taskMonth.toLowerCase() !== ptMonthFilter.toLowerCase()) return false;
+            }
+
+            // 2. Weekly / Timeframe Filter check
+            if (ptTimeframeFilter && ptTimeframeFilter !== "All") {
+              const rawDate = pt.scheduledDate || task.dueDate;
+              if (!rawDate || rawDate.trim() === "" || rawDate.trim().toUpperCase() === "TBA") return false;
+              const d = parseCustomDate(rawDate);
+              if (!d || isNaN(d.getTime())) return false;
+              const taskDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+              if (ptTimeframeFilter === "This Week") {
+                if (taskDate < thisWeekStart || taskDate > thisWeekEnd) return false;
+              } else if (ptTimeframeFilter === "Next Week") {
+                if (taskDate < nextWeekStart || taskDate > nextWeekEnd) return false;
+              } else if (ptTimeframeFilter === "Upcoming / Future") {
+                if (taskDate < today) return false;
+              } else if (ptTimeframeFilter === "Past / Overdue") {
+                if (taskDate >= today) return false;
+              }
+            }
+
+            return true;
+          });
+
+          // Group by exact parsed date or date string
+          const dateGroups = {};
+          filteredTrackedTasks.forEach(task => {
+            const pt = task.marketingData?.postTracker || {};
+            const rawDate = pt.scheduledDate || task.dueDate || "";
+            let sortKey = "9999-12-31"; // TBA sorts last
+            let displayHeader = "TBA / Unscheduled";
+            let formattedDate = "";
+            let dayLabel = pt.day || "";
+            let monthLabel = pt.month || "";
+            let d = null;
+
+            if (rawDate && rawDate.trim() !== "" && rawDate.trim().toUpperCase() !== "TBA") {
+              d = parseCustomDate(rawDate);
+              if (d && !isNaN(d.getTime())) {
+                sortKey = d.toISOString().split("T")[0];
+                const dayStr = d.toLocaleDateString("en-GB", { weekday: "long" });
+                const dateStr = d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).replace(/\//g, "-");
+                displayHeader = `${dayStr}, ${dateStr}`;
+                formattedDate = dateStr;
+                if (!dayLabel) dayLabel = dayStr;
+              } else {
+                sortKey = rawDate;
+                displayHeader = rawDate;
+                formattedDate = rawDate;
+              }
+            }
+
+            const groupKey = sortKey + "___" + displayHeader;
+            if (!dateGroups[groupKey]) {
+              dateGroups[groupKey] = {
+                sortKey,
+                displayHeader,
+                formattedDate,
+                dayLabel,
+                monthLabel,
+                dateObj: d || new Date(9999, 11, 31),
+                tasks: []
+              };
+            }
+            dateGroups[groupKey].tasks.push(task);
+          });
+
+          const sortedGroupKeys = Object.keys(dateGroups).sort((keyA, keyB) => {
+            const groupA = dateGroups[keyA];
+            const groupB = dateGroups[keyB];
+            if (groupA.sortKey === "9999-12-31" && groupB.sortKey !== "9999-12-31") return 1;
+            if (groupB.sortKey === "9999-12-31" && groupA.sortKey !== "9999-12-31") return -1;
+            if (groupA.dateObj && groupB.dateObj) {
+              const diff = groupA.dateObj - groupB.dateObj;
+              if (diff !== 0) return diff;
+            }
+            return groupA.sortKey.localeCompare(groupB.sortKey);
+          });
+
+          return (
+            <div className="space-y-8">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 bg-gradient-to-r from-slate-900 via-[#120f1c] to-slate-900 p-6 sm:p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#F05E23]/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="relative z-10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F05E23]/20 text-[#FF8C61] border border-[#F05E23]/30 text-[0.6rem] font-black uppercase tracking-widest mb-3">
+                    <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '10s' }} /> Live Schedule & Time Clock
+                  </div>
+                  <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tighter text-white">Upcoming <span className="text-[#F05E23]">Post Tracker</span></h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time surveillance organized by scheduled date across all brands</p>
                 </div>
-                <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tighter text-white">Upcoming <span className="text-[#F05E23]">Post Tracker</span></h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time surveillance of scheduled content, posting times, and live links</p>
+                <button
+                  onClick={() => setIsAddingPost(true)}
+                  className="relative z-10 bg-gradient-to-r from-[#F05E23] to-amber-500 hover:from-amber-500 hover:to-[#F05E23] text-white px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shrink-0"
+                >
+                  <span>+ Add Tracked Post</span>
+                </button>
               </div>
-              <button
-                onClick={() => setIsAddingPost(true)}
-                className="relative z-10 bg-gradient-to-r from-[#F05E23] to-amber-500 hover:from-amber-500 hover:to-[#F05E23] text-white px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-[#F05E23]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shrink-0"
-              >
-                <span>+ Add Tracked Post</span>
-              </button>
-            </div>
 
-            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-4 sm:p-6 shadow-xl">
-              <div className="overflow-x-auto overflow-y-auto max-h-[480px] sm:max-h-[560px] pr-1">
-                <table className="w-full text-left border-collapse">
-                  <thead className="sticky top-0 bg-white dark:bg-[#120f1c] z-20 shadow-sm">
-                    <tr className="border-b border-black/10 dark:border-white/10 text-[0.6rem] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                      <th className="py-3 px-3">Company / Brand</th>
-                      <th className="py-3 px-3">Content ID & Title</th>
-                      <th className="py-3 px-3">Scheduled Date</th>
-                      <th className="py-3 px-3">Posting Time</th>
-                      <th className="py-3 px-3">Type</th>
-                      <th className="py-3 px-3">Assigned To</th>
-                      <th className="py-3 px-3">Status</th>
-                      <th className="py-3 px-3">Live Asset</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs sm:text-sm font-bold">
-                    {(tasks || [])
-                      .filter(t => t.marketingData?.postTracker || t.contentId)
-                      .sort((a, b) => {
-                        const dateA = new Date(a.marketingData?.postTracker?.scheduledDate || a.dueDate || 0);
-                        const dateB = new Date(b.marketingData?.postTracker?.scheduledDate || b.dueDate || 0);
-                        return dateA - dateB;
-                      })
-                      .map(task => {
-                        const pt = task.marketingData?.postTracker || {};
-                        const dueDateVal = pt.scheduledDate || task.dueDate;
-                        const isPosted = pt.status?.includes("Posted") || pt.status?.includes("Client Review") || task.status?.includes("Done") || task.status?.includes("Completed");
-                        
-                        let dateDisplay = "TBA";
-                        let isOverdue = false;
-                        if (dueDateVal) {
-                          const d = new Date(dueDateVal);
-                          if (!isNaN(d.getTime())) {
-                            dateDisplay = d.toLocaleDateString();
-                            isOverdue = !isPosted && d < new Date(new Date().setHours(0,0,0,0));
-                          } else {
-                            dateDisplay = dueDateVal;
-                          }
-                        }
+              {/* ── FILTERS & VIEW CONTROLS FOR POST TRACKER ── */}
+              <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-5 sm:p-6 shadow-xl space-y-4">
+                {/* Month Filter */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/5 dark:border-white/5">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    <span>🗓️ Filter by Month:</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {availableMonths.map(m => (
+                      <button
+                        key={m}
+                        onClick={() => setPtMonthFilter(m)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                          ptMonthFilter === m
+                            ? "bg-[#F05E23] text-white shadow-md shadow-[#F05E23]/30 scale-105"
+                            : "bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 border border-black/5 dark:border-white/10"
+                        }`}
+                      >
+                        {m === "All" ? "ALL MONTHS" : m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                        const resolveCompany = (val) => {
-                          if (!val) return "";
-                          if (typeof val === "object") return val.name || val.projectName || val.companyName || "";
-                          const foundComp = companies?.find(c => c._id === val || c.name === val);
-                          if (foundComp) return foundComp.name;
-                          const foundProj = adminClientProjects?.find(p => p._id === val || p.projectName === val);
-                          if (foundProj) return foundProj.projectName || foundProj.name;
-                          return val;
-                        };
+                {/* Weekly / Timeframe Filter */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    <span>⚡ Timeframe / Week:</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {["All", "This Week", "Next Week", "Upcoming / Future", "Past / Overdue"].map(tf => (
+                      <button
+                        key={tf}
+                        onClick={() => setPtTimeframeFilter(tf)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                          ptTimeframeFilter === tf
+                            ? "bg-[#120f1c] dark:bg-white text-white dark:text-[#120f1c] shadow-md scale-105"
+                            : "bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 border border-black/5 dark:border-white/10"
+                        }`}
+                      >
+                        {tf === "All" ? "ALL WEEKS / DATES" : tf === "This Week" ? "📍 THIS WEEK" : tf === "Next Week" ? "⏭️ NEXT WEEK" : tf}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-                        const companyDisplay = resolveCompany(pt.companyName)
-                          || resolveCompany(pt.company)
-                          || resolveCompany(task.marketingData?.companyId)
-                          || resolveCompany(task.marketingData?.companyName)
-                          || resolveCompany(task.marketingData?.company)
-                          || resolveCompany(task.clientProjectId)
-                          || resolveCompany(task.companyId)
-                          || resolveCompany(task.companyName)
-                          || resolveCompany(task.company)
-                          || resolveCompany(task.clientId)
-                          || resolveCompany(task.brand)
-                          || "Unassigned";
-                        
-                        const liveLinkVal = pt.postedLink || pt.liveLink || task.marketingData?.postedLink || task.marketingData?.liveLink || task.marketingData?.editedLink || task.marketingData?.rawLink || task.liveLink || task.link;
-
-                        return (
-                          <tr key={task._id} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${isOverdue ? 'bg-red-500/5' : ''}`}>
-                            <td className="py-2.5 px-3 font-black text-slate-900 dark:text-white text-xs">
-                              {companyDisplay}
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <span className="text-[#F05E23] font-black text-xs">{task.contentId || "N/A"}</span>
-                              <p className="text-[0.6rem] text-slate-500 dark:text-slate-400 truncate max-w-[160px]">{task.title}</p>
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <span className={`text-xs ${isOverdue ? "text-red-500 font-black animate-pulse" : ""}`}>
-                                {dateDisplay}
-                              </span>
-                              {pt.day && <p className="text-[0.55rem] text-slate-400 uppercase">{pt.day}</p>}
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[0.65rem] font-black whitespace-nowrap">
-                                <Clock className="w-3 h-3" /> {pt.postingTime || "TBA"}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 uppercase text-[0.65rem] text-slate-600 dark:text-slate-300 font-bold">
-                              {pt.postType || "Post"}
-                            </td>
-                            <td className="py-2.5 px-3">
-                              {task.internId?.name ? (
-                                <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[0.65rem] font-bold whitespace-nowrap">{task.internId.name}</span>
-                              ) : (
-                                <span className="text-slate-400 italic text-[0.65rem]">Unassigned</span>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <span className={`px-2 py-0.5 rounded-full text-[0.6rem] font-black uppercase tracking-wider whitespace-nowrap ${
-                                isPosted
-                                  ? "bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30"
-                                  : isOverdue
-                                  ? "bg-red-500 text-white animate-pulse"
-                                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                              }`}>
-                                {isOverdue ? "⚠️ Overdue" : (pt.status || task.status || "Pending")}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3">
-                              {liveLinkVal ? (
-                                <a href={liveLinkVal} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[0.6rem] font-black uppercase tracking-wider shadow-sm transition-all whitespace-nowrap">
-                                  Live Link <ExternalLink className="w-2.5 h-2.5" />
-                                </a>
-                              ) : (
-                                <button onClick={() => setChatTaskId(task._id)} className="text-[0.6rem] text-slate-400 hover:text-[#F05E23] underline font-bold whitespace-nowrap">
-                                  + Add Link
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-                {(tasks || []).filter(t => t.marketingData?.postTracker || t.contentId).length === 0 && (
-                  <div className="text-center py-12 text-slate-400 font-bold uppercase tracking-widest text-xs">
+              <div className="space-y-6">
+                {sortedGroupKeys.length === 0 ? (
+                  <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] p-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs shadow-xl">
                     No tracked posts yet. Click "+ Add Tracked Post" above to start scheduling!
                   </div>
+                ) : (
+                  sortedGroupKeys.map(groupKey => {
+                    const group = dateGroups[groupKey];
+                    const groupTasks = [...group.tasks].sort((a, b) => {
+                      const compA = resolveCompanyTask(a);
+                      const compB = resolveCompanyTask(b);
+                      return compA.localeCompare(compB);
+                    });
+                    const isTBA = group.sortKey === "9999-12-31";
+
+                    return (
+                      <div key={groupKey} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[2rem] overflow-hidden shadow-xl transition-all hover:shadow-2xl">
+                        <div className={`px-5 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b ${
+                          isTBA
+                            ? "bg-slate-100 dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-600 dark:text-slate-400"
+                            : "bg-gradient-to-r from-[#120f1c] via-slate-900 to-[#120f1c] border-white/10 text-white"
+                        }`}>
+                          <div className="flex items-center gap-3.5">
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shadow-md shrink-0 ${
+                              isTBA ? "bg-slate-300 dark:bg-white/10 text-slate-700 dark:text-white" : "bg-gradient-to-br from-[#F05E23] to-amber-500 text-white shadow-[#F05E23]/30"
+                            }`}>
+                              📅
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-base sm:text-lg font-black uppercase tracking-tight text-white">
+                                  {group.displayHeader}
+                                </h4>
+                                {group.monthLabel && (
+                                  <span className="px-2 py-0.5 rounded-md bg-white/10 text-[0.6rem] font-black uppercase tracking-widest text-slate-300">
+                                    {group.monthLabel}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mt-0.5 flex items-center gap-2">
+                                <span>{groupTasks.length} {groupTasks.length === 1 ? "Post Scheduled" : "Posts Scheduled"}</span>
+                                <span>•</span>
+                                <span>Across {new Set(groupTasks.map(t => resolveCompanyTask(t))).size} {new Set(groupTasks.map(t => resolveCompanyTask(t))).size === 1 ? "Brand" : "Brands"}</span>
+                              </p>
+                            </div>
+                          </div>
+                          {!isTBA && group.formattedDate && (
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.65rem] font-black uppercase tracking-widest bg-[#F05E23]/20 text-[#F05E23] border border-[#F05E23]/30 shadow-sm">
+                              <Clock className="w-3 h-3" /> Date: {group.formattedDate}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-black/5 dark:border-white/5 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-black/20">
+                                <th className="py-3 px-4">Company / Brand</th>
+                                <th className="py-3 px-3">Content ID & Title</th>
+                                <th className="py-3 px-3">Posting Time</th>
+                                <th className="py-3 px-3">Type</th>
+                                <th className="py-3 px-3">Assigned To</th>
+                                <th className="py-3 px-3">Status</th>
+                                <th className="py-3 px-4">Live Asset</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs sm:text-sm font-bold">
+                              {groupTasks.map(task => {
+                                const pt = task.marketingData?.postTracker || {};
+                                const dueDateVal = pt.scheduledDate || task.dueDate;
+                                const isPosted = pt.status?.includes("Posted") || pt.status?.includes("Client Review") || task.status?.includes("Done") || task.status?.includes("Completed");
+                                
+                                let isOverdue = false;
+                                if (dueDateVal && !isTBA) {
+                                  const d = parseCustomDate(dueDateVal);
+                                  if (d && !isNaN(d.getTime())) {
+                                    isOverdue = !isPosted && d < new Date(new Date().setHours(0,0,0,0));
+                                  }
+                                }
+
+                                const companyDisplay = resolveCompanyTask(task);
+                                const liveLinkVal = pt.postedLink || pt.liveLink || task.marketingData?.postedLink || task.marketingData?.liveLink || task.marketingData?.editedLink || task.marketingData?.rawLink || task.liveLink || task.link;
+
+                                return (
+                                  <tr key={task._id} className={`hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors ${isOverdue ? 'bg-red-500/5' : ''}`}>
+                                    <td className="py-3 px-4 font-black text-slate-900 dark:text-white text-xs sm:text-sm">
+                                      {companyDisplay}
+                                    </td>
+                                    <td className="py-3 px-3">
+                                      <span className="text-[#F05E23] font-black text-xs">{task.contentId || "N/A"}</span>
+                                      <p className="text-[0.65rem] text-slate-500 dark:text-slate-400 truncate max-w-[200px] font-bold">{task.title}</p>
+                                    </td>
+                                    <td className="py-3 px-3">
+                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[0.65rem] font-black whitespace-nowrap">
+                                        <Clock className="w-3 h-3" /> {pt.postingTime || "TBA"}
+                                      </span>
+                                    </td>
+                                    <td className="py-3 px-3 uppercase text-[0.65rem] text-slate-600 dark:text-slate-300 font-black">
+                                      {pt.postType || "Post"}
+                                    </td>
+                                    <td className="py-3 px-3">
+                                      {task.internId?.name ? (
+                                        <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[0.65rem] font-bold whitespace-nowrap">{task.internId.name}</span>
+                                      ) : (
+                                        <span className="text-slate-400 italic text-[0.65rem]">Unassigned</span>
+                                      )}
+                                    </td>
+                                    <td className="py-3 px-3">
+                                      <span className={`px-2.5 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-wider whitespace-nowrap ${
+                                        isPosted
+                                          ? "bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30 shadow-sm"
+                                          : isOverdue
+                                          ? "bg-red-500 text-white animate-pulse shadow-sm"
+                                          : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-sm"
+                                      }`}>
+                                        {isOverdue ? "⚠️ Overdue" : (pt.status || task.status || "Pending")}
+                                      </span>
+                                    </td>
+                                    <td className="py-3 px-4">
+                                      {liveLinkVal ? (
+                                        <a href={liveLinkVal} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[0.6rem] font-black uppercase tracking-wider shadow-sm transition-all whitespace-nowrap">
+                                          Live Link <ExternalLink className="w-2.5 h-2.5" />
+                                        </a>
+                                      ) : (
+                                        <button onClick={() => setChatTaskId(task._id)} className="text-[0.65rem] text-slate-400 hover:text-[#F05E23] underline font-bold whitespace-nowrap transition-colors">
+                                          + Add Link
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {activeTab === "brands" && (
           <div className="space-y-8">
@@ -3210,58 +3497,60 @@ export default function AdminDashboard() {
           </div>
         )}
         {chatTaskId && (
-          <div key="modal-chat-task" className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 backdrop-blur-xl bg-black/60">
-            <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[2rem] sm:rounded-[3rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[85vh] max-h-[700px]">
-              <div className="p-5 sm:p-8 bg-[#F05E23] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
-                <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
-                  <div className="p-2.5 sm:p-3 bg-white/20 rounded-2xl shrink-0 mt-0.5 sm:mt-0"><MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" /></div>
+          <div key="modal-chat-task" className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 backdrop-blur-xl bg-black/60 overflow-y-auto overscroll-contain">
+            <motion.div key="chat-modal" initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative w-full max-w-2xl bg-white rounded-[2rem] sm:rounded-[2.5rem] p-0 shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[82vh] max-h-[650px] my-auto">
+              {/* Compact & Sleek Orange Header with Cross at Top Right Corner */}
+              <div className="relative p-4 sm:p-5 bg-gradient-to-r from-[#F05E23] to-amber-500 text-white flex flex-col gap-3 shrink-0 pr-14 sm:pr-16">
+                {/* Cross Option Strictly at Top Right Corner */}
+                <button
+                  onClick={() => setChatTaskId(null)}
+                  title="Close Modal"
+                  className="absolute top-3.5 sm:top-4 right-3.5 sm:right-4 p-2 sm:p-2.5 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all shadow-md active:scale-95 z-20"
+                >
+                  <X className="w-5 h-5 sm:w-5 sm:h-5" />
+                </button>
+
+                {/* Main Task Title & Badges */}
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="p-2 sm:p-2.5 bg-white/20 rounded-xl shrink-0 mt-0.5 shadow-sm"><MessageSquare className="w-5 h-5" /></div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight truncate">Mission <span className="opacity-60">Log</span></h2>
+                    <div className="flex items-center gap-2 flex-wrap pr-4">
+                      <h2 className="text-base sm:text-lg font-black uppercase tracking-tight truncate leading-tight">{chatTask?.title || "Mission Log"}</h2>
                       <span className="px-2 py-0.5 bg-white/20 rounded-md text-[0.55rem] font-black uppercase tracking-widest">{chatTask?.status || "Pending"}</span>
                       <span className="px-2 py-0.5 bg-black/20 rounded-md text-[0.55rem] font-black uppercase tracking-widest">{chatTask?.priority || "Normal"}</span>
                     </div>
-                    <p className="text-[0.65rem] sm:text-xs font-bold uppercase tracking-wide text-white/90 truncate mt-1">Task: {chatTask?.title}</p>
-                    <p className="text-[0.55rem] font-black uppercase tracking-widest text-white/70 mt-0.5 truncate">
+                    <p className="text-[0.6rem] font-black uppercase tracking-widest text-white/80 mt-1 truncate">
                       Intern: {chatTask?.internId?.name || "Unassigned"} {chatTask?.internId?.department ? `(${chatTask?.internId?.department})` : ""}
                     </p>
-                    {chatTask?.marketingData && (
-                      <div className="flex flex-col gap-2 mt-2 bg-black/20 p-2.5 rounded-xl w-full">
-                        <div className="flex flex-wrap gap-2">
-                          {chatTask.marketingData.rawLink && (
-                            <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
-                              <ExternalLink className="w-3 h-3" /> Raw Asset
-                            </a>
-                          )}
-                          {chatTask.marketingData.editedLink && (
-                            <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.55rem] font-black uppercase tracking-widest text-white/90 hover:text-white hover:underline flex items-center gap-1 bg-white/10 px-2 py-1 rounded">
-                              <ExternalLink className="w-3 h-3" /> Edited Output
-                            </a>
-                          )}
-                        </div>
-                        {chatTask.marketingData.postTracker && (
-                          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10 text-[0.55rem] font-black uppercase tracking-widest text-white">
-                            <span className="bg-white/10 px-2 py-1 rounded">📌 {chatTask.marketingData.postTracker.companyName || "Company"}: <span className="text-amber-300">{chatTask.marketingData.postTracker.scheduledDate || "TBA"}</span> @ <span className="text-amber-300">{chatTask.marketingData.postTracker.postingTime || "TBA"}</span></span>
-                            <span className="bg-white/10 px-2 py-1 rounded">Status: <span className={chatTask.marketingData.postTracker.status?.includes('Posted') ? 'text-green-300' : 'text-amber-300'}>{chatTask.marketingData.postTracker.status || "Pending"}</span></span>
-                            {chatTask.marketingData.postTracker.postedLink && (
-                              <a href={chatTask.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600/80 px-2 py-1 rounded hover:bg-blue-600 underline flex items-center gap-1">
-                                <ExternalLink className="w-3 h-3" /> Live Link
-                              </a>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/20 shrink-0">
-                  <button onClick={() => { setChatTaskId(null); setEditingTaskModal({ ...chatTask, internId: chatTask?.internId?._id || chatTask?.internId || "" }); }} title="Edit Task" className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all flex items-center gap-1 text-[10px] sm:text-xs font-black uppercase tracking-widest">
-                    <Edit className="w-3.5 h-3.5" /> Edit
-                  </button>
-                  <button onClick={() => { if(confirm("Are you sure you want to delete this task?")) { deleteTask(chatTask?._id); setChatTaskId(null); } }} title="Delete Task" className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all flex items-center gap-1 text-[10px] sm:text-xs font-black uppercase tracking-widest">
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
-                  </button>
-                  <button onClick={() => setChatTaskId(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all ml-auto sm:ml-1"><PlusCircle className="w-6 h-6 rotate-45" /></button>
+
+                {/* Compact Details & Action Buttons Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/20 text-[0.55rem] font-black uppercase tracking-widest">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {chatTask?.marketingData?.postTracker?.companyName && (
+                      <span className="bg-black/20 px-2 py-1 rounded-md">📌 {chatTask.marketingData.postTracker.companyName}: <span className="text-amber-200">{chatTask.marketingData.postTracker.scheduledDate || "TBA"}</span></span>
+                    )}
+                    {chatTask?.marketingData?.rawLink && (
+                      <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Raw Asset</a>
+                    )}
+                    {chatTask?.marketingData?.editedLink && (
+                      <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Edited Output</a>
+                    )}
+                    {chatTask?.marketingData?.postTracker?.postedLink && (
+                      <a href={chatTask.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600/80 hover:bg-blue-600 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Live Link</a>
+                    )}
+                  </div>
+
+                  {/* Compact Edit / Delete buttons */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => { setChatTaskId(null); setEditingTaskModal({ ...chatTask, internId: chatTask?.internId?._id || chatTask?.internId || "" }); }} title="Edit Task" className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg transition-all flex items-center gap-1">
+                      <Edit className="w-3 h-3" /> Edit
+                    </button>
+                    <button onClick={() => { if(confirm("Are you sure you want to delete this task?")) { deleteTask(chatTask?._id); setChatTaskId(null); } }} title="Delete Task" className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all flex items-center gap-1">
+                      <Trash2 className="w-3 h-3" /> Delete
+                    </button>
+                  </div>
                 </div>
               </div>
 

@@ -32,22 +32,23 @@ export async function GET(req) {
              taskObj.marketingData.departmentId = dept;
           }
        }
-        if (taskObj.contentId && postTrackerData[taskObj.contentId]) {
+        const cid = (taskObj.contentId || "").replace(/^#/, "").trim();
+        const sheetData = postTrackerData[cid] || postTrackerData[taskObj.contentId] || Object.values(postTrackerData).find(s => s.contentId && s.contentId.replace(/^#/, "").trim().toLowerCase() === cid.toLowerCase());
+        if (sheetData) {
           taskObj.marketingData = taskObj.marketingData || {};
-          const sheetData = postTrackerData[taskObj.contentId];
           const nativePT = taskObj.marketingData.postTracker || {};
           taskObj.marketingData.postTracker = {
-            ...sheetData,
             ...nativePT,
-            scheduledDate: nativePT.scheduledDate || sheetData.scheduledDate || "",
-            postingTime: nativePT.postingTime || sheetData.postingTime || "",
-            month: nativePT.month || sheetData.month || "",
-            day: nativePT.day || sheetData.day || "",
-            postType: nativePT.postType || sheetData.postType || "",
-            status: nativePT.status || sheetData.status || "Pending",
-            finalLink: nativePT.finalLink || sheetData.finalLink || "",
-            postedLink: nativePT.postedLink || sheetData.postedLink || "",
-            clientRemarks: nativePT.clientRemarks || sheetData.clientRemarks || "",
+            ...sheetData,
+            scheduledDate: sheetData.scheduledDate || nativePT.scheduledDate || "",
+            postingTime: sheetData.postingTime || nativePT.postingTime || "",
+            month: sheetData.month || nativePT.month || "",
+            day: sheetData.day || nativePT.day || "",
+            postType: sheetData.postType || nativePT.postType || "",
+            status: sheetData.status || nativePT.status || "Pending",
+            finalLink: sheetData.finalLink || nativePT.finalLink || "",
+            postedLink: sheetData.postedLink || nativePT.postedLink || "",
+            clientRemarks: sheetData.clientRemarks || nativePT.clientRemarks || "",
           };
         }
        return taskObj;
@@ -122,7 +123,7 @@ export async function POST(req) {
     try {
       const internWithSubs = await User.findById(internId).select('pushSubscriptions');
       await sendPushToOneUser(internWithSubs, {
-        title: `🚀 New Task: ${title}`,
+        title: `New Task: ${title}`,
         body: `Admin HQ assigned you a ${priority || 'Medium'} priority task. Tap to view.`,
         url: `/intern?notif_task=${task._id}&notif_action=update`,
         tag: `new-task-${task._id}`

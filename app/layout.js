@@ -105,9 +105,9 @@ export default function RootLayout({ children }) {
             <ChatProvider>
               <LoadingScreen />
               <Header />
-              <div className="relative z-10 flex-grow pt-28 transition-colors duration-500">
+              <main className="flex-grow pt-24 sm:pt-28 transition-colors duration-500">
                 {children}
-              </div>
+              </main>
               <CTA />
               <Footer />
               <ChatBot />

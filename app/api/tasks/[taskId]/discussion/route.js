@@ -42,7 +42,7 @@ export async function POST(req, { params }) {
       if (isSenderAdmin) {
         // Admin sent a message → push to intern
         await sendPushToOneUser(task.internId, {
-          title: '💬 New Message from Admin HQ',
+          title: 'New Message from Admin HQ',
           body: `Mission Log: "${shortMsg}"`,
           url: `/intern?notif_task=${taskId}&notif_action=chat`,
           tag: `chat-${taskId}-admin`
@@ -51,7 +51,7 @@ export async function POST(req, { params }) {
         // Intern sent a message → push to all admins
         const internName = task.internId?.name || 'An intern';
         await sendPushToAdmins(User, {
-          title: `💬 Mission Log: ${internName}`,
+          title: `Mission Log: ${internName}`,
           body: `"${shortMsg}"`,
           url: `/admin?notif_task=${taskId}&notif_action=chat`,
           tag: `chat-${taskId}-intern`

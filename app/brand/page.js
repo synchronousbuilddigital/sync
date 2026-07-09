@@ -24,7 +24,7 @@ export default function BrandManagerDashboard() {
 
   // Ownership-Stamped State guard: Only display tasks if memory is explicitly stamped for brand_manager identity!
   // Also allow through if still loading (dataLoading=true means fetch is in-flight, don't show empty yet)
-  const tasks = dataLoading ? [] : ((taskStore?.role === "brand_manager") ? (contextTasks || []) : []);
+  const tasks = (dataLoading && !contextTasks?.length) ? [] : ((taskStore?.role === "brand_manager") ? (contextTasks || []) : []);
 
   // Handle notification deep-link navigation
   useEffect(() => {
@@ -46,9 +46,32 @@ export default function BrandManagerDashboard() {
       }
     };
 
+    const handleSwMessage = (event) => {
+      if (event.data && event.data.type === 'PUSH_NOTIFICATION_CLICK' && event.data.url) {
+        try {
+          const params = new URLSearchParams(event.data.url.split('?')[1] || '');
+          const notifTask = params.get('notif_task');
+          if (notifTask) {
+            const task = tasks.find(t => t._id === notifTask);
+            if (task) {
+              setCalendarSelectedTask(task);
+            }
+          }
+        } catch (e) {}
+      }
+    };
+
     handleNotifNav();
     window.addEventListener('notif_navigation', handleNotifNav);
-    return () => window.removeEventListener('notif_navigation', handleNotifNav);
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    }
+    return () => {
+      window.removeEventListener('notif_navigation', handleNotifNav);
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+      }
+    };
   }, [tasks]);
 
   const { isDark } = useTheme();
@@ -65,6 +88,7 @@ export default function BrandManagerDashboard() {
   const [toDate, setToDate] = useState("");
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [calendarSelectedTask, setCalendarSelectedTask] = useState(null);
+  const [selectedDayForModal, setSelectedDayForModal] = useState(null);
 
   // ── Department colour system ──────────────────────────────────────────────
   const DEPT_COLORS = {
@@ -82,16 +106,48 @@ export default function BrandManagerDashboard() {
 
   // ── Resolve a task's calendar date ────────────────────────────────────────
   const getTaskDate = (task) => {
-    const raw = task.marketingData?.postTracker?.scheduledDate || task.dueDate || task.createdAt;
+    const raw = task.marketingData?.postTracker?.scheduledDate || task.dueDate;
     if (!raw) return null;
-    let d = new Date(raw);
-    if (isNaN(d)) {
-      const parts = String(raw).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-      if (parts) {
-        let y = parseInt(parts[3]); if (y < 100) y += 2000;
-        d = new Date(y, parseInt(parts[2]) - 1, parseInt(parts[1]));
+    const str = String(raw).trim();
+
+    // 1. Check for YYYY-MM-DD
+    const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (ymd) {
+      return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3]));
+    }
+
+    // 2. Check for DD-MM-YYYY or DD/MM/YYYY (e.g. 10-06-2026 or 24/06/2026)
+    const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (dmy) {
+      let first = parseInt(dmy[1]);
+      let second = parseInt(dmy[2]);
+      let y = parseInt(dmy[3]);
+      if (y < 100) y += 2000;
+
+      // If second > 12, then second must be the day and first is month (MM-DD-YYYY)
+      // Otherwise, assume DD-MM-YYYY (standard Indian/UK/Sheet format like 10-06-2026 = 10 June)
+      if (second > 12) {
+        return new Date(y, first - 1, second);
+      } else {
+        return new Date(y, second - 1, first);
       }
     }
+
+    // 3. Check for DD-MMM-YY or DD Month YYYY (e.g. 10-Jun-26 or 08 June 2026)
+    const dmm = str.match(/^(\d{1,2})[\/\-\s]+([A-Za-z]{3,})[\/\-\s]*(\d{0,4})$/);
+    if (dmm) {
+      const day = parseInt(dmm[1]);
+      const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+      const mIdx = monthNames.findIndex(m => dmm[2].toLowerCase().startsWith(m));
+      if (mIdx !== -1) {
+        let y = dmm[3] ? parseInt(dmm[3]) : new Date().getFullYear();
+        if (y < 100) y += 2000;
+        return new Date(y, mIdx, day);
+      }
+    }
+
+    // 4. Fallback to native Date parser
+    let d = new Date(str);
     return isNaN(d?.getTime()) ? null : d;
   };
 
@@ -113,22 +169,7 @@ export default function BrandManagerDashboard() {
     }
 
     if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
-      const dStr = task.dueDate || task.marketingData?.postTracker?.scheduledDate || task.createdAt;
-      let d = null;
-      if (dStr) {
-        d = new Date(dStr);
-        if (isNaN(d.getTime())) {
-          const parts = String(dStr).trim().match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-          if (parts) {
-            let year = parseInt(parts[3], 10);
-            if (year < 100) year += 2000;
-            d = new Date(year, parseInt(parts[2], 10) - 1, parseInt(parts[1], 10));
-            if (isNaN(d.getTime())) d = null;
-          } else {
-            d = null;
-          }
-        }
-      }
+      const d = getTaskDate(task);
       const sheetMonth = task.marketingData?.postTracker?.month || "";
 
       if (monthFilter !== "") {
@@ -172,10 +213,13 @@ export default function BrandManagerDashboard() {
     return true;
   });
 
-  // Group tasks by Main Department -> Sub Department for Card View
+  // Group tasks by Main Department (Unified Cards: Digital Marketing & Tech)
   const tasksByMainDept = displayTasks.reduce((acc, task) => {
-    const mainDeptName = task.marketingData?.departmentId?.mainDepartment || task.internId?.department || "Digital Marketing";
-    const subDeptName = task.marketingData?.departmentId?.name || task.internId?.department || task.marketingData?.postTracker?.postType || task.taskType || "General Assignments";
+    const rawDept = `${task.marketingData?.departmentId?.mainDepartment || ""} ${task.marketingData?.departmentId?.name || ""} ${task.internId?.department || ""} ${task.taskType || ""}`.toLowerCase();
+    const isTech = rawDept.includes("tech") || rawDept.includes("dev") || rawDept.includes("web") || rawDept.includes("software") || rawDept.includes("app");
+    
+    const mainDeptName = isTech ? "Tech" : "Digital Marketing";
+    const subDeptName = isTech ? "Tech" : "Digital Marketing";
     
     if (!acc[mainDeptName]) acc[mainDeptName] = {};
     if (!acc[mainDeptName][subDeptName]) acc[mainDeptName][subDeptName] = [];
@@ -192,7 +236,7 @@ export default function BrandManagerDashboard() {
     setExpandedTask(null);
   };
 
-  if (dataLoading) {
+  if (dataLoading && !user) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${isDark ? "bg-[#050505]" : "bg-[#F9F9F9]"}`}>
         <div className="flex flex-col items-center gap-4">
@@ -896,11 +940,11 @@ export default function BrandManagerDashboard() {
 
             return (
               <div className="overflow-x-auto w-full pb-4 scrollbar-hide">
-                <div className={`min-w-[650px] lg:min-w-0 rounded-[2rem] border overflow-hidden ${isDark ? "bg-white/3 border-white/10" : "bg-white border-slate-200 shadow-2xl"}`}>
+                <div className={`w-full min-w-[320px] sm:min-w-[650px] lg:min-w-0 rounded-[2rem] border overflow-hidden ${isDark ? "bg-white/3 border-white/10" : "bg-white border-slate-200 shadow-2xl"}`}>
                   {/* Day Headers */}
                   <div className="grid grid-cols-7">
                     {dayNames.map(d => (
-                      <div key={d} className={`py-3 text-center text-[0.6rem] font-black uppercase tracking-[0.2em] border-b ${isDark ? "border-white/10 text-white/30 bg-black/30" : "border-slate-100 text-slate-400 bg-slate-50"}`}>{d}</div>
+                      <div key={d} className={`py-2.5 sm:py-3 text-center text-[0.55rem] sm:text-[0.6rem] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] border-b ${isDark ? "border-white/10 text-white/40 bg-black/30" : "border-slate-100 text-slate-400 bg-slate-50"}`}>{d}</div>
                     ))}
                   </div>
 
@@ -916,21 +960,64 @@ export default function BrandManagerDashboard() {
                       return (
                         <div
                           key={idx}
-                          className={`min-h-[90px] sm:min-h-[110px] p-1.5 sm:p-2 border-b border-r transition-colors ${
+                          onClick={() => {
+                            if (isValid && dayTasks.length > 0 && window.innerWidth < 768) {
+                              if (dayTasks.length === 1) {
+                                setCalendarSelectedTask(dayTasks[0]);
+                              } else {
+                                const dateObj = new Date(year, month, dayNum);
+                                const fullDateString = dateObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+                                setSelectedDayForModal({ date: dayNum, tasks: dayTasks, fullDateString });
+                              }
+                            }
+                          }}
+                          className={`min-h-[62px] sm:min-h-[110px] p-1 sm:p-2 border-b border-r transition-colors flex flex-col items-center sm:items-stretch justify-start ${
                             !isValid ? (isDark ? "bg-black/20 border-white/5" : "bg-slate-50/50 border-slate-100")
-                            : isToday ? (isDark ? "bg-[#F05E23]/10 border-[#F05E23]/30" : "bg-[#F05E23]/5 border-[#F05E23]/20")
+                            : isToday ? (isDark ? "bg-[#F05E23]/15 sm:bg-[#F05E23]/10 border-[#F05E23]/40" : "bg-[#F05E23]/10 sm:bg-[#F05E23]/5 border-[#F05E23]/30")
                             : (isDark ? "border-white/5 hover:bg-white/[0.03]" : "border-slate-100 hover:bg-slate-50/80")
                           }`}
                         >
                           {isValid && (
                             <>
-                              <span className={`text-[0.65rem] font-black leading-none block mb-1.5 ${
-                                isToday ? "text-[#F05E23]" : (isDark ? "text-white/40" : "text-slate-400")
+                              <span className={`text-[0.8rem] sm:text-sm font-black leading-none text-center sm:text-left block mb-1 sm:mb-1.5 ${
+                                isToday ? "text-[#F05E23]" : (isDark ? "text-white/90" : "text-slate-800")
                               }`}>
                                 {dayNum}
-                                {isToday && <span className="ml-1 text-[0.5rem] bg-[#F05E23] text-white px-1 py-0.5 rounded-md">TODAY</span>}
+                                {isToday && <span className="hidden sm:inline ml-1.5 text-[0.5rem] font-black uppercase bg-[#F05E23] text-white px-1.5 py-0.5 rounded-md">TODAY</span>}
                               </span>
-                              <div className="flex flex-col gap-1.5">
+
+                              {/* Mobile Compact Apple/iOS Indicator Pills (< 768px) */}
+                              <div className="flex sm:hidden flex-wrap items-center justify-center gap-[3px] w-full mt-0.5">
+                                {dayTasks.slice(0, 3).map(task => {
+                                  const isPosted = task.marketingData?.postTracker?.status?.toLowerCase().includes('posted') || task.marketingData?.postedLink;
+                                  const isComplete = isPosted || task.status === "Complete";
+                                  const isWorking = task.status === "Working" || task.marketingData?.rawLink || task.marketingData?.editedLink;
+                                  const pillColor = isComplete ? "bg-green-500 shadow-sm shadow-green-500/50" : isWorking ? "bg-[#F05E23] shadow-sm shadow-[#F05E23]/50" : "bg-amber-500";
+                                  return (
+                                    <button
+                                      key={task._id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (dayTasks.length === 1) {
+                                          setCalendarSelectedTask(task);
+                                        } else {
+                                          const dateObj = new Date(year, month, dayNum);
+                                          const fullDateString = dateObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+                                          setSelectedDayForModal({ date: dayNum, tasks: dayTasks, fullDateString });
+                                        }
+                                      }}
+                                      className={`w-3.5 h-1.5 rounded-full transition-transform active:scale-90 ${pillColor}`}
+                                      title={`${task.contentId ? `#${task.contentId}` : task.title} (${task.status})`}
+                                    />
+                                  );
+                                })}
+                                {dayTasks.length > 3 && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-white/40" />
+                                )}
+                              </div>
+
+                              {/* Desktop Expanded Cards (>= 768px) */}
+                              <div className="hidden sm:flex flex-col gap-1.5">
                                 {dayTasks.slice(0, MAX_VISIBLE).map(task => {
                                   const dc = getDeptColor(task);
                                   const isPosted = task.marketingData?.postTracker?.status?.toLowerCase().includes('posted') || task.marketingData?.postedLink;
@@ -948,13 +1035,23 @@ export default function BrandManagerDashboard() {
                                   return (
                                     <button
                                       key={task._id}
-                                      onClick={() => setCalendarSelectedTask(task)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCalendarSelectedTask(task);
+                                      }}
                                       className={`w-full text-left px-1.5 py-1 rounded-lg text-[0.55rem] font-black uppercase tracking-wide truncate flex flex-col gap-1 transition-all hover:scale-[1.02] active:scale-95 shadow-sm ${dc.light} ${dc.border} border ${dc.text}`}
                                       title={`${task.title} — Step ${step}/5 (${step === 5 ? '100%' : step * 20 + '%'})`}
                                     >
-                                      <div className="flex items-center gap-1 w-full truncate">
-                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${postColor}`} />
-                                        <span className="truncate">{task.contentId ? `#${task.contentId}` : task.title?.slice(0, 14)}</span>
+                                      <div className="flex items-center justify-between gap-1 w-full truncate">
+                                        <div className="flex items-center gap-1 truncate">
+                                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${postColor}`} />
+                                          <span className="truncate">{task.contentId ? `#${task.contentId}` : task.title?.slice(0, 14)}</span>
+                                        </div>
+                                        {task.marketingData?.postTracker?.postingTime && (
+                                          <span className="text-[0.45rem] sm:text-[0.5rem] font-black shrink-0 px-1 py-0.2 rounded bg-black/10 dark:bg-white/15 text-[#F05E23] dark:text-amber-300">
+                                            {task.marketingData.postTracker.postingTime}
+                                          </span>
+                                        )}
                                       </div>
                                       
                                       {/* 5-Step Progress Dots */}
@@ -976,7 +1073,12 @@ export default function BrandManagerDashboard() {
                                 })}
                                 {dayTasks.length > MAX_VISIBLE && (
                                   <button
-                                    onClick={() => setCalendarSelectedTask(dayTasks[MAX_VISIBLE])}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const dateObj = new Date(year, month, dayNum);
+                                      const fullDateString = dateObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+                                      setSelectedDayForModal({ date: dayNum, tasks: dayTasks, fullDateString });
+                                    }}
                                     className={`w-full text-center text-[0.5rem] font-black uppercase tracking-widest py-0.5 rounded-lg transition-all ${
                                       isDark ? "text-white/30 hover:text-white/60 bg-white/5" : "text-slate-400 hover:text-slate-700 bg-slate-100"
                                     }`}
@@ -997,6 +1099,130 @@ export default function BrandManagerDashboard() {
           })()}
         </div>
       )}
+
+      {/* ── SELECTED DAY POSTS SELECTOR MODAL / BOTTOM DRAWER (iOS Calendar Style) ── */}
+      {typeof window !== "undefined" && createPortal(
+        <AnimatePresence>
+          {selectedDayForModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[99990] bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6"
+              onClick={() => setSelectedDayForModal(null)}
+            >
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                onClick={(e) => e.stopPropagation()}
+                className={`w-full sm:max-w-md max-h-[85vh] sm:max-h-[75vh] rounded-t-[2.5rem] sm:rounded-[2rem] border overflow-hidden flex flex-col shadow-2xl ${
+                  isDark ? "bg-[#161618] border-white/15 text-white" : "bg-white border-slate-200 text-slate-900"
+                }`}
+              >
+                {/* Clean Apple iOS Calendar Header */}
+                <div className={`pt-5 pb-4 px-6 border-b flex flex-col gap-2 shrink-0 ${
+                  isDark ? "border-white/10 bg-[#1C1C1E]/80" : "border-slate-100 bg-slate-50/80"
+                }`}>
+                  <div className="flex items-center justify-between w-full">
+                    <button
+                      onClick={() => setSelectedDayForModal(null)}
+                      className="flex items-center text-[#F05E23] font-semibold text-sm hover:opacity-80 transition-opacity -ml-1"
+                    >
+                      <ChevronLeft className="w-5 h-5 -mr-0.5" /> Back to Calendar
+                    </button>
+                    <button
+                      onClick={() => setSelectedDayForModal(null)}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                        isDark ? "bg-white/10 hover:bg-white/20 text-white/70" : "bg-slate-200 hover:bg-slate-300 text-slate-600"
+                      }`}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="mt-1">
+                    <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                      {selectedDayForModal.fullDateString}
+                    </h3>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                      {selectedDayForModal.tasks.length} {selectedDayForModal.tasks.length === 1 ? "Scheduled Post" : "Scheduled Posts"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Clean iOS Apple Calendar Event List */}
+                <div className="p-4 sm:p-5 overflow-y-auto space-y-2.5 flex-1">
+                  {selectedDayForModal.tasks.map((task, idx) => {
+                    const pt = task.marketingData?.postTracker || {};
+                    const isPosted = pt.status?.toLowerCase().includes('posted') || task.marketingData?.postedLink;
+                    const postColor = isPosted ? "bg-green-500" : "bg-[#F05E23]";
+                    let step = 1;
+                    if (isPosted || task.status === "Complete") step = 5;
+                    else if (task.marketingData?.brandManagerReviewStatus === "Approved") step = 4;
+                    else if (task.marketingData?.reviewStatus === "Approved") step = 3;
+                    else if (task.status === "Working" || task.marketingData?.rawLink || task.marketingData?.editedLink) step = 2;
+
+                    return (
+                      <button
+                        key={task._id || idx}
+                        onClick={() => {
+                          setSelectedDayForModal(null);
+                          setCalendarSelectedTask(task);
+                        }}
+                        className={`w-full text-left p-3.5 sm:p-4 rounded-2xl transition-all flex items-center justify-between gap-3 group border ${
+                          isDark
+                            ? "bg-[#242426] hover:bg-[#2C2C2E] border-white/5 active:bg-[#343436]"
+                            : "bg-slate-50 hover:bg-slate-100 border-slate-200/80 active:bg-slate-200/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                          {/* Vertical Indicator Pill (iOS Event Style) */}
+                          <div className={`w-1.5 h-11 rounded-full shrink-0 ${postColor} shadow-sm`} />
+                          
+                          {/* Event Info */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                              {pt.postingTime && (
+                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                  ⏰ {pt.postingTime}
+                                </span>
+                              )}
+                              {task.contentId && (
+                                <span className="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#F05E23]/15 text-[#F05E23]">
+                                  #{task.contentId}
+                                </span>
+                              )}
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                step === 5 ? "bg-green-500/15 text-green-500" : "bg-amber-500/15 text-amber-500"
+                              }`}>
+                                {step === 5 ? "100% Done" : `${step * 20}% • ${task.status}`}
+                              </span>
+                            </div>
+                            <h4 className="text-sm sm:text-base font-bold tracking-tight truncate text-slate-900 dark:text-white group-hover:text-[#F05E23] transition-colors">
+                              {task.title}
+                            </h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate font-medium">
+                              {pt.postType || task.taskType || "Digital Marketing Post"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Subtle Apple-Style Right Chevron */}
+                        <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center transition-all ${
+                          isDark ? "bg-white/5 group-hover:bg-white/10 text-white/50 group-hover:text-white" : "bg-slate-200/60 group-hover:bg-slate-200 text-slate-400 group-hover:text-slate-700"
+                        }`}>
+                          <ChevronRight className="w-4 h-4" />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      , document.body)}
 
       {/* ── CALENDAR TASK DETAIL PANEL ─────────────────────────────────────── */}
       {typeof window !== "undefined" && createPortal(
