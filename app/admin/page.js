@@ -927,47 +927,93 @@ export default function AdminDashboard() {
   const handleFileUpload = async (file, onUploadSuccess) => {
     if (!file) return;
 
-    // Enforce Vercel's 4.5MB upload limit on non-local domains
+    const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks
     const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    if (!isLocal && file.size > 4.5 * 1024 * 1024) {
-      showToast("Upload failed: File exceeds Vercel's 4.5MB limit. Please compress the file or link an external URL.", "error");
+    const isLarge = file.size > 4 * 1024 * 1024;
+
+    // For local dev or small files, upload directly
+    if (isLocal || !isLarge) {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      try {
+        const authToken = token || localStorage.getItem("sync_token") || "";
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${authToken}`
+          },
+          body: formData
+        });
+        
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (err) {
+          if (res.status === 413 || text.includes("Too Large")) {
+            showToast("Upload failed: File exceeds Vercel's 4.5MB limit. Please compress the file or use an external URL link.", "error");
+          } else {
+            showToast(`Upload failed: Server returned status ${res.status}`, "error");
+          }
+          return;
+        }
+
+        if (data.success) {
+          onUploadSuccess(data.url);
+          showToast("File uploaded successfully!", "success");
+        } else {
+          showToast(data.message || "Upload failed", "error");
+        }
+      } catch (e) {
+        showToast(e.message, "error");
+      }
       return;
     }
-    
-    const formData = new FormData();
-    formData.append("file", file);
-    
-    try {
-      const authToken = token || localStorage.getItem("sync_token") || "";
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${authToken}`
-        },
-        body: formData
-      });
-      
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (err) {
-        if (res.status === 413 || text.includes("Too Large")) {
-          showToast("Upload failed: File exceeds Vercel's 4.5MB limit. Please compress the file or use an external URL link.", "error");
-        } else {
-          showToast(`Upload failed: Server returned status ${res.status}`, "error");
-        }
-        return;
-      }
 
-      if (data.success) {
-        onUploadSuccess(data.url);
-        showToast("File uploaded successfully!", "success");
-      } else {
-        showToast(data.message || "Upload failed", "error");
+    // Otherwise, perform chunked upload to bypass Vercel body limits
+    try {
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+      const filename = file.name || "video.mp4";
+      const authToken = token || localStorage.getItem("sync_token") || "";
+
+      showToast(`Uploading large file in ${totalChunks} parts...`, "info");
+
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const start = chunkIndex * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+
+        const formData = new FormData();
+        formData.append("file", chunk);
+        formData.append("chunkIndex", chunkIndex);
+        formData.append("totalChunks", totalChunks);
+        formData.append("sessionId", sessionId);
+        formData.append("filename", filename);
+
+        const res = await fetch("/api/admin/upload/chunk", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${authToken}`
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message || `Part ${chunkIndex + 1} failed`);
+        }
+
+        if (data.url) {
+          // Completed reassembly
+          onUploadSuccess(data.url);
+          showToast("Large file uploaded successfully!", "success");
+          return;
+        }
       }
-    } catch (e) {
-      showToast(e.message, "error");
+    } catch (err) {
+      showToast(`Chunked upload failed: ${err.message}`, "error");
     }
   };
 
