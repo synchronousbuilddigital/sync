@@ -292,6 +292,7 @@ export default function AdminDashboard() {
   const [isAddingReel, setIsAddingReel] = useState(false);
   const [editingReel, setEditingReel] = useState(null);
   const [reelForm, setReelForm] = useState({ title: "", category: "", videoUrl: "", description: "", index: 0 });
+  const [isUploading, setIsUploading] = useState(false);
 
   const [isAddingLogo, setIsAddingLogo] = useState(false);
   const [editingLogo, setEditingLogo] = useState(null);
@@ -926,6 +927,7 @@ export default function AdminDashboard() {
 
   const handleFileUpload = async (file, onUploadSuccess) => {
     if (!file) return;
+    setIsUploading(true);
 
     const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks
     const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -956,6 +958,7 @@ export default function AdminDashboard() {
           } else {
             showToast(`Upload failed: Server returned status ${res.status}`, "error");
           }
+          setIsUploading(false);
           return;
         }
 
@@ -968,6 +971,7 @@ export default function AdminDashboard() {
       } catch (e) {
         showToast(e.message, "error");
       }
+      setIsUploading(false);
       return;
     }
 
@@ -1009,12 +1013,14 @@ export default function AdminDashboard() {
           // Completed reassembly
           onUploadSuccess(data.url);
           showToast("Large file uploaded successfully!", "success");
+          setIsUploading(false);
           return;
         }
       }
     } catch (err) {
       showToast(`Chunked upload failed: ${err.message}`, "error");
     }
+    setIsUploading(false);
   };
 
   const adminStats = {
@@ -3807,14 +3813,14 @@ export default function AdminDashboard() {
                       <Film className="w-8 h-8 text-[#F05E23] mb-2 animate-bounce" />
                       <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Reel Video File</span>
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">MP4, MOV, WEBM (Max 4.5MB on Vercel)</span>
-                      <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, videoUrl: url }))} />
+                      <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm(prev => ({ ...prev, videoUrl: url })))} />
                     </label>
                   )}
                   <div className="relative mt-2">
                     <input
                       type="text"
                       value={reelForm.videoUrl}
-                      onChange={e => setReelForm({ ...reelForm, videoUrl: e.target.value })}
+                      onChange={e => setReelForm(prev => ({ ...prev, videoUrl: e.target.value }))}
                       placeholder="Or paste external video URL (YouTube, Vimeo, direct link, etc.)"
                       className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white"
                     />
@@ -3829,29 +3835,31 @@ export default function AdminDashboard() {
                         <img src={reelForm.thumbnailUrl} alt="Thumbnail Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
                         <label className="relative z-10 cursor-pointer bg-black/85 hover:bg-black text-white hover:text-[#F05E23] px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
                           Replace Image
-                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, thumbnailUrl: url }))} />
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm(prev => ({ ...prev, thumbnailUrl: url })))} />
                         </label>
                       </div>
                     ) : (
                       <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
                         <Plus className="w-6 h-6 text-slate-400 mb-1" />
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Photo</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm({ ...reelForm, thumbnailUrl: url }))} />
+                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setReelForm(prev => ({ ...prev, thumbnailUrl: url })))} />
                       </label>
                     )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index (optional)</label>
-                    <input type="number" value={reelForm.index} onChange={e => setReelForm({ ...reelForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                    <input type="number" value={reelForm.index} onChange={e => setReelForm(prev => ({ ...prev, index: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Description (optional)</label>
-                  <textarea rows={3} value={reelForm.description || ""} onChange={e => setReelForm({ ...reelForm, description: e.target.value })} placeholder="Short info about this production item..." className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white resize-none" />
+                  <textarea rows={3} value={reelForm.description || ""} onChange={e => setReelForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Short info about this production item..." className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white resize-none" />
                 </div>
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsAddingReel(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
-                  <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Reel</button>
+                  <button type="submit" disabled={isUploading} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isUploading ? "Uploading..." : "Finalize Reel"}
+                  </button>
                 </div>
               </form>
             </motion.div>
@@ -3882,7 +3890,7 @@ export default function AdminDashboard() {
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
                             Replace Logo
-                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, logoUrl: url }))} />
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm(prev => ({ ...prev, logoUrl: url })))} />
                           </label>
                         </div>
                       </div>
@@ -3890,19 +3898,21 @@ export default function AdminDashboard() {
                       <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
                         <Plus className="w-6 h-6 text-slate-400 mb-1" />
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Logo File</span>
-                        <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, logoUrl: url }))} />
+                        <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm(prev => ({ ...prev, logoUrl: url })))} />
                       </label>
                     )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index</label>
-                    <input type="number" value={logoForm.index} onChange={e => setLogoForm({ ...logoForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                    <input type="number" value={logoForm.index} onChange={e => setLogoForm(prev => ({ ...prev, index: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
                   </div>
                 </div>
 
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsAddingLogo(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
-                  <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Logo</button>
+                  <button type="submit" disabled={isUploading} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isUploading ? "Uploading..." : "Finalize Logo"}
+                  </button>
                 </div>
               </form>
             </motion.div>
@@ -3933,7 +3943,7 @@ export default function AdminDashboard() {
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
                             Replace Photo
-                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm({ ...categoryForm, image: url }))} />
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm(prev => ({ ...prev, image: url })))} />
                           </label>
                         </div>
                       </div>
@@ -3941,22 +3951,24 @@ export default function AdminDashboard() {
                       <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
                         <Plus className="w-6 h-6 text-slate-400 mb-1" />
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Category Image</span>
-                        <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm({ ...categoryForm, image: url }))} />
+                        <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm(prev => ({ ...prev, image: url })))} />
                       </label>
                     )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index</label>
-                    <input type="number" value={categoryForm.index} onChange={e => setCategoryForm({ ...categoryForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                    <input type="number" value={categoryForm.index} onChange={e => setCategoryForm(prev => ({ ...prev, index: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Category Description / Details</label>
-                  <textarea rows={3} value={categoryForm.description || ""} onChange={e => setCategoryForm({ ...categoryForm, description: e.target.value })} placeholder="Write details/description about this category's campaigns..." className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white resize-none" />
+                  <textarea rows={3} value={categoryForm.description || ""} onChange={e => setCategoryForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Write details/description about this category's campaigns..." className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white resize-none" />
                 </div>
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsAddingCategory(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
-                  <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Category</button>
+                  <button type="submit" disabled={isUploading} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isUploading ? "Uploading..." : "Finalize Category"}
+                  </button>
                 </div>
               </form>
             </motion.div>
@@ -4004,7 +4016,7 @@ export default function AdminDashboard() {
                           </div>
                         )}
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <button type="button" onClick={() => setGalleryItemForm({ ...galleryItemForm, mediaUrl: "" })} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">Clear</button>
+                          <button type="button" onClick={() => setGalleryItemForm(prev => ({ ...prev, mediaUrl: "" }))} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">Clear</button>
                         </div>
                       </div>
                     ) : (
@@ -4013,14 +4025,14 @@ export default function AdminDashboard() {
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">
                           Upload {galleryItemForm.type === "photo" ? "Photo" : "Video"}
                         </span>
-                        <input type="file" accept={galleryItemForm.type === "photo" ? "image/*" : "video/*"} className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, mediaUrl: url }))} />
+                        <input type="file" accept={galleryItemForm.type === "photo" ? "image/*" : "video/*"} className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm(prev => ({ ...prev, mediaUrl: url })))} />
                       </label>
                     )}
                     <div className="relative mt-2">
                       <input
                         type="text"
                         value={galleryItemForm.mediaUrl}
-                        onChange={e => setGalleryItemForm({ ...galleryItemForm, mediaUrl: e.target.value })}
+                        onChange={e => setGalleryItemForm(prev => ({ ...prev, mediaUrl: e.target.value }))}
                         placeholder={`Or paste external ${galleryItemForm.type === 'photo' ? 'image' : 'video'} link`}
                         className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white"
                       />
@@ -4029,7 +4041,7 @@ export default function AdminDashboard() {
 
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index</label>
-                    <input type="number" value={galleryItemForm.index} onChange={e => setGalleryItemForm({ ...galleryItemForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                    <input type="number" value={galleryItemForm.index} onChange={e => setGalleryItemForm(prev => ({ ...prev, index: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
                   </div>
                 </div>
 
@@ -4043,16 +4055,16 @@ export default function AdminDashboard() {
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
                             Replace
-                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, thumbnailUrl: url }))} />
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm(prev => ({ ...prev, thumbnailUrl: url })))} />
                           </label>
-                          <button type="button" onClick={() => setGalleryItemForm({ ...galleryItemForm, thumbnailUrl: "" })} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">Remove</button>
+                          <button type="button" onClick={() => setGalleryItemForm(prev => ({ ...prev, thumbnailUrl: "" }))} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">Remove</button>
                         </div>
                       </div>
                     ) : (
                       <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
                         <Plus className="w-6 h-6 text-slate-400 mb-1" />
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Thumbnail Photo</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm({ ...galleryItemForm, thumbnailUrl: url }))} />
+                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setGalleryItemForm(prev => ({ ...prev, thumbnailUrl: url })))} />
                       </label>
                     )}
                   </div>
@@ -4060,7 +4072,9 @@ export default function AdminDashboard() {
 
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsAddingGalleryItem(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
-                  <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Item</button>
+                  <button type="submit" disabled={isUploading} className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isUploading ? "Uploading..." : "Finalize Item"}
+                  </button>
                 </div>
               </form>
             </motion.div>
