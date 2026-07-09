@@ -1,5 +1,5 @@
-import { readFile } from "fs/promises";
-import { join } from "path";
+import dbConnect from "@/lib/mongodb";
+import StoredFileChunk from "@/models/StoredFileChunk";
 
 export async function GET(req, { params }) {
   try {
@@ -10,12 +10,16 @@ export async function GET(req, { params }) {
       return new Response("Invalid filename", { status: 400 });
     }
 
-    const uploadsDir = (process.env.VERCEL || process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV)
-      ? "/tmp/uploads"
-      : join(process.cwd(), "public", "uploads");
+    await dbConnect();
 
-    const filePath = join(uploadsDir, filename);
-    const fileBuffer = await readFile(filePath);
+    // Fetch chunks from database
+    const chunks = await StoredFileChunk.find({ filename }).sort({ chunkIndex: 1 });
+    if (chunks.length === 0) {
+      return new Response("File not found", { status: 404 });
+    }
+
+    // Assemble file content from chunks
+    const fileBuffer = Buffer.concat(chunks.map(c => c.data));
 
     // MIME type mapping
     const ext = filename.split(".").pop().toLowerCase();
@@ -43,6 +47,7 @@ export async function GET(req, { params }) {
       }
     });
   } catch (err) {
+    console.error("Serve file error:", err);
     return new Response("File not found", { status: 404 });
   }
 }

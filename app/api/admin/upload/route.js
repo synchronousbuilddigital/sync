@@ -1,5 +1,5 @@
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import dbConnect from "@/lib/mongodb";
+import StoredFileChunk from "@/models/StoredFileChunk";
 import { verifyToken } from "@/lib/auth";
 
 export async function POST(req) {
@@ -18,19 +18,18 @@ export async function POST(req) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create uploads directory (use writable /tmp/uploads in read-only serverless envs)
-    const uploadsDir = (process.env.VERCEL || process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV)
-      ? "/tmp/uploads"
-      : join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
     // Define unique file name
     const ext = (file.name || "bin").split(".").pop();
     const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const path = join(uploadsDir, filename);
 
-    // Save file
-    await writeFile(path, buffer);
+    await dbConnect();
+    
+    // Save to database
+    await StoredFileChunk.create({
+      filename,
+      chunkIndex: 0,
+      data: buffer
+    });
 
     const url = `/uploads/${filename}`;
     return Response.json({ success: true, url });
