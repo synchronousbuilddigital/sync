@@ -46,14 +46,14 @@ export async function PATCH(req) {
     }
 
     await dbConnect();
-    const { id, name, image, index, oldName } = await req.json();
+    const { id, name, image, index, description, oldName } = await req.json();
     if (!id) {
       return Response.json({ success: false, message: "Missing category ID" }, { status: 400 });
     }
 
     const updatedCategory = await ProductionCategory.findByIdAndUpdate(
       id,
-      { name, image, index },
+      { name, image, index, description },
       { new: true }
     );
 

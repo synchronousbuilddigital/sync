@@ -11,7 +11,7 @@ export default function CategoryProductionPage() {
   const params = useParams();
   const router = useRouter();
   const { isDark } = useTheme();
-  const { productionItems = [] } = useAuth();
+  const { productionItems = [], productionCategories = [] } = useAuth();
   const [activeVideo, setActiveVideo] = useState(null);
 
   // Decode the category name from params
@@ -106,18 +106,32 @@ export default function CategoryProductionPage() {
           <span>Back to Production</span>
         </button>
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <div>
-            <span className="text-[0.65rem] font-black uppercase tracking-[0.4em] text-[#F05E23] block mb-3">Showcase Directory</span>
-            <h1 className={`text-4xl sm:text-6xl font-black uppercase tracking-tighter italic leading-none ${isDark ? 'text-white' : 'text-[#111]'}`}>
-              {categoryName} <span className="text-[#F05E23]">HQ</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#F05E23]/10 border border-[#F05E23]/20 text-[0.65rem] font-black uppercase tracking-widest text-[#F05E23]">
-            <Film className="w-3.5 h-3.5" />
-            <span>{reels.length} Deployed Clips</span>
-          </div>
-        </div>
+        {(() => {
+          const currentCategory = productionCategories.find(
+            (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+          );
+          const categoryDescription = currentCategory?.description || `Explore our premium visuals for ${categoryName.toLowerCase()} campaigns.`;
+          
+          return (
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+              <div className="max-w-3xl">
+                <span className="text-[0.65rem] font-black uppercase tracking-[0.4em] text-[#F05E23] block mb-3">Showcase Directory</span>
+                <h1 className={`text-4xl sm:text-6xl font-black uppercase tracking-tighter italic leading-none ${isDark ? 'text-white' : 'text-[#111]'}`}>
+                  {categoryName} <span className="text-[#F05E23]">HQ</span>
+                </h1>
+                {categoryDescription && (
+                  <p className={`text-xs sm:text-sm font-bold uppercase tracking-wider mt-4 leading-relaxed max-w-2xl ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                    {categoryDescription}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#F05E23]/10 border border-[#F05E23]/20 text-[0.65rem] font-black uppercase tracking-widest text-[#F05E23] shrink-0">
+                <Film className="w-3.5 h-3.5" />
+                <span>{reels.length} Deployed Clips</span>
+              </div>
+            </div>
+          );
+        })()}
       </header>
 
       {/* Reels Grid */}

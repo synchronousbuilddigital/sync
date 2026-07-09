@@ -3,6 +3,8 @@ import ProductionItem from "@/models/ProductionItem";
 import PartnerLogo from "@/models/PartnerLogo";
 import ProductionCategory from "@/models/ProductionCategory";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req) {
   try {
     await dbConnect();

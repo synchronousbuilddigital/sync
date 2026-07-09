@@ -26,12 +26,16 @@ const PartnerLogoSchema = new mongoose.Schema({
   name: String,
   logoUrl: String,
   index: Number,
+  videoUrl: String,
+  thumbnailUrl: String,
+  description: String,
 });
 
 const ProductionCategorySchema = new mongoose.Schema({
   name: String,
   image: String,
   index: Number,
+  description: String,
 });
 
 const ProductionItem = mongoose.models.ProductionItem || mongoose.model("ProductionItem", ProductionItemSchema);
@@ -50,7 +54,14 @@ async function seedData() {
 
     // 2. Add partner logos
     const logos = [
-      { name: "Nike", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg", index: 1 },
+      { 
+        name: "Nike", 
+        logoUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg", 
+        index: 1,
+        videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+        thumbnailUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=60",
+        description: "Nike Air Max - Unleashed Potential commercial showcasing shoe performance."
+      },
       { name: "Coca Cola", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Coca-Cola_logo.svg", index: 2 },
       { name: "Google", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg", index: 3 },
       { name: "Apple", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg", index: 4 },
@@ -62,9 +73,9 @@ async function seedData() {
 
     // 3. Add categories
     const categories = [
-      { name: "Commercials", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=60", index: 1 },
-      { name: "Social Media", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60", index: 2 },
-      { name: "Short Films", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&auto=format&fit=crop&q=60", index: 3 }
+      { name: "Commercials", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=60", index: 1, description: "High-impact promotional media for television and online campaigns." },
+      { name: "Social Media", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60", index: 2, description: "Sleek, short-form narratives engineered for viral social engagement." },
+      { name: "Short Films", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&auto=format&fit=crop&q=60", index: 3, description: "Creative cinematic experiments and long-form visual stories." }
     ];
 
     await ProductionCategory.insertMany(categories);

@@ -216,11 +216,11 @@ export default function AdminDashboard() {
 
   const [isAddingLogo, setIsAddingLogo] = useState(false);
   const [editingLogo, setEditingLogo] = useState(null);
-  const [logoForm, setLogoForm] = useState({ name: "", logoUrl: "", index: 0 });
+  const [logoForm, setLogoForm] = useState({ name: "", logoUrl: "", index: 0, videoUrl: "", thumbnailUrl: "", description: "" });
 
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [categoryForm, setCategoryForm] = useState({ name: "", image: "", index: 0 });
+  const [categoryForm, setCategoryForm] = useState({ name: "", image: "", index: 0, description: "" });
 
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [newIntern, setNewIntern] = useState({ name: "", email: "", password: "", department: "" });
@@ -748,7 +748,7 @@ export default function AdminDashboard() {
       setStatusMsg({ type: "success", msg: `Logo ${editingLogo ? 'updated' : 'deployed'} successfully.` });
       setIsAddingLogo(false);
       setEditingLogo(null);
-      setLogoForm({ name: "", logoUrl: "", index: 0 });
+      setLogoForm({ name: "", logoUrl: "", index: 0, videoUrl: "", thumbnailUrl: "", description: "" });
     } else {
       setStatusMsg({ type: "error", msg: res.message });
     }
@@ -759,7 +759,10 @@ export default function AdminDashboard() {
     setLogoForm({
       name: logo.name,
       logoUrl: logo.logoUrl,
-      index: logo.index || 0
+      index: logo.index || 0,
+      videoUrl: logo.videoUrl || "",
+      thumbnailUrl: logo.thumbnailUrl || "",
+      description: logo.description || ""
     });
     setIsAddingLogo(true);
   };
@@ -777,7 +780,7 @@ export default function AdminDashboard() {
       setStatusMsg({ type: "success", msg: `Category ${editingCategory ? 'updated' : 'deployed'} successfully.` });
       setIsAddingCategory(false);
       setEditingCategory(null);
-      setCategoryForm({ name: "", image: "", index: 0 });
+      setCategoryForm({ name: "", image: "", index: 0, description: "" });
     } else {
       setStatusMsg({ type: "error", msg: res.message });
     }
@@ -788,7 +791,8 @@ export default function AdminDashboard() {
     setCategoryForm({
       name: cat.name,
       image: cat.image,
-      index: cat.index || 0
+      index: cat.index || 0,
+      description: cat.description || ""
     });
     setIsAddingCategory(true);
   };
@@ -1837,7 +1841,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => {
                     setEditingCategory(null);
-                    setCategoryForm({ name: "", image: "", index: 0 });
+                    setCategoryForm({ name: "", image: "", index: 0, description: "" });
                     setIsAddingCategory(true);
                   }}
                   className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
@@ -1864,6 +1868,11 @@ export default function AdminDashboard() {
                       </div>
                       <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-800 dark:text-white truncate max-w-full">{cat.name}</span>
                       <span className="text-[0.55rem] text-slate-400 font-bold mt-1">Idx: {cat.index || 0}</span>
+                      {cat.description && (
+                        <p className="text-[0.55rem] text-slate-400 dark:text-white/40 font-bold uppercase tracking-wide mt-1.5 text-center line-clamp-2 w-full px-1" title={cat.description}>
+                          {cat.description}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
@@ -1883,7 +1892,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => {
                     setEditingLogo(null);
-                    setLogoForm({ name: "", logoUrl: "", index: 0 });
+                    setLogoForm({ name: "", logoUrl: "", index: 0, videoUrl: "", thumbnailUrl: "", description: "" });
                     setIsAddingLogo(true);
                   }}
                   className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
@@ -1896,8 +1905,8 @@ export default function AdminDashboard() {
                 {(partnerLogos || []).map((logo) => (
                   <div key={logo._id} className="bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl p-4 flex flex-col items-center relative group">
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
-                      <button onClick={() => handleEditLogo(logo)} className="p-1 bg-amber-500 text-white rounded"><Edit className="w-3 h-3" /></button>
-                      <button onClick={() => { if(confirm("Are you sure you want to delete this logo?")) deletePartnerLogo(logo._id); }} className="p-1 bg-red-500 text-white rounded"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={() => handleEditLogo(logo)} className="p-1 bg-amber-500 text-white rounded"><Edit className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => { if(confirm("Are you sure you want to delete this logo?")) deletePartnerLogo(logo._id); }} className="p-1 bg-red-500 text-white rounded"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                     <div className="h-16 w-full flex items-center justify-center mb-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1905,6 +1914,13 @@ export default function AdminDashboard() {
                     </div>
                     <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-800 dark:text-white truncate max-w-full">{logo.name}</span>
                     <span className="text-[0.55rem] text-slate-400 font-bold mt-1">Idx: {logo.index || 0}</span>
+                    {logo.videoUrl ? (
+                      <a href={logo.videoUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-[0.55rem] font-black uppercase tracking-wider text-[#F05E23] flex items-center gap-1 hover:underline">
+                        <Film className="w-3 h-3" /> View Reel
+                      </a>
+                    ) : (
+                      <span className="mt-2 text-[0.5rem] font-bold text-slate-400 uppercase tracking-widest">No Reel</span>
+                    )}
                   </div>
                 ))}
                 {(partnerLogos || []).length === 0 && (
@@ -3388,11 +3404,11 @@ export default function AdminDashboard() {
         )}
 
         {isAddingLogo && (
-          <div key="modal-adding-logo" className="fixed inset-0 z-100 flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
+          <div key="modal-adding-logo" className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-slate-900/40">
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide animate-in fade-in zoom-in duration-200"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-2xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide animate-in fade-in zoom-in duration-200"
             >
               <button onClick={() => setIsAddingLogo(false)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"><X className="w-5 h-5 text-slate-500" /></button>
               <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900 dark:text-white">{editingLogo ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Partner Logo</span></h2>
@@ -3428,6 +3444,70 @@ export default function AdminDashboard() {
                     <input type="number" value={logoForm.index} onChange={e => setLogoForm({ ...logoForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
                   </div>
                 </div>
+
+                {/* Reel Section */}
+                <div className="border-t border-black/5 dark:border-white/5 pt-6 space-y-6">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Partner Reel (Optional)</h4>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Video File</label>
+                    {logoForm.videoUrl ? (
+                      <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-white truncate max-w-[280px]" title={logoForm.videoUrl}>
+                            {logoForm.videoUrl.split('/').pop()}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setLogoForm({ ...logoForm, videoUrl: "" })} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all">Remove</button>
+                          <label className="cursor-pointer bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-black dark:hover:bg-slate-100 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all">
+                            Replace
+                            <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, videoUrl: url }))} />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                        <Film className="w-8 h-8 text-[#F05E23] mb-2 animate-bounce" />
+                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Reel Video File</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">MP4, MOV, WEBM (Max 50MB)</span>
+                        <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, videoUrl: url }))} />
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Thumbnail Image</label>
+                      {logoForm.thumbnailUrl ? (
+                        <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={logoForm.thumbnailUrl} alt="Thumbnail Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                          <div className="relative z-10 flex gap-2">
+                            <button type="button" onClick={() => setLogoForm({ ...logoForm, thumbnailUrl: "" })} className="bg-red-500/80 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">Remove</button>
+                            <label className="cursor-pointer bg-black/85 hover:bg-black text-white hover:text-[#F05E23] px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
+                              Replace
+                              <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, thumbnailUrl: url }))} />
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                          <Plus className="w-6 h-6 text-slate-400 mb-1" />
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Photo</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, thumbnailUrl: url }))} />
+                        </label>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Description</label>
+                      <textarea rows={4} value={logoForm.description || ""} onChange={e => setLogoForm({ ...logoForm, description: e.target.value })} placeholder="Short description of this partner's reel..." className="w-full h-[112px] bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white resize-none" />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsAddingLogo(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>
                   <button type="submit" className="flex-1 bg-slate-900 dark:bg-white text-white dark:text-black py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] hover:bg-black dark:hover:bg-slate-100 shadow-xl transition-all">Finalize Logo</button>
@@ -3442,7 +3522,7 @@ export default function AdminDashboard() {
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide animate-in fade-in zoom-in duration-200"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 w-full max-w-2xl p-12 rounded-[4rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-hide animate-in fade-in zoom-in duration-200"
             >
               <button onClick={() => setIsAddingCategory(false)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all"><X className="w-5 h-5 text-slate-500" /></button>
               <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter italic text-center text-slate-900 dark:text-white">{editingCategory ? 'Update' : 'Deploy'} <span className="text-[#F05E23]">Category</span></h2>
@@ -3477,6 +3557,10 @@ export default function AdminDashboard() {
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index</label>
                     <input type="number" value={categoryForm.index} onChange={e => setCategoryForm({ ...categoryForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Category Description / Details</label>
+                  <textarea rows={3} value={categoryForm.description || ""} onChange={e => setCategoryForm({ ...categoryForm, description: e.target.value })} placeholder="Write details/description about this category's campaigns..." className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white resize-none" />
                 </div>
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsAddingCategory(false)} className="flex-1 py-5 rounded-2xl font-black uppercase text-[0.7rem] tracking-[0.2em] border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all">Abort</button>

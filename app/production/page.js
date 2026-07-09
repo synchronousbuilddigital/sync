@@ -19,7 +19,8 @@ export default function ProductionPage() {
     return {
       name: cat.name,
       count,
-      thumbnail: cat.image
+      thumbnail: cat.image,
+      description: cat.description
     };
   });
 
@@ -27,7 +28,7 @@ export default function ProductionPage() {
     <main className={`min-h-screen selection:bg-[#F05E23]/20 overflow-x-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-[#FDFDFD]'}`}>
       {/* Minimalist Grid Pattern */}
       <div className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 ${isDark ? 'opacity-[0.08]' : 'opacity-[0.03]'}`}
-           style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
+        style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
 
       {/* Hero Header */}
       <header className="relative w-full pt-32 pb-16 px-6 overflow-hidden">
@@ -48,8 +49,8 @@ export default function ProductionPage() {
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
               className={`text-[3.5rem] sm:text-[5rem] md:text-[6.5rem] lg:text-[7.5rem] font-bold tracking-[-0.05em] leading-[0.85] transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}
             >
-              Masterful Craft. <br />
-              <span className="text-[#F05E23]">Vision Engineered.</span>
+              Woven for Tomorrow. <br />
+              <span className="text-[#F05E23]">Crafted for Life.</span>
             </motion.h1>
 
             <motion.div
@@ -127,9 +128,8 @@ export default function ProductionPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1, duration: 0.6 }}
-                className={`group rounded-[2.5rem] border overflow-hidden transition-all duration-500 flex flex-col justify-between ${
-                  isDark ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10' : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-2xl hover:shadow-[#F05E23]/5'
-                }`}
+                className={`group rounded-[2.5rem] border overflow-hidden transition-all duration-500 flex flex-col justify-between ${isDark ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10' : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-2xl hover:shadow-[#F05E23]/5'
+                  }`}
               >
                 <div className="relative h-60 w-full overflow-hidden bg-slate-900 flex items-center justify-center">
                   {cat.thumbnail ? (
@@ -148,15 +148,14 @@ export default function ProductionPage() {
                   <div className="space-y-3 mb-8">
                     <h3 className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white group-hover:text-[#F05E23] transition-colors">{cat.name}</h3>
                     <p className="text-xs text-slate-500 dark:text-white/40 leading-relaxed font-bold uppercase tracking-wider">
-                      Explore our premium visuals for {cat.name.toLowerCase()} campaigns.
+                      {cat.description || `Explore our premium visuals for ${cat.name.toLowerCase()} campaigns.`}
                     </p>
                   </div>
 
                   <Link
                     href={`/production/${encodeURIComponent(cat.name)}`}
-                    className={`w-full py-4.5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-xs border transition-all ${
-                      isDark ? 'bg-white/5 border-white/10 text-white hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]' : 'bg-[#111] border-[#111] text-white hover:bg-[#F05E23] hover:border-[#F05E23]'
-                    }`}
+                    className={`w-full py-4.5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-xs border transition-all ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]' : 'bg-[#111] border-[#111] text-white hover:bg-[#F05E23] hover:border-[#F05E23]'
+                      }`}
                   >
                     <span>Enter Showcase</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
