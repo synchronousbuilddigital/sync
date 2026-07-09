@@ -1882,7 +1882,7 @@ export default function AdminDashboard() {
                                 )}
                               </div>
                               <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mt-0.5 flex items-center gap-2">
-                                <span>{groupTasks.length} {groupTasks.length === 1 ? "Post Scheduled" : "Posts Scheduled"}</span>
+                                <span>{groupTasks.length} {isTBA ? (groupTasks.length === 1 ? "Unscheduled Post" : "Unscheduled Posts") : (groupTasks.length === 1 ? "Post Scheduled" : "Posts Scheduled")}</span>
                                 <span>•</span>
                                 <span>Across {new Set(groupTasks.map(t => resolveCompanyTask(t))).size} {new Set(groupTasks.map(t => resolveCompanyTask(t))).size === 1 ? "Brand" : "Brands"}</span>
                               </p>
