@@ -359,7 +359,7 @@ export default function ProductionPage() {
         </div>
 
         {filteredGalleryItems.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6 [column-fill:_balance]">
             {filteredGalleryItems.map((item, idx) => (
               <motion.div
                 key={item._id}
@@ -368,13 +368,13 @@ export default function ProductionPage() {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.05, duration: 0.5 }}
                 onClick={() => setLightboxItem(item)}
-                className={`group cursor-pointer rounded-3xl overflow-hidden border transition-all duration-500 relative aspect-square flex items-center justify-center ${
+                className={`group cursor-pointer rounded-3xl overflow-hidden border transition-all duration-500 relative flex flex-col justify-start break-inside-avoid mb-6 ${
                   isDark ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10' : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-2xl hover:shadow-[#F05E23]/5'
                 }`}
               >
                 {item.type === "photo" ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.mediaUrl} alt={item.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100" />
+                  <img src={item.mediaUrl} alt={item.title} className="w-full h-auto block group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100" />
                 ) : (
                   <video
                     src={item.mediaUrl}
@@ -382,7 +382,7 @@ export default function ProductionPage() {
                     muted
                     loop
                     playsInline
-                    className="absolute inset-0 w-full h-full object-cover filter brightness-90 group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
+                    className="w-full h-auto block filter brightness-90 group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
                   />
                 )}
 

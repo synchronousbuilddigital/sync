@@ -293,7 +293,7 @@ export default function AdminDashboard() {
 
   const [isAddingLogo, setIsAddingLogo] = useState(false);
   const [editingLogo, setEditingLogo] = useState(null);
-  const [logoForm, setLogoForm] = useState({ name: "", logoUrl: "", index: 0, videoUrl: "", thumbnailUrl: "", description: "" });
+  const [logoForm, setLogoForm] = useState({ name: "", logoUrl: "", index: 0 });
 
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -841,7 +841,7 @@ export default function AdminDashboard() {
       setStatusMsg({ type: "success", msg: `Logo ${editingLogo ? 'updated' : 'deployed'} successfully.` });
       setIsAddingLogo(false);
       setEditingLogo(null);
-      setLogoForm({ name: "", logoUrl: "", index: 0, videoUrl: "", thumbnailUrl: "", description: "" });
+      setLogoForm({ name: "", logoUrl: "", index: 0 });
     } else {
       setStatusMsg({ type: "error", msg: res.message });
     }
@@ -852,10 +852,7 @@ export default function AdminDashboard() {
     setLogoForm({
       name: logo.name,
       logoUrl: logo.logoUrl,
-      index: logo.index || 0,
-      videoUrl: logo.videoUrl || "",
-      thumbnailUrl: logo.thumbnailUrl || "",
-      description: logo.description || ""
+      index: logo.index || 0
     });
     setIsAddingLogo(true);
   };
@@ -2293,13 +2290,6 @@ export default function AdminDashboard() {
                     </div>
                     <span className="text-[0.65rem] font-black uppercase tracking-widest text-slate-800 dark:text-white truncate max-w-full">{logo.name}</span>
                     <span className="text-[0.55rem] text-slate-400 font-bold mt-1">Idx: {logo.index || 0}</span>
-                    {logo.videoUrl ? (
-                      <a href={logo.videoUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-[0.55rem] font-black uppercase tracking-wider text-[#F05E23] flex items-center gap-1 hover:underline">
-                        <Film className="w-3 h-3" /> View Reel
-                      </a>
-                    ) : (
-                      <span className="mt-2 text-[0.5rem] font-bold text-slate-400 uppercase tracking-widest">No Reel</span>
-                    )}
                   </div>
                 ))}
                 {(partnerLogos || []).length === 0 && (
@@ -3833,69 +3823,6 @@ export default function AdminDashboard() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index</label>
                     <input type="number" value={logoForm.index} onChange={e => setLogoForm({ ...logoForm, index: parseInt(e.target.value) || 0 })} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
-                  </div>
-                </div>
-
-                {/* Reel Section */}
-                <div className="border-t border-black/5 dark:border-white/5 pt-6 space-y-6">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Partner Reel (Optional)</h4>
-                  
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Video File</label>
-                    {logoForm.videoUrl ? (
-                      <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-                          <span className="text-xs font-bold text-slate-700 dark:text-white truncate max-w-[280px]" title={logoForm.videoUrl}>
-                            {logoForm.videoUrl.split('/').pop()}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button type="button" onClick={() => setLogoForm({ ...logoForm, videoUrl: "" })} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all">Remove</button>
-                          <label className="cursor-pointer bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-black dark:hover:bg-slate-100 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all">
-                            Replace
-                            <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, videoUrl: url }))} />
-                          </label>
-                        </div>
-                      </div>
-                    ) : (
-                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
-                        <Film className="w-8 h-8 text-[#F05E23] mb-2 animate-bounce" />
-                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Reel Video File</span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">MP4, MOV, WEBM (Max 50MB)</span>
-                        <input type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, videoUrl: url }))} />
-                      </label>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Thumbnail Image</label>
-                      {logoForm.thumbnailUrl ? (
-                        <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={logoForm.thumbnailUrl} alt="Thumbnail Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                          <div className="relative z-10 flex gap-2">
-                            <button type="button" onClick={() => setLogoForm({ ...logoForm, thumbnailUrl: "" })} className="bg-red-500/80 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">Remove</button>
-                            <label className="cursor-pointer bg-black/85 hover:bg-black text-white hover:text-[#F05E23] px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
-                              Replace
-                              <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, thumbnailUrl: url }))} />
-                            </label>
-                          </div>
-                        </div>
-                      ) : (
-                        <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
-                          <Plus className="w-6 h-6 text-slate-400 mb-1" />
-                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Photo</span>
-                          <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm({ ...logoForm, thumbnailUrl: url }))} />
-                        </label>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Reel Description</label>
-                      <textarea rows={4} value={logoForm.description || ""} onChange={e => setLogoForm({ ...logoForm, description: e.target.value })} placeholder="Short description of this partner's reel..." className="w-full h-[112px] bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white resize-none" />
-                    </div>
                   </div>
                 </div>
 

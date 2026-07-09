@@ -6,10 +6,8 @@ import { usePathname } from 'next/navigation';
 
 export default function LoadingScreen() {
     const pathname = usePathname();
-    const isLoggedIn = typeof window !== 'undefined' && Boolean(localStorage.getItem('sync_token'));
-    // Don't show the branded splash screen on internal dashboard/tool pages or if already logged in
-    const dashboardPaths = ['/intern', '/admin', '/brand', '/client', '/change-password', '/login', '/hiring', '/calendar', '/projects', '/settings'];
-    if (isLoggedIn || dashboardPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
+    const [mounted, setMounted] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const [isVisible, setIsVisible] = useState(true);
     const [isFading, setIsFading] = useState(false);
@@ -19,6 +17,9 @@ export default function LoadingScreen() {
     const fullText = "Initializing Services";
 
     useEffect(() => {
+        setMounted(true);
+        setIsLoggedIn(Boolean(localStorage.getItem('sync_token')));
+
         // Prevent the browser from automatically restoring the scroll position
         if ('scrollRestoration' in window.history) {
             window.history.scrollRestoration = 'manual';
@@ -70,6 +71,12 @@ export default function LoadingScreen() {
             document.body.style.overflow = 'unset';
         };
     }, []);
+
+    if (!mounted) return null;
+
+    // Don't show the branded splash screen on internal dashboard/tool pages or if already logged in
+    const dashboardPaths = ['/intern', '/admin', '/brand', '/client', '/change-password', '/login', '/hiring', '/calendar', '/projects', '/settings'];
+    if (isLoggedIn || dashboardPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
 
     if (!isVisible) return null;
 
