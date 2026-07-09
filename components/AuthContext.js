@@ -1104,7 +1104,7 @@ export function AuthProvider({ children }) {
   const [readNotifIds, setReadNotifIds] = useState([]);
   useEffect(() => {
     if (user) {
-      const userId = user.id || user._id;
+      const userId = user._id || user.id || user.email;
       if (!userId) return;
       try {
         const stored = JSON.parse(localStorage.getItem(`sync_read_notifs_${userId}`) || "[]");
@@ -1184,10 +1184,10 @@ export function AuthProvider({ children }) {
 
   const markAllNotificationsRead = useCallback(() => {
     if (!user) return;
-    const userId = user.id || user._id;
+    const userId = user._id || user.id || user.email;
     if (!userId) return;
     const allIds = notifications.map(n => n.id);
-    const combined = Array.from(new Set([...readNotifIds, ...allIds]));
+    const combined = Array.from(new Set([...readNotifIds, ...allIds])).slice(-200);
     setReadNotifIds(combined);
     try {
       localStorage.setItem(`sync_read_notifs_${userId}`, JSON.stringify(combined));

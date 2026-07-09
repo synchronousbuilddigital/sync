@@ -101,6 +101,8 @@ export default function InternDashboard() {
      const unreadCount = (tasks || []).filter(hasUnreadInternMessage).length;
      const currentTaskIds = new Set((tasks || []).map(t => t._id));
 
+     if (dataLoading && (!tasks || tasks.length === 0)) return;
+
      if (isInitialLoadRef.current) {
        isInitialLoadRef.current = false;
        setPrevInternUnreadCount(unreadCount);

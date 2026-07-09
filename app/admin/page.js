@@ -113,6 +113,8 @@ export default function AdminDashboard() {
     const currentCompletedTasks = (tasks || []).filter(t => ["Done", "Completed", "Complete"].includes(t.status) || t.marketingData?.postTracker?.status?.includes("Posted"));
     const currentCompletedIds = new Set(currentCompletedTasks.map(t => t._id));
     
+    if (dataLoading && (!tasks || tasks.length === 0)) return;
+
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
       setPrevAdminUnreadCount(unreadCount);
