@@ -11,8 +11,8 @@ export async function POST(req) {
 
     const data = await req.formData();
     const file = data.get("file");
-    if (!file) {
-      return Response.json({ success: false, message: "No file uploaded" }, { status: 400 });
+    if (!file || typeof file === "string" || typeof file.arrayBuffer !== "function") {
+      return Response.json({ success: false, message: "Invalid or empty file uploaded" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
@@ -23,7 +23,7 @@ export async function POST(req) {
     await mkdir(uploadsDir, { recursive: true });
 
     // Define unique file name
-    const ext = file.name.split(".").pop();
+    const ext = (file.name || "bin").split(".").pop();
     const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
     const path = join(uploadsDir, filename);
 
@@ -33,6 +33,7 @@ export async function POST(req) {
     const url = `/uploads/${filename}`;
     return Response.json({ success: true, url });
   } catch (err) {
+    console.error("Upload error:", err);
     return Response.json({ success: false, message: err.message }, { status: 500 });
   }
 }
