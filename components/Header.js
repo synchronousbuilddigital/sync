@@ -29,6 +29,15 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
 
+  useEffect(() => {
+    if (notifOpen && unreadNotifCount > 0 && markAllNotificationsRead) {
+      const timer = setTimeout(() => {
+        markAllNotificationsRead();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [notifOpen, unreadNotifCount, markAllNotificationsRead]);
+
   const handleNotifClick = (n) => {
     if (n.unread) markAllNotificationsRead();
     setNotifOpen(false);
