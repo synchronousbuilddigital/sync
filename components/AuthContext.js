@@ -555,6 +555,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateTaskStatus = async (taskId, status, note = "", isApproved = undefined, marketingData = undefined) => {
+    if (markTaskNotificationsRead) markTaskNotificationsRead(taskId);
     const res = await fetch(`/api/intern/tasks/${taskId}`, {
       method: "PATCH",
       headers: {
@@ -601,6 +602,7 @@ export function AuthProvider({ children }) {
   };
 
   const markChatRead = async (taskId) => {
+    if (markTaskNotificationsRead) markTaskNotificationsRead(taskId);
     try {
       setTasks(prev => prev.map(t => {
         if (t._id === taskId) {
@@ -701,6 +703,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateTask = async (taskId, updateData) => {
+    if (markTaskNotificationsRead) markTaskNotificationsRead(taskId);
     const res = await fetch(`/api/admin/tasks/${taskId}`, {
       method: "PATCH",
       headers: {
@@ -1182,6 +1185,23 @@ export function AuthProvider({ children }) {
 
   const unreadNotifCount = useMemo(() => notifications.filter(n => n.unread).length, [notifications]);
 
+  const markTaskNotificationsRead = useCallback((taskId) => {
+    if (!user || !taskId) return;
+    const userId = user._id || user.id || user.email;
+    if (!userId) return;
+    const tId = typeof taskId === 'object' ? (taskId._id || taskId.id) : taskId;
+    if (!tId) return;
+    const matchingIds = notifications
+      .filter(n => n.taskId === tId || (typeof n.id === 'string' && n.id.includes(tId)))
+      .map(n => n.id);
+    if (matchingIds.length === 0) return;
+    const combined = Array.from(new Set([...readNotifIds, ...matchingIds])).slice(-200);
+    setReadNotifIds(combined);
+    try {
+      localStorage.setItem(`sync_read_notifs_${userId}`, JSON.stringify(combined));
+    } catch (e) { }
+  }, [user, notifications, readNotifIds]);
+
   const markAllNotificationsRead = useCallback(() => {
     if (!user) return;
     const userId = user._id || user.id || user.email;
@@ -1207,7 +1227,7 @@ export function AuthProvider({ children }) {
       generateBrandIntel, markFeedbackAsRead, brandManagerReviewTask,
       companies, addCompany, updateCompany, deleteCompany,
       brandManagers, removeBrandManager,
-      notifications, unreadNotifCount, markAllNotificationsRead
+      notifications, unreadNotifCount, markAllNotificationsRead, markTaskNotificationsRead
     }}>
       {children}
       <NotificationToaster statusMsg={globalToast} onClose={() => setGlobalToast({ type: "", msg: "" })} />

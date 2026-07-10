@@ -58,7 +58,7 @@ const parseCustomDate = (val) => {
 };
 
 export default function InternDashboard() {
-   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, dataLoading, refreshInternData, markChatRead, showToast, token } = useAuth();
+   const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, dataLoading, refreshInternData, markChatRead, showToast, token, markTaskNotificationsRead } = useAuth();
    
    const hasUnreadInternMessage = (task) => {
      if (!task || task._id === chatTaskId) return false;
@@ -184,6 +184,13 @@ export default function InternDashboard() {
          }
       };
    }, [chatTaskId, selectedTaskId, isUpdatingPost, isLeaveModalOpen]);
+
+   useEffect(() => {
+      if (markTaskNotificationsRead) {
+         if (chatTaskId) markTaskNotificationsRead(chatTaskId);
+         if (selectedTaskId) markTaskNotificationsRead(selectedTaskId);
+      }
+   }, [chatTaskId, selectedTaskId, markTaskNotificationsRead]);
 
    // Handle notification deep-link navigation
    useEffect(() => {

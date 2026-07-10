@@ -68,7 +68,7 @@ export default function AdminDashboard() {
     purgeClientProject, generateRoadmap, generateBrandIntel, sendAdminFeed,
     markFeedbackAsRead, loading, dataLoading, token,
     companies, addCompany, updateCompany, deleteCompany,
-    brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion,
+    brandManagers, removeBrandManager, refreshAdminData, markChatRead, showToast, sendDiscussion, markTaskNotificationsRead,
     productionItems, partnerLogos, productionCategories, productionGalleryItems, addProductionItem, updateProductionItem, deleteProductionItem, addPartnerLogo, updatePartnerLogo, deletePartnerLogo, addProductionCategory, updateProductionCategory, deleteProductionCategory, addProductionGalleryItem, updateProductionGalleryItem, deleteProductionGalleryItem
   } = useAuth();
 
@@ -447,6 +447,14 @@ export default function AdminDashboard() {
       }
     };
   }, [chatTaskId, reviewingTask, isAddingPost, isAddingClient, isAddingIntern, isAddingBrandManager, isAddingProject, editingProject, editingTaskModal, isEditingCredentials]);
+
+  useEffect(() => {
+    if (markTaskNotificationsRead) {
+      if (chatTaskId) markTaskNotificationsRead(chatTaskId);
+      if (reviewingTask) markTaskNotificationsRead(reviewingTask);
+      if (editingTaskModal) markTaskNotificationsRead(editingTaskModal);
+    }
+  }, [chatTaskId, reviewingTask, editingTaskModal, markTaskNotificationsRead]);
 
   const chatTask = tasks.find(t => t._id === chatTaskId);
   const tabLabels = {
