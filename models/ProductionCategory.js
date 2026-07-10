@@ -24,4 +24,6 @@ const ProductionCategorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+ProductionCategorySchema.index({ index: 1, name: 1 });
+
 export default mongoose.models.ProductionCategory || mongoose.model("ProductionCategory", ProductionCategorySchema);

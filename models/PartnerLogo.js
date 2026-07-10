@@ -9,4 +9,6 @@ const PartnerLogoSchema = new mongoose.Schema({
   description: { type: String }
 }, { timestamps: true });
 
+PartnerLogoSchema.index({ index: 1, createdAt: -1 });
+
 export default mongoose.models.PartnerLogo || mongoose.model("PartnerLogo", PartnerLogoSchema);

@@ -9,4 +9,6 @@ const ProductionItemSchema = new mongoose.Schema({
   index: { type: Number, default: 0 },
 }, { timestamps: true });
 
+ProductionItemSchema.index({ index: 1, createdAt: -1 });
+
 export default mongoose.models.ProductionItem || mongoose.model("ProductionItem", ProductionItemSchema);

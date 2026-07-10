@@ -992,38 +992,64 @@ export default function AdminDashboard() {
 
       showToast(`Uploading large file in ${totalChunks} parts...`, "info");
 
-      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        const start = chunkIndex * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        const chunk = file.slice(start, end);
+      let activeIndex = 0;
+      let uploadedUrl = null;
+      let uploadError = null;
+      const CONCURRENCY = 4;
 
-        const formData = new FormData();
-        formData.append("file", chunk);
-        formData.append("chunkIndex", chunkIndex);
-        formData.append("totalChunks", totalChunks);
-        formData.append("sessionId", sessionId);
-        formData.append("filename", filename);
+      const uploadWorker = async () => {
+        while (activeIndex < totalChunks && !uploadError && !uploadedUrl) {
+          const chunkIndex = activeIndex++;
+          const start = chunkIndex * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, file.size);
+          const chunk = file.slice(start, end);
 
-        const res = await fetch("/api/admin/upload/chunk", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${authToken}`
-          },
-          body: formData
-        });
+          const formData = new FormData();
+          formData.append("file", chunk);
+          formData.append("chunkIndex", chunkIndex);
+          formData.append("totalChunks", totalChunks);
+          formData.append("sessionId", sessionId);
+          formData.append("filename", filename);
 
-        const data = await res.json();
-        if (!data.success) {
-          throw new Error(data.message || `Part ${chunkIndex + 1} failed`);
+          try {
+            const res = await fetch("/api/admin/upload/chunk", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${authToken}`
+              },
+              body: formData
+            });
+
+            const data = await res.json();
+            if (!data.success) {
+              throw new Error(data.message || `Part ${chunkIndex + 1} failed`);
+            }
+
+            if (data.url) {
+              uploadedUrl = data.url;
+            }
+          } catch (err) {
+            uploadError = err;
+            break;
+          }
         }
+      };
 
-        if (data.url) {
-          // Completed reassembly
-          onUploadSuccess(data.url);
-          showToast("Large file uploaded successfully!", "success");
-          setIsUploading(false);
-          return;
-        }
+      const workers = Array.from(
+        { length: Math.min(CONCURRENCY, totalChunks) },
+        () => uploadWorker()
+      );
+      await Promise.all(workers);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      if (uploadedUrl) {
+        onUploadSuccess(uploadedUrl);
+        showToast("Large file uploaded successfully!", "success");
+      } else {
+        throw new Error("Assembly failed (no URL returned)");
       }
     } catch (err) {
       showToast(`Chunked upload failed: ${err.message}`, "error");

@@ -378,6 +378,7 @@ export function AuthProvider({ children }) {
     const storedToken = localStorage.getItem("sync_token");
 
     fetchProjects(); // Publicly fetch projects
+    fetchProductionData(); // Publicly fetch production data
 
     if (storedUser && storedToken) {
       const parsedUser = JSON.parse(storedUser);
@@ -387,6 +388,7 @@ export function AuthProvider({ children }) {
 
       if (parsedUser.role !== "brand_manager") {
         fetchProjects();
+        fetchProductionData();
         fetchLeaves(storedToken);
       }
 
@@ -424,10 +426,11 @@ export function AuthProvider({ children }) {
       return () => clearInterval(pollInterval);
     } else {
       fetchProjects(); // Publicly fetch projects if no stored session
+      fetchProductionData(); // Publicly fetch production data if no stored session
     }
     setLoading(false);
     setDataLoading(false); // No stored session — nothing to load
-  }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers]);
+  }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers, fetchProjects, fetchProductionData]);
 
   const login = async (email, password) => {
     try {

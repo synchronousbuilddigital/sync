@@ -28,4 +28,6 @@ const ProductionGalleryItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+ProductionGalleryItemSchema.index({ index: 1, createdAt: -1 });
+
 export default mongoose.models.ProductionGalleryItem || mongoose.model("ProductionGalleryItem", ProductionGalleryItemSchema);
