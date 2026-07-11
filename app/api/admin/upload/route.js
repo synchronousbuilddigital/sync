@@ -1,6 +1,5 @@
-import dbConnect from "@/lib/mongodb";
-import StoredFileChunk from "@/models/StoredFileChunk";
 import { verifyToken } from "@/lib/auth";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export async function POST(req) {
   try {
@@ -22,16 +21,10 @@ export async function POST(req) {
     const ext = (file.name || "bin").split(".").pop();
     const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
-    await dbConnect();
-    
-    // Save to database
-    await StoredFileChunk.create({
-      filename,
-      chunkIndex: 0,
-      data: buffer
-    });
+    // Upload buffer directly to Cloudinary
+    const uploadResult = await uploadToCloudinary(buffer, filename);
+    const url = uploadResult.secure_url;
 
-    const url = `/uploads/${filename}`;
     return Response.json({ success: true, url });
   } catch (err) {
     console.error("Upload error:", err);

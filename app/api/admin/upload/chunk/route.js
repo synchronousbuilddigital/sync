@@ -1,6 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import StoredFileChunk from "@/models/StoredFileChunk";
 import { verifyToken } from "@/lib/auth";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export async function POST(req) {
   try {
@@ -39,7 +40,19 @@ export async function POST(req) {
     const chunksCount = await StoredFileChunk.countDocuments({ filename: finalFilename });
 
     if (chunksCount === totalChunks) {
-      const url = `/uploads/${finalFilename}`;
+      // Retrieve all chunks sorted by index
+      const chunks = await StoredFileChunk.find({ filename: finalFilename }).sort({ chunkIndex: 1 });
+      
+      // Concatenate the chunks into one single Buffer
+      const fileBuffer = Buffer.concat(chunks.map(c => c.data));
+
+      // Upload the assembled buffer to Cloudinary
+      const uploadResult = await uploadToCloudinary(fileBuffer, finalFilename);
+      const url = uploadResult.secure_url;
+
+      // Clean up the temporary chunks from the database
+      await StoredFileChunk.deleteMany({ filename: finalFilename });
+
       return Response.json({ success: true, url });
     }
 

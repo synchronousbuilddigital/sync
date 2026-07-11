@@ -301,6 +301,8 @@ export default function AdminDashboard() {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [categoryForm, setCategoryForm] = useState({ name: "", image: "", index: 0, description: "" });
+  const [logoUploadMode, setLogoUploadMode] = useState("file");
+  const [categoryUploadMode, setCategoryUploadMode] = useState("file");
 
   const [isAddingGalleryItem, setIsAddingGalleryItem] = useState(false);
   const [editingGalleryItem, setEditingGalleryItem] = useState(null);
@@ -865,6 +867,7 @@ export default function AdminDashboard() {
       logoUrl: logo.logoUrl,
       index: logo.index || 0
     });
+    setLogoUploadMode(logo.logoUrl && logo.logoUrl.startsWith("http") ? "url" : "file");
     setIsAddingLogo(true);
   };
 
@@ -895,6 +898,7 @@ export default function AdminDashboard() {
       index: cat.index || 0,
       description: cat.description || ""
     });
+    setCategoryUploadMode(cat.image && cat.image.startsWith("http") ? "url" : "file");
     setIsAddingCategory(true);
   };
 
@@ -2273,6 +2277,7 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setEditingCategory(null);
                     setCategoryForm({ name: "", image: "", index: 0, description: "" });
+                    setCategoryUploadMode("file");
                     setIsAddingCategory(true);
                   }}
                   className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
@@ -2377,6 +2382,7 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setEditingLogo(null);
                     setLogoForm({ name: "", logoUrl: "", index: 0, videoUrl: "", thumbnailUrl: "", description: "" });
+                    setLogoUploadMode("file");
                     setIsAddingLogo(true);
                   }}
                   className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
@@ -3916,24 +3922,61 @@ export default function AdminDashboard() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="sm:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Logo Image</label>
-                    {logoForm.logoUrl ? (
-                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={logoForm.logoUrl} alt="Logo Preview" className="max-h-full max-w-full object-contain p-4 filter brightness-200 contrast-200" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
-                            Replace Logo
-                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm(prev => ({ ...prev, logoUrl: url })))} />
-                          </label>
-                        </div>
+                    <div className="flex justify-between items-center pl-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Logo Image</label>
+                      <div className="flex gap-2 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => setLogoUploadMode("file")}
+                          className={`text-[8px] font-black uppercase px-2 py-1 rounded-md transition-all ${logoUploadMode === "file" ? "bg-[#F05E23] text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-white"}`}
+                        >
+                          Upload File
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLogoUploadMode("url")}
+                          className={`text-[8px] font-black uppercase px-2 py-1 rounded-md transition-all ${logoUploadMode === "url" ? "bg-[#F05E23] text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-white"}`}
+                        >
+                          Logo URL
+                        </button>
                       </div>
+                    </div>
+                    {logoUploadMode === "file" ? (
+                      logoForm.logoUrl ? (
+                        <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={logoForm.logoUrl} alt="Logo Preview" className="max-h-full max-w-full object-contain p-4 filter brightness-200 contrast-200" />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
+                              Replace Logo
+                              <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm(prev => ({ ...prev, logoUrl: url })))} />
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                          <Plus className="w-6 h-6 text-slate-400 mb-1" />
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Logo File</span>
+                          <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm(prev => ({ ...prev, logoUrl: url })))} />
+                        </label>
+                      )
                     ) : (
-                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
-                        <Plus className="w-6 h-6 text-slate-400 mb-1" />
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Logo File</span>
-                        <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setLogoForm(prev => ({ ...prev, logoUrl: url })))} />
-                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="url"
+                          required
+                          value={logoForm.logoUrl}
+                          onChange={e => setLogoForm({ ...logoForm, logoUrl: e.target.value })}
+                          placeholder="e.g. https://example.com/logo.png"
+                          className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white"
+                        />
+                        {logoForm.logoUrl && (
+                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-900 h-16 flex items-center justify-center overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={logoForm.logoUrl} alt="Logo Preview" className="max-h-full max-w-full object-contain p-2 filter brightness-200 contrast-200" onError={(e) => { e.target.style.display = 'none'; }} />
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -3969,24 +4012,61 @@ export default function AdminDashboard() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="sm:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Category Image (Photo)</label>
-                    {categoryForm.image ? (
-                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={categoryForm.image} alt="Category Preview" className="h-full w-full object-cover filter brightness-75 group-hover:scale-105 transition-transform duration-300" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
-                            Replace Photo
-                            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm(prev => ({ ...prev, image: url })))} />
-                          </label>
-                        </div>
+                    <div className="flex justify-between items-center pl-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category Image (Photo)</label>
+                      <div className="flex gap-2 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => setCategoryUploadMode("file")}
+                          className={`text-[8px] font-black uppercase px-2 py-1 rounded-md transition-all ${categoryUploadMode === "file" ? "bg-[#F05E23] text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-white"}`}
+                        >
+                          Upload File
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCategoryUploadMode("url")}
+                          className={`text-[8px] font-black uppercase px-2 py-1 rounded-md transition-all ${categoryUploadMode === "url" ? "bg-[#F05E23] text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-white"}`}
+                        >
+                          Image URL
+                        </button>
                       </div>
+                    </div>
+                    {categoryUploadMode === "file" ? (
+                      categoryForm.image ? (
+                        <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-900 h-28 flex items-center justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={categoryForm.image} alt="Category Preview" className="h-full w-full object-cover filter brightness-75 group-hover:scale-105 transition-transform duration-300" />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <label className="cursor-pointer bg-[#F05E23] hover:bg-[#d9531e] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all">
+                              Replace Photo
+                              <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm(prev => ({ ...prev, image: url })))} />
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
+                          <Plus className="w-6 h-6 text-slate-400 mb-1" />
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Category Image</span>
+                          <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm(prev => ({ ...prev, image: url })))} />
+                        </label>
+                      )
                     ) : (
-                      <label className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl h-28 flex flex-col items-center justify-center cursor-pointer hover:border-[#F05E23]/40 hover:bg-[#F05E23]/3 transition-all text-center">
-                        <Plus className="w-6 h-6 text-slate-400 mb-1" />
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-white">Upload Category Image</span>
-                        <input type="file" required accept="image/*" className="hidden" onChange={e => handleFileUpload(e.target.files[0], (url) => setCategoryForm(prev => ({ ...prev, image: url })))} />
-                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="url"
+                          required
+                          value={categoryForm.image}
+                          onChange={e => setCategoryForm({ ...categoryForm, image: e.target.value })}
+                          placeholder="e.g. https://example.com/image.jpg"
+                          className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white"
+                        />
+                        {categoryForm.image && (
+                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-900 h-16 flex items-center justify-center overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={categoryForm.image} alt="Category Preview" className="h-full w-full object-cover filter brightness-75" onError={(e) => { e.target.style.display = 'none'; }} />
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2">
