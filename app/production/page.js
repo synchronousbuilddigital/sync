@@ -43,7 +43,7 @@ export default function ProductionPage() {
 
   function renderVideoPlayer(url) {
     if (!url) return null;
-    
+
     const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i);
     if (ytMatch) {
       const videoId = ytMatch[1];
@@ -56,7 +56,7 @@ export default function ProductionPage() {
         />
       );
     }
-    
+
     const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/i);
     if (vimeoMatch) {
       const videoId = vimeoMatch[1];
@@ -69,7 +69,7 @@ export default function ProductionPage() {
         />
       );
     }
-    
+
     if (url.includes("instagram.com")) {
       const cleanUrl = url.split("?")[0];
       const embedUrl = cleanUrl.endsWith("/") ? `${cleanUrl}embed` : `${cleanUrl}/embed`;
@@ -81,7 +81,7 @@ export default function ProductionPage() {
         />
       );
     }
-    
+
     if (url.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i) || url.startsWith("/uploads/")) {
       return (
         <video
@@ -92,7 +92,7 @@ export default function ProductionPage() {
         />
       );
     }
-    
+
     return (
       <iframe
         src={url}
@@ -128,90 +128,93 @@ export default function ProductionPage() {
         style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
 
       {/* Hero Header Banner */}
-      <header className="relative w-full min-h-[70vh] md:min-h-[80vh] flex items-center pt-32 pb-24 px-6 overflow-hidden">
+      <header className="relative w-full min-h-[50vh] md:min-h-[55vh] flex items-center pt-20 pb-8 px-6 overflow-hidden">
         {/* Widescreen Interactive Slideshow Background */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {banners.map((banner, index) => (
             <div
               key={index}
-              className={`absolute inset-0 transition-all duration-1000 ease-in-out transform ${
-                index === activeSlide 
-                  ? "opacity-75 scale-100" 
+              className={`absolute inset-0 transition-all duration-[1500ms] ease-in-out transform ${index === activeSlide
+                  ? "opacity-85 scale-100"
                   : "opacity-0 scale-105 pointer-events-none"
-              }`}
+                }`}
             >
+              {/* Ken Burns panning/zoom background slide loop */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <motion.img
                 src={banner.image}
                 alt={banner.title}
-                className="w-full h-full object-cover filter brightness-[0.65] contrast-[1.05]"
+                animate={index === activeSlide ? { scale: 1.08, y: [0, -4, 0] } : { scale: 1.0 }}
+                transition={{ duration: 6, ease: "easeInOut", repeat: Infinity, repeatType: "reverse" }}
+                className="w-full h-full object-cover filter brightness-[0.68] contrast-[1.05]"
               />
             </div>
           ))}
           {/* Ambient Overlay Gradients for Dynamic Dual Theme readability */}
-          <div className={`absolute inset-0 z-10 transition-colors duration-700 ${
-            isDark 
-              ? 'bg-gradient-to-r from-black/85 via-black/50 to-black/10' 
-              : 'bg-gradient-to-r from-white/85 via-white/50 to-white/10'
-          }`} />
+          <div className={`absolute inset-0 z-10 transition-colors duration-700 ${isDark
+              ? 'bg-gradient-to-r from-black/75 via-black/35 to-transparent'
+              : 'bg-gradient-to-r from-white/75 via-white/25 to-transparent'
+            }`} />
           {/* Bottom vignette gradient */}
-          <div className={`absolute inset-x-0 bottom-0 h-32 z-10 transition-colors duration-700 ${
-            isDark 
-              ? 'bg-gradient-to-t from-[#0A0A0A] to-transparent' 
+          <div className={`absolute inset-x-0 bottom-0 h-32 z-10 transition-colors duration-700 ${isDark
+              ? 'bg-gradient-to-t from-[#0A0A0A] to-transparent'
               : 'bg-gradient-to-t from-[#FDFDFD] to-transparent'
-          }`} />
+            }`} />
         </div>
 
-        <div className="max-w-7xl mx-auto w-full flex flex-col items-start relative z-20">
+        <div className="max-w-7xl mx-auto w-full flex flex-col items-start relative z-20 -translate-y-2 sm:-translate-y-4">
+          {/* Top Creators Badge */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className={`inline-flex items-center gap-3 px-5 py-2.5 border rounded-full mb-10 shadow-sm backdrop-blur-md transition-colors duration-500 ${
-              isDark ? 'bg-white/5 border-white/10 text-[#F05E23]' : 'bg-white/40 border-slate-200/50 text-[#F05E23]'
-            }`}
+            className={`inline-flex items-center gap-3 px-5 py-2.5 border rounded-full mb-8 shadow-sm backdrop-blur-md transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/10 text-[#F05E23]' : 'bg-white/50 border-slate-200/60 text-[#F05E23]'
+              }`}
           >
             <span className="w-2 h-2 rounded-full bg-[#F05E23] animate-pulse"></span>
             <span className="text-[0.7rem] font-bold tracking-[0.45em] uppercase border-none">Our Creations</span>
           </motion.div>
 
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-16 w-full">
-            <motion.h1
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              className={`text-[3.5rem] sm:text-[5rem] md:text-[6.5rem] lg:text-[7.5rem] font-bold tracking-[-0.05em] leading-[0.85] transition-colors duration-500 drop-shadow-sm ${
-                isDark ? 'text-white' : 'text-[#111]'
-              }`}
-            >
-              Woven for Tomorrow. <br />
-              <span className="text-[#F05E23]">Crafted for Life.</span>
-            </motion.h1>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12 sm:gap-16 w-full">
+            <div className="space-y-8 max-w-3xl">
+              {/* Redesigned Bold Typography */}
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                className={`text-[3.2rem] sm:text-[4.6rem] md:text-[5.5rem] lg:text-[6.2rem] font-black tracking-tighter leading-[0.95] transition-colors duration-500 drop-shadow-md italic uppercase`}
+              >
+                <span className={isDark ? 'text-white' : 'text-[#111]'}>Woven for</span> <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F05E23] to-[#FF8C61]">Tomorrow.</span> <br />
+                <span className={isDark ? 'text-white/95' : 'text-[#222]'}>Crafted for </span>
+                <span className="text-[#F05E23]">Life.</span>
+              </motion.h1>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className={`max-w-xs border-l-2 border-[#F05E23] pl-8 pb-4 font-medium leading-relaxed italic transition-colors duration-500 ${
-                isDark ? 'text-white/60' : 'text-slate-700'
-              }`}
-            >
-              Capturing high-authority visual narratives to drive brand alignment and massive audience conversions.
-            </motion.div>
+            <div className="flex flex-col items-start lg:items-end gap-8 shrink-0">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className={`max-w-xs border-l-2 border-[#F05E23] pl-6 py-1 font-semibold leading-relaxed transition-colors duration-500 text-sm italic ${isDark ? 'text-white/60' : 'text-slate-700'
+                  }`}
+              >
+                Capturing high-authority visual narratives to drive brand alignment and massive audience conversions.
+              </motion.div>
+            </div>
           </div>
         </div>
 
         {/* Banner Navigation & Sliders Indicators */}
-        <div className="absolute bottom-8 left-6 right-6 z-20 flex justify-between items-center max-w-7xl mx-auto w-[calc(100%-3rem)]">
+        <div className="absolute bottom-4 left-6 right-6 z-20 flex justify-between items-center max-w-7xl mx-auto w-[calc(100%-3rem)]">
           <div className="flex gap-2.5">
             {banners.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setActiveSlide(index)}
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  index === activeSlide 
-                    ? "w-10 bg-[#F05E23]" 
-                    : `w-2 ${isDark ? 'bg-white/20 hover:bg-white/40' : 'bg-black/20 hover:bg-black/40'}`
-                }`}
+                className={`h-1.5 rounded-full transition-all duration-500 ${index === activeSlide
+                  ? "w-10 bg-[#F05E23]"
+                  : `w-2 ${isDark ? 'bg-white/20 hover:bg-white/40' : 'bg-black/20 hover:bg-black/40'}`
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
@@ -223,7 +226,7 @@ export default function ProductionPage() {
       </header>
 
       {/* Infinite Logo Marquee Section */}
-      <section className="w-full relative z-10 py-8 mb-16 overflow-hidden">
+      <section className="w-full relative z-10 pt-0 pb-6 mb-12 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center gap-3">
           <Users className="w-4 h-4 text-[#F05E23]" />
           <span className="text-[0.65rem] font-black uppercase tracking-[0.3em] text-[#F05E23]">Brands Who Trust Synchronous</span>
@@ -335,7 +338,7 @@ export default function ProductionPage() {
             <ImageIcon className="w-5 h-5 text-[#F05E23]" />
             <h2 className="text-2xl font-black uppercase tracking-widest italic">Showcase <span className="text-[#F05E23]">Gallery</span></h2>
           </div>
-          
+
           {/* Filter Tabs */}
           <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-white/5 border border-black/5 dark:border-white/10 w-fit shrink-0">
             {[
@@ -346,11 +349,10 @@ export default function ProductionPage() {
               <button
                 key={tab.id}
                 onClick={() => setFilterType(tab.id)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                  filterType === tab.id
-                    ? "bg-[#F05E23] text-white shadow-md shadow-[#F05E23]/10"
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                }`}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${filterType === tab.id
+                  ? "bg-[#F05E23] text-white shadow-md shadow-[#F05E23]/10"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  }`}
               >
                 {tab.label}
               </button>
@@ -368,9 +370,8 @@ export default function ProductionPage() {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.05, duration: 0.5 }}
                 onClick={() => setLightboxItem(item)}
-                className={`group cursor-pointer rounded-3xl overflow-hidden border transition-all duration-500 relative flex flex-col justify-start break-inside-avoid mb-6 ${
-                  isDark ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10' : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-2xl hover:shadow-[#F05E23]/5'
-                }`}
+                className={`group cursor-pointer rounded-3xl overflow-hidden border transition-all duration-500 relative flex flex-col justify-start break-inside-avoid mb-6 ${isDark ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10' : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-2xl hover:shadow-[#F05E23]/5'
+                  }`}
               >
                 {item.type === "photo" ? (
                   // eslint-disable-next-line @next/next/no-img-element
