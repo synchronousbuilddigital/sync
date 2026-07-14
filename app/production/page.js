@@ -11,35 +11,21 @@ export default function ProductionPage() {
   const { isDark } = useTheme();
   const { productionItems = [], partnerLogos = [], productionCategories = [], productionGalleryItems = [] } = useAuth();
 
-  const banners = [
-    {
-      image: "/production_banner_1.png",
-      title: "Futuristic Studio",
-      subtitle: "State-of-the-Art Creation",
-    },
-    {
-      image: "/production_banner_2.png",
-      title: "Cinematic Showcase",
-      subtitle: "High-Authority Narratives",
-    },
-    {
-      image: "/production_banner_3.png",
-      title: "Creative Visualization",
-      subtitle: "Crafted for Impact",
-    },
-  ];
-
-  const [activeSlide, setActiveSlide] = useState(0);
-
   const [filterType, setFilterType] = useState("all");
   const [lightboxItem, setLightboxItem] = useState(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % banners.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
+  const heroMarqueeImages = [
+    "/web_hero_1.png",
+    "/web_hero_2.png",
+    "/web_hero_3.png",
+    "/web_hero_4.png",
+    "/web_hero_5.png",
+    "/web_hero_6.png",
+  ];
+
+  const handleScrollToGallery = () => {
+    document.getElementById("gallery")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   function renderVideoPlayer(url) {
     if (!url) return null;
@@ -127,106 +113,82 @@ export default function ProductionPage() {
       <div className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 ${isDark ? 'opacity-[0.08]' : 'opacity-[0.03]'}`}
         style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
 
-      {/* Hero Header Banner */}
-      <header className="relative w-full min-h-[50vh] md:min-h-[55vh] flex items-center pt-20 pb-8 px-6 overflow-hidden">
-        {/* Widescreen Interactive Slideshow Background */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          {banners.map((banner, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-all duration-[1500ms] ease-in-out transform ${index === activeSlide
-                  ? "opacity-85 scale-100"
-                  : "opacity-0 scale-105 pointer-events-none"
-                }`}
-            >
-              {/* Ken Burns panning/zoom background slide loop */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <motion.img
-                src={banner.image}
-                alt={banner.title}
-                animate={index === activeSlide ? { scale: 1.08, y: [0, -4, 0] } : { scale: 1.0 }}
-                transition={{ duration: 6, ease: "easeInOut", repeat: Infinity, repeatType: "reverse" }}
-                className="w-full h-full object-cover filter brightness-[0.68] contrast-[1.05]"
-              />
+      {/* Hero Header Banner with Scrolling Image Marquee Background */}
+      <header className="relative w-full min-h-[60vh] md:min-h-[65vh] flex items-center pt-36 pb-16 px-6 overflow-hidden bg-black select-none">
+
+        {/* Infinite Scrolling Image Background Marquee */}
+        <div className="absolute inset-0 z-0 overflow-hidden bg-[#0A0A0A]">
+          <div className="flex w-max h-full items-center gap-0 animate-marquee whitespace-nowrap opacity-40">
+            {/* Set 1 */}
+            <div className="flex shrink-0 h-full items-center gap-0">
+              {heroMarqueeImages.map((src, idx) => (
+                <div key={`hero-marquee-1-${idx}`} className="relative h-full w-[260px] sm:w-[300px] md:w-[340px] shrink-0 overflow-hidden border-r border-black/30">
+                  <img src={src} alt="Creative Work" className="w-full h-full object-cover pointer-events-none" />
+                </div>
+              ))}
             </div>
-          ))}
-          {/* Ambient Overlay Gradients for Dynamic Dual Theme readability */}
-          <div className={`absolute inset-0 z-10 transition-colors duration-700 ${isDark
-              ? 'bg-gradient-to-r from-black/75 via-black/35 to-transparent'
-              : 'bg-gradient-to-r from-white/75 via-white/25 to-transparent'
-            }`} />
-          {/* Bottom vignette gradient */}
-          <div className={`absolute inset-x-0 bottom-0 h-32 z-10 transition-colors duration-700 ${isDark
-              ? 'bg-gradient-to-t from-[#0A0A0A] to-transparent'
-              : 'bg-gradient-to-t from-[#FDFDFD] to-transparent'
+            {/* Set 2 */}
+            <div className="flex shrink-0 h-full items-center gap-0">
+              {heroMarqueeImages.map((src, idx) => (
+                <div key={`hero-marquee-2-${idx}`} className="relative h-full w-[260px] sm:w-[300px] md:w-[340px] shrink-0 overflow-hidden border-r border-black/30">
+                  <img src={src} alt="Creative Work" className="w-full h-full object-cover pointer-events-none" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Vignette Overlays for Contrast */}
+          <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/45 to-transparent" />
+
+          {/* Bottom vignette */}
+          <div className={`absolute inset-x-0 bottom-0 h-28 z-10 transition-colors duration-700 ${isDark
+            ? 'bg-gradient-to-t from-[#0A0A0A] to-transparent'
+            : 'bg-gradient-to-t from-[#FDFDFD] to-transparent'
             }`} />
         </div>
 
-        <div className="max-w-7xl mx-auto w-full flex flex-col items-start relative z-20 -translate-y-2 sm:-translate-y-4">
-          {/* Top Creators Badge */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={`inline-flex items-center gap-3 px-5 py-2.5 border rounded-full mb-8 shadow-sm backdrop-blur-md transition-colors duration-500 ${isDark ? 'bg-white/5 border-white/10 text-[#F05E23]' : 'bg-white/50 border-slate-200/60 text-[#F05E23]'
-              }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-[#F05E23] animate-pulse"></span>
-            <span className="text-[0.7rem] font-bold tracking-[0.45em] uppercase border-none">Our Creations</span>
-          </motion.div>
-
+        <div className="max-w-7xl mx-auto w-full flex flex-col items-start relative z-20">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12 sm:gap-16 w-full">
-            <div className="space-y-8 max-w-3xl">
-              {/* Redesigned Bold Typography */}
+            <div className="space-y-6 max-w-4xl">
+              {/* Redesigned Typography to match 'Prerak Production9' */}
               <motion.h1
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 35 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                className={`text-[3.2rem] sm:text-[4.6rem] md:text-[5.5rem] lg:text-[6.2rem] font-black tracking-tighter leading-[0.95] transition-colors duration-500 drop-shadow-md italic uppercase`}
+                className="text-[3.2rem] sm:text-[4.6rem] md:text-[5.5rem] lg:text-[6.5rem] font-black tracking-tighter leading-[0.95] text-white drop-shadow-lg italic uppercase"
               >
-                <span className={isDark ? 'text-white' : 'text-[#111]'}>Woven for</span> <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F05E23] to-[#FF8C61]">Tomorrow.</span> <br />
-                <span className={isDark ? 'text-white/95' : 'text-[#222]'}>Crafted for </span>
-                <span className="text-[#F05E23]">Life.</span>
+                Synchronous <span className="text-[#F05E23]">Production</span>
               </motion.h1>
-            </div>
 
-            <div className="flex flex-col items-start lg:items-end gap-8 shrink-0">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className={`max-w-xs border-l-2 border-[#F05E23] pl-6 py-1 font-semibold leading-relaxed transition-colors duration-500 text-sm italic ${isDark ? 'text-white/60' : 'text-slate-700'
-                  }`}
+                transition={{ delay: 0.4 }}
+                className="border-l-2 border-[#F05E23] pl-6 py-1 font-semibold leading-relaxed text-sm italic text-white/70 max-w-md"
               >
                 Capturing high-authority visual narratives to drive brand alignment and massive audience conversions.
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="pt-4"
+              >
+                <button
+                  onClick={handleScrollToGallery}
+                  className="px-8 py-4 border border-white hover:border-[#F05E23] hover:bg-[#F05E23] text-white text-xs font-black uppercase tracking-widest rounded-full transition-all duration-300 active:scale-95 shadow-lg shadow-black/30 bg-black/20 backdrop-blur-sm"
+                >
+                  View Gallery
+                </button>
               </motion.div>
             </div>
           </div>
         </div>
-
-        {/* Banner Navigation & Sliders Indicators */}
-        <div className="absolute bottom-4 left-6 right-6 z-20 flex justify-between items-center max-w-7xl mx-auto w-[calc(100%-3rem)]">
-          <div className="flex gap-2.5">
-            {banners.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveSlide(index)}
-                className={`h-1.5 rounded-full transition-all duration-500 ${index === activeSlide
-                  ? "w-10 bg-[#F05E23]"
-                  : `w-2 ${isDark ? 'bg-white/20 hover:bg-white/40' : 'bg-black/20 hover:bg-black/40'}`
-                  }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-          <span className={`text-[10px] font-black tracking-widest uppercase ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
-            0{activeSlide + 1} / 0{banners.length}
-          </span>
-        </div>
       </header>
 
       {/* Infinite Logo Marquee Section */}
-      <section className="w-full relative z-10 pt-0 pb-6 mb-12 overflow-hidden">
+      <section className="w-full relative z-10 pt-0 pb-2 mb-4 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center gap-3">
           <Users className="w-4 h-4 text-[#F05E23]" />
           <span className="text-[0.65rem] font-black uppercase tracking-[0.3em] text-[#F05E23]">Brands Who Trust Synchronous</span>
@@ -271,59 +233,95 @@ export default function ProductionPage() {
       </section>
 
       {/* Production Categories Section */}
-      <section className="max-w-7xl mx-auto px-6 py-12 relative z-10">
-        <div className="flex items-center gap-3 mb-12">
+      <section className="max-w-7xl mx-auto px-6 py-8 relative z-10">
+
+        {/* Background Ambient Glow Orbs */}
+        <div className="absolute -top-10 -right-20 w-80 h-80 rounded-full bg-[#F05E23]/5 blur-[80px] pointer-events-none z-0" />
+        <div className="absolute -bottom-10 -left-20 w-96 h-96 rounded-full bg-[#FF8C61]/3 blur-[100px] pointer-events-none z-0" />
+
+        <div className="flex items-center gap-3 mb-16 relative z-10">
           <Layers className="w-5 h-5 text-[#F05E23]" />
           <h2 className="text-2xl font-black uppercase tracking-widest italic">Operational <span className="text-[#F05E23]">Categories</span></h2>
         </div>
 
         {categories.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {categories.map((cat, idx) => (
-              <motion.div
-                key={cat.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1, duration: 0.6 }}
-                className={`group rounded-[2.5rem] border overflow-hidden transition-all duration-500 flex flex-col justify-between ${isDark ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10' : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-2xl hover:shadow-[#F05E23]/5'
-                  }`}
-              >
-                <div className="relative h-60 w-full overflow-hidden bg-slate-900 flex items-center justify-center">
-                  {cat.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={cat.thumbnail} alt={cat.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-60" />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#F05E23]/20 to-[#FF8C61]/20 flex items-center justify-center">
-                      <Video className="w-16 h-16 text-[#F05E23]/40" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                  <span className="absolute bottom-6 left-6 text-[0.6rem] font-black uppercase tracking-widest text-[#F05E23] bg-[#F05E23]/10 border border-[#F05E23]/20 px-3 py-1 rounded-full">{cat.count} {cat.count === 1 ? 'Reel' : 'Reels'}</span>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 relative z-10">
+            {categories.map((cat, idx) => {
+              const displayNum = String(idx + 1).padStart(2, '0');
+              return (
+                <motion.div
+                  key={cat.name}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1, duration: 0.6 }}
+                  className={`group rounded-[2.5rem] border overflow-hidden transition-all duration-500 flex flex-col justify-between relative ${isDark
+                    ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10 hover:shadow-[0_20px_50px_rgba(240,94,35,0.06)]'
+                    : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-[0_20px_50px_rgba(240,94,35,0.08)]'
+                    }`}
+                >
+                  {/* Thumbnail Image Container */}
+                  <div className="relative h-64 w-full overflow-hidden bg-slate-950 flex items-center justify-center">
+                    {cat.thumbnail ? (
+                      <img
+                        src={cat.thumbnail}
+                        alt={cat.name}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-100"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#F05E23]/30 via-slate-950 to-[#FF8C61]/15 flex items-center justify-center">
+                        {/* Micro technical grid backdrop */}
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:14px_24px]" />
+                        <Video className="w-16 h-16 text-[#F05E23]/40 animate-pulse relative z-10" />
+                      </div>
+                    )}
 
-                <div className="p-8 flex flex-col justify-between flex-1">
-                  <div className="space-y-3 mb-8">
-                    <h3 className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white group-hover:text-[#F05E23] transition-colors">{cat.name}</h3>
-                    <p className="text-xs text-slate-500 dark:text-white/40 leading-relaxed font-bold uppercase tracking-wider">
-                      {cat.description || `Explore our premium visuals for ${cat.name.toLowerCase()} campaigns.`}
-                    </p>
+                    {/* Lighter bottom gradient overlay for badge readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                    {/* Floating Counter Badge with active dot indicator */}
+                    <span className="absolute bottom-6 left-6 text-[0.65rem] font-black uppercase tracking-widest text-white bg-black/60 backdrop-blur-md border border-white/10 px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${cat.count > 0 ? 'bg-[#F05E23] animate-pulse' : 'bg-slate-500'}`} />
+                      <span>{cat.count} {cat.count === 1 ? 'Reel' : 'Reels'}</span>
+                    </span>
                   </div>
 
-                  <Link
-                    href={`/production/${encodeURIComponent(cat.name)}`}
-                    className={`w-full py-4.5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-xs border transition-all ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]' : 'bg-[#111] border-[#111] text-white hover:bg-[#F05E23] hover:border-[#F05E23]'
-                      }`}
-                  >
-                    <span>Enter Showcase</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-                  </Link>
-                </div>
-              </motion.div>
-            ))}
+                  {/* Details Body */}
+                  <div className="p-8 flex flex-col justify-between flex-1">
+                    <div className="space-y-4 mb-8">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-[#F05E23] tracking-widest uppercase">
+                          {displayNum} /
+                        </span>
+                        <span className="h-[1px] w-8 bg-[#F05E23]/30" />
+                      </div>
+
+                      <h3 className={`text-2.5xl font-black uppercase tracking-tighter italic transition-colors group-hover:text-[#F05E23] ${isDark ? 'text-white' : 'text-slate-900'
+                        }`}>
+                        {cat.name}
+                      </h3>
+                    </div>
+
+                    <Link
+                      href={`/production/${encodeURIComponent(cat.name)}`}
+                      className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[10px] border transition-all ${isDark
+                        ? 'bg-white/5 border-white/10 text-white hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]'
+                        : 'bg-slate-900 border-slate-900 text-white hover:bg-[#F05E23] hover:border-[#F05E23]'
+                        }`}
+                    >
+                      <span>Enter Showcase</span>
+                      <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-2 transition-transform" />
+                    </Link>
+                  </div>
+
+                  {/* Micro gradient line at the bottom on hover */}
+                  <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-[#F05E23] to-[#FF8C61] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[3rem]">
+          <div className="text-center py-20 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[3rem] relative z-10">
             <Video className="w-12 h-12 mx-auto text-slate-300 dark:text-white/20 mb-4 animate-pulse" />
             <p className="text-sm font-black uppercase tracking-widest text-slate-400">No production campaigns deployed yet.</p>
             <p className="text-xs text-slate-500 dark:text-white/40 mt-1 uppercase tracking-widest">Please seed or add categories in the admin dashboard</p>
@@ -332,7 +330,7 @@ export default function ProductionPage() {
       </section>
 
       {/* Showcase Gallery Section */}
-      <section className="max-w-7xl mx-auto px-6 py-16 relative z-10 border-t border-black/5 dark:border-white/10 mt-16">
+      <section id="gallery" className="max-w-7xl mx-auto px-6 py-8 relative z-10 border-t border-black/5 dark:border-white/10 mt-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div className="flex items-center gap-3">
             <ImageIcon className="w-5 h-5 text-[#F05E23]" />

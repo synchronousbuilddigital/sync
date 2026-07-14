@@ -7,6 +7,7 @@ const ProductionItemSchema = new mongoose.Schema({
   thumbnailUrl: { type: String },
   description: { type: String },
   index: { type: Number, default: 0 },
+  isFeatured: { type: Boolean, default: false },
 }, { timestamps: true });
 
 ProductionItemSchema.index({ index: 1, createdAt: -1 });

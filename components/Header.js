@@ -92,7 +92,7 @@ export default function Header() {
         className={`w-full mx-auto flex items-center justify-between transition-all duration-500 ${isScrolled ? 'px-4 sm:px-6 h-12 sm:h-14' : 'px-6 sm:px-10 max-w-7xl h-16 sm:h-20'}`}
       >
         {/* Logo Section */}
-        <Link href="/" className="relative z-10 flex items-center group">
+        <Link href="/" className="relative z-10 flex items-center group shrink-0">
           <div className={`relative ${isScrolled ? 'w-8 h-8 sm:w-10 sm:h-10 border-0 shadow-none' : 'w-10 h-10 sm:w-12 sm:h-12 border shadow-sm'} mr-3 rounded-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center ${!isScrolled && (isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5')} ${isScrolled && (isDark ? 'bg-transparent' : 'bg-transparent')}`}>
             <Image
               src="/logo.png"
@@ -103,14 +103,19 @@ export default function Header() {
             />
           </div>
           <div className="flex flex-col">
-            <span className={`${isScrolled ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} font-black tracking-tighter leading-none uppercase transition-all duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Synchronous</span>
-            {!isScrolled && <span className="text-[0.6rem] font-bold tracking-[0.3em] text-[#F05E23] leading-none uppercase mt-1 transition-all duration-500 opacity-100">Digital Marketing</span>}
+            <span className={`${isScrolled ? 'text-sm sm:text-base md:text-lg' : 'text-base sm:text-lg md:text-xl'} font-black tracking-tighter leading-none uppercase transition-all duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Synchronous</span>
+            {!isScrolled && (
+              <>
+                <span className="hidden sm:inline-block text-[0.6rem] font-bold tracking-[0.3em] text-[#F05E23] leading-none uppercase mt-1 transition-all duration-500 opacity-100">Digital Marketing</span>
+                <span className="inline-block sm:hidden text-[0.55rem] font-bold tracking-[0.2em] text-[#F05E23] leading-none uppercase mt-0.5 transition-all duration-500 opacity-80">Digital</span>
+              </>
+            )}
             {isScrolled && <span className="text-[0.55rem] font-bold tracking-[0.2em] text-[#F05E23] leading-none uppercase mt-0.5 transition-all duration-500 opacity-80">Digital</span>}
           </div>
         </Link>
 
         {/* Desktop Navigation Link Pill */}
-        <div className={`hidden lg:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
+        <div className={`hidden xl:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
           {navLinks.map((link) => (
             <NavLink key={link.name} href={link.href} active={pathname === link.href} isDark={isDark} isScrolled={isScrolled}>
               {link.name}
@@ -124,7 +129,7 @@ export default function Header() {
         </div>
 
         {/* Action Button Section Area */}
-        <div className="hidden md:flex items-center gap-2 lg:gap-4">
+        <div className="hidden xl:flex items-center gap-2 lg:gap-4">
           {/* Notification Bell */}
           {user && (
             <div className="relative">
@@ -190,7 +195,7 @@ export default function Header() {
         </div>
 
         {/* Mobile Menu Toggle Area */}
-        <div className="md:hidden flex items-center gap-2">
+        <div className="xl:hidden flex items-center gap-1.5 sm:gap-2 shrink-0">
           {user && (
             <div className="relative">
               <button
@@ -235,7 +240,7 @@ export default function Header() {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="fixed top-16 sm:top-20 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-96 max-h-[75vh] bg-white dark:bg-[#0A0A0E] rounded-[2rem] shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden z-[1000] flex flex-col backdrop-blur-3xl"
+            className="fixed top-20 sm:top-24 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-96 max-h-[75vh] bg-white dark:bg-[#0A0A0E] rounded-[2rem] shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden z-[1000] flex flex-col backdrop-blur-3xl"
           >
             <div className="p-4 sm:p-5 bg-gradient-to-r from-[#F05E23] to-[#ff7e47] text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">

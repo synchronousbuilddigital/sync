@@ -20,6 +20,7 @@ const ProductionItemSchema = new mongoose.Schema({
   thumbnailUrl: String,
   description: String,
   index: Number,
+  isFeatured: Boolean,
 });
 
 const PartnerLogoSchema = new mongoose.Schema({
@@ -89,7 +90,8 @@ async function seedData() {
         videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         thumbnailUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=60",
         description: "A high-octane conceptual advertisement showcasing the responsive cushioning system of the Nike Air Max lineup.",
-        index: 1
+        index: 1,
+        isFeatured: true
       },
       {
         title: "Coca Cola - Shared Happiness",
@@ -105,7 +107,8 @@ async function seedData() {
         videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         thumbnailUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60",
         description: "Dynamic micro-video demonstrating the automated analytics framework of a modern SaaS builder application.",
-        index: 1
+        index: 1,
+        isFeatured: true
       },
       {
         title: "Synchronous Build - HQ Tour",

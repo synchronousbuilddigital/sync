@@ -291,7 +291,7 @@ export default function AdminDashboard() {
 
   const [isAddingReel, setIsAddingReel] = useState(false);
   const [editingReel, setEditingReel] = useState(null);
-  const [reelForm, setReelForm] = useState({ title: "", category: "", videoUrl: "", description: "", index: 0 });
+  const [reelForm, setReelForm] = useState({ title: "", category: "", videoUrl: "", description: "", index: 0, isFeatured: false });
   const [isUploading, setIsUploading] = useState(false);
 
   const [isAddingLogo, setIsAddingLogo] = useState(false);
@@ -823,7 +823,7 @@ export default function AdminDashboard() {
       setStatusMsg({ type: "success", msg: `Reel ${editingReel ? 'updated' : 'deployed'} successfully.` });
       setIsAddingReel(false);
       setEditingReel(null);
-      setReelForm({ title: "", category: "", videoUrl: "", description: "", index: 0 });
+      setReelForm({ title: "", category: "", videoUrl: "", description: "", index: 0, isFeatured: false });
     } else {
       setStatusMsg({ type: "error", msg: res.message });
     }
@@ -836,7 +836,8 @@ export default function AdminDashboard() {
       category: reel.category,
       videoUrl: reel.videoUrl,
       description: reel.description || "",
-      index: reel.index || 0
+      index: reel.index || 0,
+      isFeatured: reel.isFeatured || false
     });
     setIsAddingReel(true);
   };
@@ -2213,7 +2214,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => {
                     setEditingReel(null);
-                    setReelForm({ title: "", category: "", videoUrl: "", description: "", index: 0 });
+                    setReelForm({ title: "", category: "", videoUrl: "", description: "", index: 0, isFeatured: false });
                     setIsAddingReel(true);
                   }}
                   className="bg-[#F05E23] hover:bg-[#d9531e] text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[0.65rem] shadow-md transition-all flex items-center gap-2"
@@ -2229,6 +2230,7 @@ export default function AdminDashboard() {
                       <th className="py-3 px-4">Index</th>
                       <th className="py-3 px-4">Title</th>
                       <th className="py-3 px-4">Category</th>
+                      <th className="py-3 px-4">Featured</th>
                       <th className="py-3 px-4">Video Link</th>
                       <th className="py-3 px-4">Description</th>
                       <th className="py-3 px-4 text-right">Actions</th>
@@ -2241,6 +2243,15 @@ export default function AdminDashboard() {
                         <td className="py-3 px-4 text-slate-900 dark:text-white font-extrabold">{reel.title}</td>
                         <td className="py-3 px-4">
                           <span className="bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20 px-2 py-0.5 rounded text-[0.65rem] font-black uppercase tracking-widest">{reel.category}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {reel.isFeatured ? (
+                            <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2.5 py-1 rounded-xl text-[0.6rem] font-black uppercase tracking-widest inline-flex items-center gap-1">
+                              ★ Featured
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-[0.6rem] font-black uppercase tracking-widest">-</span>
+                          )}
                         </td>
                         <td className="py-3 px-4">
                           <a href={reel.videoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
@@ -2258,7 +2269,7 @@ export default function AdminDashboard() {
                     ))}
                     {(productionItems || []).length === 0 && (
                       <tr>
-                        <td colSpan="6" className="text-center py-8 text-slate-400 font-bold uppercase tracking-widest text-xs">No reels added yet.</td>
+                        <td colSpan="7" className="text-center py-8 text-slate-400 font-bold uppercase tracking-widest text-xs">No reels added yet.</td>
                       </tr>
                     )}
                   </tbody>
@@ -3886,9 +3897,23 @@ export default function AdminDashboard() {
                       </label>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index (optional)</label>
-                    <input type="number" value={reelForm.index} onChange={e => setReelForm(prev => ({ ...prev, index: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                  <div className="space-y-2 flex flex-col justify-between">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2">Sorting Index (optional)</label>
+                      <input type="number" value={reelForm.index} onChange={e => setReelForm(prev => ({ ...prev, index: parseInt(e.target.value) || 0 }))} placeholder="0" className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-xs text-slate-800 dark:text-white" />
+                    </div>
+                    <label className="flex items-center gap-3 cursor-pointer group p-3.5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 hover:border-[#F05E23]/40 transition-all select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={reelForm.isFeatured || false} 
+                        onChange={e => setReelForm(prev => ({ ...prev, isFeatured: e.target.checked }))}
+                        className="w-4 h-4 rounded text-[#F05E23] focus:ring-[#F05E23] border-slate-300 dark:border-white/10 cursor-pointer"
+                      />
+                      <div className="flex flex-col text-left">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-white group-hover:text-[#F05E23] transition-colors">Featured Production</span>
+                        <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wide">Highlight at the top of category page</span>
+                      </div>
+                    </label>
                   </div>
                 </div>
                 <div className="space-y-2">
