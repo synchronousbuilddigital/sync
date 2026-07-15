@@ -9,7 +9,6 @@ export default function LoadingScreen() {
     const pathname = usePathname();
     const auth = useAuth() || {};
     const { loading = false, dataLoading = false } = auth;
-    const [mounted, setMounted] = useState(false);
 
     const [isVisible, setIsVisible] = useState(true);
     const [isFading, setIsFading] = useState(false);
@@ -17,27 +16,32 @@ export default function LoadingScreen() {
     const [activeModule, setActiveModule] = useState(0);
     const [displayText, setDisplayText] = useState("");
     const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const fullText = "Initializing Services";
 
     useEffect(() => {
         setMounted(true);
-
         // Prevent the browser from automatically restoring the scroll position
         if ('scrollRestoration' in window.history) {
             window.history.scrollRestoration = 'manual';
         }
         window.scrollTo(0, 0);
 
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        if (scrollbarWidth > 0) {
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
+        }
         document.body.style.overflow = 'hidden';
 
-        // Smooth progress animation
+        // Smooth progress animation with gentle start to eliminate initial chunk pop
         const progressInterval = setInterval(() => {
             setProgress(prev => {
-                if (prev >= 92) return prev + Math.random() * 1;
-                if (prev >= 70) return prev + Math.random() * 3;
-                return prev + Math.random() * 12;
+                if (prev >= 92) return prev + Math.random() * 0.4;
+                if (prev >= 70) return prev + Math.random() * 1.2;
+                if (prev < 15) return prev + Math.random() * 2.5; // Small gentle ticks for initial progression
+                return prev + Math.random() * 3.5;
             });
-        }, 250);
+        }, 60);
 
         // Smooth module rotation
         const moduleInterval = setInterval(() => {
@@ -63,6 +67,7 @@ export default function LoadingScreen() {
             clearInterval(textInterval);
             clearTimeout(timer);
             document.body.style.overflow = 'unset';
+            document.body.style.paddingRight = '';
         };
     }, []);
 
@@ -72,6 +77,7 @@ export default function LoadingScreen() {
             setIsFading(true);
             const removeTimer = setTimeout(() => {
                 document.body.style.overflow = 'unset';
+                document.body.style.paddingRight = '';
                 window.scrollTo(0, 0);
                 setIsVisible(false);
             }, 700);
@@ -79,7 +85,7 @@ export default function LoadingScreen() {
         }
     }, [minTimeElapsed, loading, dataLoading, isVisible, isFading]);
 
-    if (!mounted || !isVisible) return null;
+    if (!isVisible) return null;
 
     const modules = [
         { name: "DESIGN", icon: Globe2, color: "#3B82F6", lightColor: "rgba(59, 130, 246, 0.1)", shadowColor: "rgba(59, 130, 246, 0.5)" },
@@ -164,11 +170,11 @@ export default function LoadingScreen() {
                 }
 
                 .smooth-glow { animation: smoothGlow 3s ease-in-out infinite; }
-                .float-in { animation: floatInSmooth 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-                .slide-in { animation: slideIn 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-                .slide-in-right { animation: slideInRight 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+                .float-in { animation: floatInSmooth 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+                .slide-in { animation: slideIn 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+                .slide-in-right { animation: slideInRight 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
                 .soft-pulse { animation: softPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-                .module-slide { animation: moduleSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+                .module-slide { animation: moduleSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
                 .fade-out { animation: fadeOutSmooth 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 
                 /* Smooth scrolling background */
@@ -185,8 +191,9 @@ export default function LoadingScreen() {
                 }
             `}</style>
 
-            <div 
-                className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center overflow-hidden transition-all duration-700 bg-[#0A0A0A] ${isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+            <div
+                className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center overflow-hidden transition-opacity duration-700 ease-out bg-[#0A0A0A] ${isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                style={{ contain: 'layout style paint', willChange: 'opacity, transform' }}
             >
                 {/* Premium Grid Background */}
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
@@ -200,9 +207,9 @@ export default function LoadingScreen() {
 
                 {/* Main Content */}
                 <div className="relative z-10 flex flex-col items-center justify-center gap-8 px-6">
-                    
+
                     {/* Logo/Brand Section */}
-                    <div className="float-in flex flex-col items-center gap-4 mb-4">
+                    <div className="flex flex-col items-center gap-4 mb-4">
                         <div className="relative">
                             <div className="absolute -inset-6 bg-gradient-to-r from-orange-500/20 to-blue-500/20 rounded-2xl blur-2xl opacity-60"></div>
                             <div className="relative backdrop-blur-sm bg-white/5 border border-white/10 rounded-2xl px-8 py-4">
@@ -211,7 +218,7 @@ export default function LoadingScreen() {
                                 </h1>
                             </div>
                         </div>
-                        <p className="text-xs md:text-sm tracking-[0.25em] text-orange-400/70 font-bold uppercase slide-in" style={{ animationDelay: '0.15s' }}>
+                        <p className="text-xs md:text-sm tracking-[0.25em] text-orange-400/70 font-bold uppercase">
                             BUILD DIGITAL
                         </p>
                     </div>
@@ -221,35 +228,34 @@ export default function LoadingScreen() {
                         {modules.map((module, index) => {
                             const Icon = module.icon;
                             const isActive = activeModule === index;
-                            
+
                             // Staggered rotation for the row
                             const positionData = [
                                 { rotate: '-4deg', skewY: '1deg' },
                                 { rotate: '0deg', skewY: '0deg' },
                                 { rotate: '4deg', skewY: '-1deg' }
                             ];
-                            
+
                             const position = positionData[index];
-                            
+
                             return (
                                 <div
                                     key={module.name}
-                                    className="module-slide relative shrink-0 sm:shrink"
+                                    className="relative shrink-0 sm:shrink"
                                     style={{
-                                        animationDelay: `${0.2 + index * 0.1}s`,
                                         width: 'clamp(95px, 30vw, 300px)',
                                         height: 'clamp(100px, 20vh, 170px)'
                                     }}
                                 >
-                                    <div className="relative group w-full h-full" style={{ 
+                                    <div className="relative group w-full h-full" style={{
                                         transform: `perspective(800px) rotateY(${isActive ? '0deg' : '-5deg'}) rotateX(${isActive ? '0deg' : '2deg'}) rotateZ(${position.rotate}) skewY(${position.skewY})`,
                                         transformStyle: 'preserve-3d',
-                                        transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                                        transition: 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
                                     }}>
                                         {/* Glow Background */}
-                                        <div 
-                                            className={`absolute inset-0 rounded-2xl transition-all duration-500`}
-                                            style={{ 
+                                        <div
+                                            className={`absolute inset-0 rounded-2xl transition-opacity duration-500`}
+                                            style={{
                                                 backgroundColor: module.lightColor,
                                                 boxShadow: isActive ? `0 20px 60px ${module.shadowColor}, 0 0 60px ${module.shadowColor}` : `0 10px 30px rgba(0, 0, 0, 0.3)`,
                                                 filter: isActive ? 'blur(8px)' : 'blur(6px)',
@@ -258,13 +264,13 @@ export default function LoadingScreen() {
                                         ></div>
 
                                         {/* Premium Card with Border */}
-                                        <div 
-                                            className="relative w-full h-full rounded-2xl p-4 sm:p-6 flex flex-col items-start justify-start transition-all duration-500 overflow-hidden group cursor-pointer"
+                                        <div
+                                            className="relative w-full h-full rounded-2xl p-4 sm:p-6 flex flex-col items-start justify-start transition-colors duration-500 overflow-hidden group cursor-pointer"
                                             style={{
                                                 background: `linear-gradient(135deg, ${module.color}cc 0%, ${module.color}88 100%)`,
                                                 border: `2px solid ${module.color}44`,
-                                                boxShadow: isActive 
-                                                    ? `0 25px 50px ${module.shadowColor}, inset 0 0 30px rgba(255, 255, 255, 0.15), 0 0 40px ${module.shadowColor}` 
+                                                boxShadow: isActive
+                                                    ? `0 25px 50px ${module.shadowColor}, inset 0 0 30px rgba(255, 255, 255, 0.15), 0 0 40px ${module.shadowColor}`
                                                     : `0 15px 35px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.08)`,
                                                 backdropFilter: 'blur(10px)',
                                                 transform: isActive ? 'scale(1.02) translateZ(20px)' : 'scale(1) translateZ(0)',
@@ -273,9 +279,9 @@ export default function LoadingScreen() {
                                         >
                                             {/* Icon */}
                                             <div className="relative z-10 mb-2 sm:mb-3">
-                                                <Icon 
+                                                <Icon
                                                     className="w-8 h-8 sm:w-10 sm:h-10 transition-all duration-500 drop-shadow-lg text-white"
-                                                    style={{ 
+                                                    style={{
                                                         filter: `drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))`,
                                                         transform: isActive ? 'scale(1.15) rotate(0deg)' : 'scale(1) rotate(-5deg)',
                                                         transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
@@ -295,58 +301,64 @@ export default function LoadingScreen() {
                     </div>
 
                     {/* Advanced Progress Indicator */}
-                    <div className="float-in flex flex-col items-center gap-8 w-full max-w-xs" style={{ animationDelay: '0.3s' }}>
-                        {/* Circular Progress with Gradient */}
-                        <div className="relative w-36 h-36">
-                            <svg className="w-full h-full transform -rotate-90 drop-shadow-lg" viewBox="0 0 160 160">
-                                {/* Outer glow circle */}
-                                <circle 
-                                    cx="80" 
-                                    cy="80" 
-                                    r="72" 
-                                    fill="none" 
-                                    stroke="rgba(255, 255, 255, 0.05)" 
-                                    strokeWidth="1"
-                                />
-                                {/* Background circle */}
-                                <circle 
-                                    cx="80" 
-                                    cy="80" 
-                                    r="65" 
-                                    fill="none" 
-                                    stroke="rgba(255, 255, 255, 0.1)" 
-                                    strokeWidth="2"
-                                />
-                                {/* Progress circle - smooth animation */}
-                                <circle 
-                                    cx="80" 
-                                    cy="80" 
-                                    r="65" 
-                                    fill="none" 
-                                    stroke="url(#progressGradient)" 
-                                    strokeWidth="3"
-                                    strokeDasharray={`${408.41}`}
-                                    strokeDashoffset={`${408.41 - (408.41 * progress / 100)}`}
-                                    strokeLinecap="round"
-                                    style={{ 
-                                        transition: 'stroke-dashoffset 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                                        filter: `drop-shadow(0 0 ${Math.min(20, progress / 5)}px rgba(240, 94, 35, 0.5))`
-                                    }}
-                                />
-                                <defs>
-                                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style={{ stopColor: '#F05E23', stopOpacity: 1 }} />
-                                        <stop offset="50%" style={{ stopColor: '#8B5CF6', stopOpacity: 1 }} />
-                                        <stop offset="100%" style={{ stopColor: '#3B82F6', stopOpacity: 1 }} />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                            {/* Center Content */}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-4xl font-black text-white drop-shadow-lg">{Math.round(progress)}</span>
-                                <span className="text-xs text-white/60 tracking-widest mt-1">%</span>
+                    <div className="flex flex-col items-center gap-8 w-full max-w-xs">
+                        {/* Circular Progress with Gradient - Client Only to prevent SSR frozen 0% and hydration double appearance */}
+                        {mounted ? (
+                            <div className="relative w-36 h-36">
+                                <svg className="w-full h-full transform -rotate-90 drop-shadow-lg" viewBox="0 0 160 160">
+                                    {/* Outer glow circle */}
+                                    <circle
+                                        cx="80"
+                                        cy="80"
+                                        r="72"
+                                        fill="none"
+                                        stroke="rgba(255, 255, 255, 0.05)"
+                                        strokeWidth="1"
+                                    />
+                                    {/* Background circle */}
+                                    <circle
+                                        cx="80"
+                                        cy="80"
+                                        r="65"
+                                        fill="none"
+                                        stroke="rgba(255, 255, 255, 0.1)"
+                                        strokeWidth="2"
+                                    />
+                                    {/* Progress circle - smooth animation */}
+                                    <circle
+                                        cx="80"
+                                        cy="80"
+                                        r="65"
+                                        fill="none"
+                                        stroke="url(#progressGradient)"
+                                        strokeWidth="3"
+                                        strokeDasharray={`${408.41}`}
+                                        strokeDashoffset={`${408.41 - (408.41 * progress / 100)}`}
+                                        strokeLinecap="round"
+                                        style={{
+                                            transition: 'stroke-dashoffset 0.12s linear',
+                                            filter: `drop-shadow(0 0 ${Math.min(20, progress / 5)}px rgba(240, 94, 35, 0.5))`
+                                        }}
+                                    />
+                                    <defs>
+                                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style={{ stopColor: '#F05E23', stopOpacity: 1 }} />
+                                            <stop offset="50%" style={{ stopColor: '#8B5CF6', stopOpacity: 1 }} />
+                                            <stop offset="100%" style={{ stopColor: '#3B82F6', stopOpacity: 1 }} />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                {/* Center Content */}
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span className="text-4xl font-black text-white drop-shadow-lg">{Math.round(progress)}</span>
+                                    <span className="text-xs text-white/60 tracking-widest mt-1">%</span>
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="relative w-36 h-36 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-full border-2 border-white/10 border-t-orange-500 animate-spin" />
+                            </div>
+                        )}
 
                         {/* Status Indicator */}
                         <div className="flex flex-col items-center gap-4 w-full">
@@ -376,8 +388,8 @@ export default function LoadingScreen() {
                 </div>
 
                 {/* Corner Accent - Subtle */}
-                <div className="absolute top-8 left-8 w-24 h-24 border border-white/10 rounded-2xl pointer-events-none slide-in" style={{ animationDelay: '0.4s' }}></div>
-                <div className="absolute bottom-8 right-8 w-20 h-20 border border-white/10 rounded-full pointer-events-none slide-in-right" style={{ animationDelay: '0.5s' }}></div>
+                <div className="absolute top-8 left-8 w-24 h-24 border border-white/10 rounded-2xl pointer-events-none"></div>
+                <div className="absolute bottom-8 right-8 w-20 h-20 border border-white/10 rounded-full pointer-events-none"></div>
             </div>
         </>
     );
