@@ -73,164 +73,160 @@ export default function Header() {
 
   return (
     <header className={`fixed left-0 right-0 z-[60] transition-all duration-500 flex justify-center w-full ${isScrolled
-        ? 'top-4 px-4'
-        : 'top-0 px-0'
+      ? 'top-4 px-4'
+      : 'top-0 px-0'
       }`}>
-      
+
       <div className={`transition-all duration-500 w-full ${isScrolled
-        ? isDark 
-            ? 'bg-[#0A0A0A]/85 backdrop-blur-md border border-white/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] max-w-6xl py-2'
-            : 'bg-white/85 backdrop-blur-md border border-black/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)] max-w-6xl py-2'
+        ? isDark
+          ? 'bg-[#0A0A0A]/85 backdrop-blur-md border border-white/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] max-w-6xl py-2'
+          : 'bg-white/85 backdrop-blur-md border border-black/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)] max-w-6xl py-2'
         : isDark
-            ? 'bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
-            : 'bg-[#F9F9F9]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
-      }`}>
-      
-      <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className={`w-full mx-auto flex items-center justify-between transition-all duration-500 ${isScrolled ? 'px-4 sm:px-6 h-12 sm:h-14' : 'px-6 sm:px-10 max-w-7xl h-16 sm:h-20'}`}
-      >
-        {/* Logo Section */}
-        <Link href="/" className="relative z-10 flex items-center group shrink-0">
-          <div className={`relative ${isScrolled ? 'w-8 h-8 sm:w-10 sm:h-10 border-0 shadow-none' : 'w-10 h-10 sm:w-12 sm:h-12 border shadow-sm'} mr-3 rounded-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center ${!isScrolled && (isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5')} ${isScrolled && (isDark ? 'bg-transparent' : 'bg-transparent')}`}>
-            <Image
-              src="/logo.png"
-              alt="Sync Logo"
-              width={isScrolled ? 28 : 32}
-              height={isScrolled ? 28 : 32}
-              className="object-contain transition-all duration-500"
-            />
-          </div>
-          <div className="flex flex-col">
-            <span className={`${isScrolled ? 'text-sm sm:text-base md:text-lg' : 'text-base sm:text-lg md:text-xl'} font-black tracking-tighter leading-none uppercase transition-all duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Synchronous</span>
-            {!isScrolled && (
-              <>
-                <span className="hidden sm:inline-block text-[0.6rem] font-bold tracking-[0.3em] text-[#F05E23] leading-none uppercase mt-1 transition-all duration-500 opacity-100">Digital Marketing</span>
-                <span className="inline-block sm:hidden text-[0.55rem] font-bold tracking-[0.2em] text-[#F05E23] leading-none uppercase mt-0.5 transition-all duration-500 opacity-80">Digital</span>
-              </>
+          ? 'bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
+          : 'bg-[#F9F9F9]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
+        }`}>
+
+        <motion.nav
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className={`w-full mx-auto flex items-center justify-between transition-all duration-500 ${isScrolled ? 'px-4 sm:px-6 h-12 sm:h-14' : 'px-6 sm:px-10 max-w-7xl h-16 sm:h-20'}`}
+        >
+          {/* Logo Section */}
+          <Link href="/" className="relative z-10 flex items-center group shrink-0 mr-2 sm:mr-3 xl:mr-4">
+            <div className={`relative ${isScrolled ? 'w-8 h-8 sm:w-10 sm:h-10 border-0 shadow-none' : 'w-10 h-10 sm:w-12 sm:h-12 border shadow-sm'} mr-3 rounded-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center ${!isScrolled && (isDark ? 'bg-[#111] border-white/10' : 'bg-white border-black/5')} ${isScrolled && (isDark ? 'bg-transparent' : 'bg-transparent')}`}>
+              <Image
+                src="/logo.png"
+                alt="Sync Logo"
+                width={isScrolled ? 28 : 32}
+                height={isScrolled ? 28 : 32}
+                className="object-contain transition-all duration-500"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className={`${isScrolled ? 'text-sm sm:text-base md:text-lg' : 'text-base sm:text-lg md:text-xl'} font-black tracking-tighter leading-none uppercase transition-all duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>Synchronous</span>
+              {!isScrolled && (
+                <>
+                  <span className="hidden sm:inline-block text-[0.6rem] font-bold tracking-[0.3em] text-[#F05E23] leading-none uppercase mt-1 transition-all duration-500 opacity-100">Digital Marketing</span>
+                  <span className="inline-block sm:hidden text-[0.55rem] font-bold tracking-[0.2em] text-[#F05E23] leading-none uppercase mt-0.5 transition-all duration-500 opacity-80">Digital</span>
+                </>
+              )}
+              {isScrolled && <span className="text-[0.55rem] font-bold tracking-[0.2em] text-[#F05E23] leading-none uppercase mt-0.5 transition-all duration-500 opacity-80">Digital</span>}
+            </div>
+          </Link>
+
+          {/* Desktop Navigation Link Pill */}
+          <div className={`hidden xl:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'} mx-1 xl:mx-1.5`}>
+            {navLinks.map((link) => (
+              <NavLink key={link.name} href={link.href} active={pathname === link.href} isDark={isDark} isScrolled={isScrolled}>
+                {link.name}
+              </NavLink>
+            ))}
+            {user && (
+              <NavLink href={user.role === 'admin' ? '/admin' : (user.role === 'client' ? '/client' : (user.role === 'brand_manager' ? '/brand' : '/intern'))} active={pathname === '/admin' || pathname === '/intern' || pathname === '/client' || pathname === '/brand'} isDark={isDark} isScrolled={isScrolled}>
+                Dashboard
+              </NavLink>
             )}
-            {isScrolled && <span className="text-[0.55rem] font-bold tracking-[0.2em] text-[#F05E23] leading-none uppercase mt-0.5 transition-all duration-500 opacity-80">Digital</span>}
           </div>
-        </Link>
 
-        {/* Desktop Navigation Link Pill */}
-        <div className={`hidden xl:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
-          {navLinks.map((link) => (
-            <NavLink key={link.name} href={link.href} active={pathname === link.href} isDark={isDark} isScrolled={isScrolled}>
-              {link.name}
-            </NavLink>
-          ))}
-          {user && (
-            <NavLink href={user.role === 'admin' ? '/admin' : (user.role === 'client' ? '/client' : (user.role === 'brand_manager' ? '/brand' : '/intern'))} active={pathname === '/admin' || pathname === '/intern' || pathname === '/client' || pathname === '/brand'} isDark={isDark} isScrolled={isScrolled}>
-              Dashboard
-            </NavLink>
-          )}
-        </div>
+          {/* Action Button Section Area */}
+          <div className="hidden xl:flex items-center gap-2.5 lg:gap-4 ml-1.5 xl:ml-2">
+            {/* Notification Bell */}
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  title="Notifications"
+                  className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
+                      ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
+                      : 'bg-black/5 border-black/5 text-slate-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
+                    }`}
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadNotifCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#F05E23] text-white text-[0.55rem] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-[#F05E23]/50">
+                      {unreadNotifCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
 
-        {/* Action Button Section Area */}
-        <div className="hidden xl:flex items-center gap-2 lg:gap-4">
-          {/* Notification Bell */}
-          {user && (
-            <div className="relative">
-              <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                title="Notifications"
-                className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${
-                  isDark
-                    ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
-                    : 'bg-black/5 border-black/5 text-slate-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
-                }`}
-              >
-                <Bell className="w-4 h-4" />
-                {unreadNotifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#F05E23] text-white text-[0.55rem] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-[#F05E23]/50">
-                    {unreadNotifCount}
-                  </span>
-                )}
-              </button>
-            </div>
-          )}
-
-          {/* Dark/Light Mode Toggle */}
-          <button
-            onClick={toggleTheme}
-            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${
-              isDark
-                ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
-                : 'bg-black/5 border-black/5 text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
-            }`}
-          >
-            {isDark
-              ? <Sun className="w-4 h-4 transition-transform group-hover:rotate-45 duration-300" />
-              : <Moon className="w-4 h-4 transition-transform group-hover:-rotate-12 duration-300" />
-            }
-          </button>
-          {!user ? (
-            <Link
-              href="/login"
-              className={`relative overflow-hidden ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-6 py-3 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-black/5 border-black/5 text-[#111] hover:bg-black/10'}`}
-            >
-              Login
-            </Link>
-          ) : (
+            {/* Dark/Light Mode Toggle */}
             <button
-              onClick={logout}
-              className={`relative overflow-hidden ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-6 py-3 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400' : 'bg-black/5 border-black/5 text-[#111] hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-600'}`}
-            >
-              Logout
-            </button>
-          )}
-          
-          <a
-            href="https://wa.me/919161391566?text=I'd like to start growing my business with Synchronous Build Digital."
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`relative group overflow-hidden ${isScrolled ? 'px-5 py-2.5 rounded-full' : 'px-8 py-3.5 rounded-xl text-xs'} shadow-lg transition-all hover:scale-[1.03] active:scale-95 border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
-          >
-            <span className={`font-bold uppercase tracking-widest relative z-10 transition-all duration-500 ${isScrolled ? 'text-[0.65rem]' : 'text-xs'} ${isDark ? 'text-[#111]' : 'text-white'}`}>Start Growing</span>
-            <div className={`absolute top-0 right-0 ${isScrolled ? 'w-3 h-3' : 'w-4 h-4'} bg-[#F05E23] mask-triangle z-20 transition-all duration-500`}></div>
-          </a>
-        </div>
-
-        {/* Mobile Menu Toggle Area */}
-        <div className="xl:hidden flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {user && (
-            <div className="relative">
-              <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${
-                  isDark ? 'text-white bg-white/5' : 'text-slate-700 bg-black/5'
+              onClick={toggleTheme}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
+                  ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
+                  : 'bg-black/5 border-black/5 text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
                 }`}
+            >
+              {isDark
+                ? <Sun className="w-4 h-4 transition-transform group-hover:rotate-45 duration-300" />
+                : <Moon className="w-4 h-4 transition-transform group-hover:-rotate-12 duration-300" />
+              }
+            </button>
+            {!user ? (
+              <Link
+                href="/login"
+                className={`relative overflow-hidden ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-6 py-3 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-black/5 border-black/5 text-[#111] hover:bg-black/10'}`}
               >
-                <Bell className="w-5 h-5" />
-                {unreadNotifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#F05E23] text-white text-[0.55rem] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-[#F05E23]/50">
-                    {unreadNotifCount}
-                  </span>
-                )}
+                Login
+              </Link>
+            ) : (
+              <button
+                onClick={logout}
+                className={`relative overflow-hidden ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-6 py-3 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400' : 'bg-black/5 border-black/5 text-[#111] hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-600'}`}
+              >
+                Logout
               </button>
-            </div>
-          )}
-          <button
-            onClick={toggleTheme}
-            className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${
-              isDark
-                ? 'text-amber-400 bg-amber-400/10'
-                : 'text-slate-600 bg-black/5'
-            }`}
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-          <button
-            className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark ? 'text-white bg-white/5' : 'text-[#111] bg-black/5'}`}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} /> : <Menu className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} />}
-          </button>
-        </div>
-      </motion.nav>
+            )}
+
+            <a
+              href="https://wa.me/919161391566?text=I'd like to start growing my business with Synchronous Build Digital."
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`relative group overflow-hidden ${isScrolled ? 'px-5 py-2.5 rounded-full' : 'px-8 py-3.5 rounded-xl text-xs'} shadow-lg transition-all hover:scale-[1.03] active:scale-95 border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
+            >
+              <span className={`font-bold uppercase tracking-widest relative z-10 transition-all duration-500 ${isScrolled ? 'text-[0.65rem]' : 'text-xs'} ${isDark ? 'text-[#111]' : 'text-white'}`}>Start Growing</span>
+              <div className={`absolute top-0 right-0 ${isScrolled ? 'w-3 h-3' : 'w-4 h-4'} bg-[#F05E23] mask-triangle z-20 transition-all duration-500`}></div>
+            </a>
+          </div>
+
+          {/* Mobile Menu Toggle Area */}
+          <div className="xl:hidden flex items-center gap-2 sm:gap-3 shrink-0">
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark ? 'text-white bg-white/5' : 'text-slate-700 bg-black/5'
+                    }`}
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadNotifCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#F05E23] text-white text-[0.55rem] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-[#F05E23]/50">
+                      {unreadNotifCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
+            <button
+              onClick={toggleTheme}
+              className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark
+                  ? 'text-amber-400 bg-amber-400/10'
+                  : 'text-slate-600 bg-black/5'
+                }`}
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            <button
+              className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark ? 'text-white bg-white/5' : 'text-[#111] bg-black/5'}`}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} /> : <Menu className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} />}
+            </button>
+          </div>
+        </motion.nav>
       </div>
 
       {/* Glassmorphic Notification Dropdown Panel */}
@@ -275,9 +271,8 @@ export default function Header() {
                   <div
                     key={n.id}
                     onClick={() => handleNotifClick(n)}
-                    className={`p-3.5 sm:p-4 rounded-2xl transition-all cursor-pointer flex items-start gap-3 ${
-                      n.unread ? "bg-[#F05E23]/10 dark:bg-[#F05E23]/15 border border-[#F05E23]/20" : "hover:bg-slate-50 dark:hover:bg-white/5"
-                    }`}
+                    className={`p-3.5 sm:p-4 rounded-2xl transition-all cursor-pointer flex items-start gap-3 ${n.unread ? "bg-[#F05E23]/10 dark:bg-[#F05E23]/15 border border-[#F05E23]/20" : "hover:bg-slate-50 dark:hover:bg-white/5"
+                      }`}
                   >
                     <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${n.type === 'task' ? 'bg-amber-500/10 text-amber-500' : n.type === 'link' ? 'bg-blue-500/10 text-blue-500' : n.type === 'chat' ? 'bg-purple-500/10 text-purple-500' : 'bg-green-500/10 text-green-500'}`}>
                       {n.type === 'task' ? <Activity className="w-4 h-4" /> : n.type === 'link' ? <ExternalLink className="w-4 h-4" /> : n.type === 'chat' ? <MessageSquare className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
@@ -349,9 +344,8 @@ export default function Header() {
                   <Link
                     href={user.role === 'admin' ? '/admin' : (user.role === 'client' ? '/client' : (user.role === 'brand_manager' ? '/brand' : '/intern'))}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`text-4xl sm:text-6xl md:text-7xl font-black tracking-[-0.05em] leading-[0.85] transition-all hover:tracking-[-0.03em] ${
-                      pathname === '/admin' || pathname === '/intern' || pathname === '/client' || pathname === '/brand' ? 'text-[#F05E23]' : `${isDark ? 'text-white/40 hover:text-white' : 'text-[#111]/40 hover:text-[#111]'} hover:text-[#F05E23]`
-                    }`}
+                    className={`text-4xl sm:text-6xl md:text-7xl font-black tracking-[-0.05em] leading-[0.85] transition-all hover:tracking-[-0.03em] ${pathname === '/admin' || pathname === '/intern' || pathname === '/client' || pathname === '/brand' ? 'text-[#F05E23]' : `${isDark ? 'text-white/40 hover:text-white' : 'text-[#111]/40 hover:text-[#111]'} hover:text-[#F05E23]`
+                      }`}
                   >
                     Dashboard
                   </Link>
@@ -375,9 +369,8 @@ export default function Header() {
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-sm border ${
-                    isDark ? 'bg-white/10 text-white border-white/10 hover:bg-white/20' : 'bg-black/5 text-[#111] border-black/10 hover:bg-black/10'
-                  }`}
+                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-sm border ${isDark ? 'bg-white/10 text-white border-white/10 hover:bg-white/20' : 'bg-black/5 text-[#111] border-black/10 hover:bg-black/10'
+                    }`}
                 >
                   <span>Login / Portal Access</span>
                 </Link>
@@ -387,9 +380,8 @@ export default function Header() {
                     logout();
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-sm border ${
-                    isDark ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-600 border-red-200'
-                  }`}
+                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-sm border ${isDark ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-600 border-red-200'
+                    }`}
                 >
                   <span>Logout</span>
                 </button>

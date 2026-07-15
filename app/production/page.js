@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useAuth } from "../../components/AuthContext";
 import { useTheme } from "../../components/ThemeContext";
@@ -14,14 +14,35 @@ export default function ProductionPage() {
   const [filterType, setFilterType] = useState("all");
   const [lightboxItem, setLightboxItem] = useState(null);
 
-  const heroMarqueeImages = [
-    "/web_hero_1.png",
-    "/web_hero_2.png",
-    "/web_hero_3.png",
-    "/web_hero_4.png",
-    "/web_hero_5.png",
-    "/web_hero_6.png",
+  const userBannerImages = [
+    "/production_banner_user.png",
+    "/production_banner_user_team.jpg",
+    "/production_banner_user_marketing.jpg"
   ];
+
+  const [activeBannerIdx, setActiveBannerIdx] = useState(0);
+
+  const slideVariants = {
+    enter: {
+      x: "100%",
+      opacity: 0,
+    },
+    center: {
+      x: 0,
+      opacity: 0.95,
+    },
+    exit: {
+      x: "-100%",
+      opacity: 0,
+    },
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveBannerIdx((prev) => (prev + 1) % userBannerImages.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleScrollToGallery = () => {
     document.getElementById("gallery")?.scrollIntoView({ behavior: "smooth" });
@@ -116,29 +137,27 @@ export default function ProductionPage() {
       {/* Hero Header Banner with Scrolling Image Marquee Background */}
       <header className="relative w-full min-h-[60vh] md:min-h-[65vh] flex items-center pt-36 pb-16 px-6 overflow-hidden bg-black select-none">
 
-        {/* Infinite Scrolling Image Background Marquee */}
-        <div className="absolute inset-0 z-0 overflow-hidden bg-[#0A0A0A]">
-          <div className="flex w-max h-full items-center gap-0 animate-marquee whitespace-nowrap opacity-40">
-            {/* Set 1 */}
-            <div className="flex shrink-0 h-full items-center gap-0">
-              {heroMarqueeImages.map((src, idx) => (
-                <div key={`hero-marquee-1-${idx}`} className="relative h-full w-[260px] sm:w-[300px] md:w-[340px] shrink-0 overflow-hidden border-r border-black/30">
-                  <img src={src} alt="Creative Work" className="w-full h-full object-cover pointer-events-none" />
-                </div>
-              ))}
-            </div>
-            {/* Set 2 */}
-            <div className="flex shrink-0 h-full items-center gap-0">
-              {heroMarqueeImages.map((src, idx) => (
-                <div key={`hero-marquee-2-${idx}`} className="relative h-full w-[260px] sm:w-[300px] md:w-[340px] shrink-0 overflow-hidden border-r border-black/30">
-                  <img src={src} alt="Creative Work" className="w-full h-full object-cover pointer-events-none" />
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Cinematic Slowly Changing Background Slideshow */}
+        <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
+          <AnimatePresence initial={false}>
+            <motion.img
+              key={activeBannerIdx}
+              src={userBannerImages[activeBannerIdx]}
+              alt="Digital Connection Network Banner"
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { duration: 1.5, ease: [0.25, 1, 0.5, 1] },
+                opacity: { duration: 1.2, ease: "easeInOut" }
+              }}
+              className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transform-gpu"
+            />
+          </AnimatePresence>
 
-          {/* Vignette Overlays for Contrast */}
-          <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/45 to-transparent" />
+          {/* Minimal Vignette Overlays for Maximum Contrast & Clarity (very light to keep images 100% unblurred and clear) */}
+          <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/60 via-black/5 to-transparent" />
 
           {/* Bottom vignette */}
           <div className={`absolute inset-x-0 bottom-0 h-28 z-10 transition-colors duration-700 ${isDark
@@ -255,66 +274,69 @@ export default function ProductionPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.1, duration: 0.6 }}
-                  className={`group rounded-[2.5rem] border overflow-hidden transition-all duration-500 flex flex-col justify-between relative ${isDark
-                    ? 'bg-white/5 border-white/5 hover:border-[#F05E23]/30 hover:bg-white/10 hover:shadow-[0_20px_50px_rgba(240,94,35,0.06)]'
-                    : 'bg-white border-slate-100 hover:border-[#F05E23]/30 hover:shadow-[0_20px_50px_rgba(240,94,35,0.08)]'
-                    }`}
+                  className="group relative rounded-[2.5rem] border overflow-hidden transition-all duration-500 h-[420px] w-full flex flex-col justify-end cursor-pointer bg-slate-950 border-white/5 shadow-2xl hover:border-[#F05E23]/30"
                 >
-                  {/* Thumbnail Image Container */}
-                  <div className="relative h-64 w-full overflow-hidden bg-slate-950 flex items-center justify-center">
+                  {/* Category Thumbnail Background */}
+                  <div className="absolute inset-0 w-full h-full overflow-hidden bg-slate-950 z-0">
                     {cat.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={cat.thumbnail}
                         alt={cat.name}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-100"
+                        className="w-full h-full object-cover transition-transform duration-700 opacity-80 group-hover:scale-110 group-hover:opacity-60"
                       />
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-[#F05E23]/30 via-slate-950 to-[#FF8C61]/15 flex items-center justify-center">
-                        {/* Micro technical grid backdrop */}
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:14px_24px]" />
-                        <Video className="w-16 h-16 text-[#F05E23]/40 animate-pulse relative z-10" />
+                        <Video className="w-16 h-16 text-[#F05E23]/40 animate-pulse" />
                       </div>
                     )}
 
-                    {/* Lighter bottom gradient overlay for badge readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    {/* Dark gradient vignette */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-500" />
+                  </div>
 
-                    {/* Floating Counter Badge with active dot indicator */}
-                    <span className="absolute bottom-6 left-6 text-[0.65rem] font-black uppercase tracking-widest text-white bg-black/60 backdrop-blur-md border border-white/10 px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${cat.count > 0 ? 'bg-[#F05E23] animate-pulse' : 'bg-slate-500'}`} />
+                  {/* Top-Right Floating Reels Counter Badge */}
+                  <div className="absolute top-6 right-6 z-20">
+                    <span className="text-[0.6rem] font-black uppercase tracking-widest text-white bg-black/60 backdrop-blur-md border border-white/10 px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${cat.count > 0 ? 'bg-[#F05E23] animate-pulse' : 'bg-slate-500'}`} />
                       <span>{cat.count} {cat.count === 1 ? 'Reel' : 'Reels'}</span>
                     </span>
                   </div>
 
-                  {/* Details Body */}
-                  <div className="p-8 flex flex-col justify-between flex-1">
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-[#F05E23] tracking-widest uppercase">
-                          {displayNum} /
-                        </span>
-                        <span className="h-[1px] w-8 bg-[#F05E23]/30" />
-                      </div>
-
-                      <h3 className={`text-2.5xl font-black uppercase tracking-tighter italic transition-colors group-hover:text-[#F05E23] ${isDark ? 'text-white' : 'text-slate-900'
-                        }`}>
-                        {cat.name}
-                      </h3>
+                  {/* Cinematic Content Reveal Panel */}
+                  <div className="p-8 relative z-10 w-full flex flex-col justify-end transition-all duration-500 transform translate-y-[85px] group-hover:translate-y-0">
+                    {/* Index & Divider */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] font-black text-[#F05E23] tracking-widest uppercase">
+                        {displayNum} / Category
+                      </span>
+                      <span className="h-[1px] w-8 bg-[#F05E23]/30" />
                     </div>
 
+                    {/* Category Title */}
+                    <h3 className="text-2.5xl font-black uppercase tracking-tighter italic text-white mb-3">
+                      {cat.name}
+                    </h3>
+
+                    {/* Category Description (smoothly fades and slides in) */}
+                    {cat.description && (
+                      <p className="text-[11px] font-semibold text-slate-300 uppercase tracking-wide leading-relaxed line-clamp-3 mb-6 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-75">
+                        {cat.description}
+                      </p>
+                    )}
+
+                    {/* Enter Showcase Button */}
                     <Link
                       href={`/production/${encodeURIComponent(cat.name)}`}
-                      className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[10px] border transition-all ${isDark
-                        ? 'bg-white/5 border-white/10 text-white hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]'
-                        : 'bg-slate-900 border-slate-900 text-white hover:bg-[#F05E23] hover:border-[#F05E23]'
-                        }`}
+                      className="w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[10px] border border-[#F05E23] bg-[#F05E23] text-white hover:bg-white hover:text-slate-900 hover:border-white transition-all duration-300 opacity-0 group-hover:opacity-100"
                     >
                       <span>Enter Showcase</span>
                       <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-2 transition-transform" />
                     </Link>
                   </div>
 
-                  {/* Micro gradient line at the bottom on hover */}
+                  {/* Accent bottom neon line */}
                   <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-[#F05E23] to-[#FF8C61] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
                 </motion.div>
               );
