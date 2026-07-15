@@ -33,10 +33,11 @@ export default function LoadingScreen() {
         }
         document.body.style.overflow = 'hidden';
 
-        // Smooth progress animation with gentle start to eliminate initial chunk pop
+        // Smooth progress animation with gentle start and strict 99% interval ceiling before completion
         const progressInterval = setInterval(() => {
             setProgress(prev => {
-                if (prev >= 92) return prev + Math.random() * 0.4;
+                if (prev >= 99) return 99;
+                if (prev >= 92) return Math.min(99, prev + Math.random() * 0.4);
                 if (prev >= 70) return prev + Math.random() * 1.2;
                 if (prev < 15) return prev + Math.random() * 2.5; // Small gentle ticks for initial progression
                 return prev + Math.random() * 3.5;
@@ -333,7 +334,7 @@ export default function LoadingScreen() {
                                         stroke="url(#progressGradient)"
                                         strokeWidth="3"
                                         strokeDasharray={`${408.41}`}
-                                        strokeDashoffset={`${408.41 - (408.41 * progress / 100)}`}
+                                        strokeDashoffset={`${408.41 - (408.41 * Math.min(100, progress) / 100)}`}
                                         strokeLinecap="round"
                                         style={{
                                             transition: 'stroke-dashoffset 0.12s linear',
@@ -350,7 +351,7 @@ export default function LoadingScreen() {
                                 </svg>
                                 {/* Center Content */}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-4xl font-black text-white drop-shadow-lg">{Math.round(progress)}</span>
+                                    <span className="text-4xl font-black text-white drop-shadow-lg">{Math.min(100, Math.round(progress))}</span>
                                     <span className="text-xs text-white/60 tracking-widest mt-1">%</span>
                                 </div>
                             </div>
