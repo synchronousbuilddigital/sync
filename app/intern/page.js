@@ -361,13 +361,7 @@ export default function InternDashboard() {
      return true;
    });
 
-   if ((loading || dataLoading) && !user) return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050505]">
-         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-            <Clock className="w-12 h-12 text-[#F05E23]" />
-         </motion.div>
-      </div>
-   );
+   if ((loading || dataLoading) && !user) return <div className="min-h-screen bg-[#050505]" />;
 
    if (!user || user.role !== "intern") {
       return <div className="p-20 text-center font-black text-red-500 uppercase tracking-widest">Access Denied. Intern Clearance Required.</div>;

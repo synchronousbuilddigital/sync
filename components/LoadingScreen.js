@@ -3,22 +3,24 @@
 import { useState, useEffect } from "react";
 import { Sparkles, Zap, Target, Globe2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useAuth } from "./AuthContext";
 
 export default function LoadingScreen() {
     const pathname = usePathname();
+    const auth = useAuth() || {};
+    const { loading = false, dataLoading = false } = auth;
     const [mounted, setMounted] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const [isVisible, setIsVisible] = useState(true);
     const [isFading, setIsFading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [activeModule, setActiveModule] = useState(0);
     const [displayText, setDisplayText] = useState("");
+    const [minTimeElapsed, setMinTimeElapsed] = useState(false);
     const fullText = "Initializing Services";
 
     useEffect(() => {
         setMounted(true);
-        setIsLoggedIn(Boolean(localStorage.getItem('sync_token')));
 
         // Prevent the browser from automatically restoring the scroll position
         if ('scrollRestoration' in window.history) {
@@ -31,9 +33,9 @@ export default function LoadingScreen() {
         // Smooth progress animation
         const progressInterval = setInterval(() => {
             setProgress(prev => {
-                if (prev >= 88) return prev + Math.random() * 3;
-                if (prev >= 60) return prev + Math.random() * 8;
-                return prev + Math.random() * 15;
+                if (prev >= 92) return prev + Math.random() * 1;
+                if (prev >= 70) return prev + Math.random() * 3;
+                return prev + Math.random() * 12;
             });
         }, 250);
 
@@ -51,34 +53,33 @@ export default function LoadingScreen() {
             }
         }, 50);
 
-        const fadeTimer = setTimeout(() => {
-            setProgress(100);
-            setIsFading(true);
-        }, 2200);
-
-        const removeTimer = setTimeout(() => {
-            document.body.style.overflow = 'unset';
-            window.scrollTo(0, 0);
-            setIsVisible(false);
-        }, 2900);
+        const timer = setTimeout(() => {
+            setMinTimeElapsed(true);
+        }, 2000);
 
         return () => {
             clearInterval(progressInterval);
             clearInterval(moduleInterval);
             clearInterval(textInterval);
-            clearTimeout(fadeTimer);
-            clearTimeout(removeTimer);
+            clearTimeout(timer);
             document.body.style.overflow = 'unset';
         };
     }, []);
 
-    if (!mounted) return null;
+    useEffect(() => {
+        if (minTimeElapsed && !loading && !dataLoading && isVisible && !isFading) {
+            setProgress(100);
+            setIsFading(true);
+            const removeTimer = setTimeout(() => {
+                document.body.style.overflow = 'unset';
+                window.scrollTo(0, 0);
+                setIsVisible(false);
+            }, 700);
+            return () => clearTimeout(removeTimer);
+        }
+    }, [minTimeElapsed, loading, dataLoading, isVisible, isFading]);
 
-    // Don't show the branded splash screen on internal dashboard/tool pages or if already logged in
-    const dashboardPaths = ['/intern', '/admin', '/brand', '/client', '/change-password', '/login', '/hiring', '/calendar', '/projects', '/settings'];
-    if (isLoggedIn || dashboardPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
-
-    if (!isVisible) return null;
+    if (!mounted || !isVisible) return null;
 
     const modules = [
         { name: "DESIGN", icon: Globe2, color: "#3B82F6", lightColor: "rgba(59, 130, 246, 0.1)", shadowColor: "rgba(59, 130, 246, 0.5)" },

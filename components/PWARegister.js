@@ -8,7 +8,11 @@ export default function PWARegister() {
 
     // --- 1. COMMIT & BUILD VERSION CHECKER (For Both Website & PWA) ---
     const checkVersionAndRefresh = async () => {
+      if (typeof window !== "undefined" && window._isReloading) return;
       try {
+        const lastReloadTime = Number(localStorage.getItem("app_last_reload_time") || 0);
+        if (Date.now() - lastReloadTime < 10000) return;
+
         const res = await fetch(`/api/version?t=${Date.now()}`, {
           cache: "no-store",
           headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
@@ -25,7 +29,9 @@ export default function PWARegister() {
           console.log(`[VersionChecker] New commit detected! Old: ${savedCommit} -> New: ${latestCommit}`);
           console.log("[VersionChecker] Purging all caches and performing hard refresh...");
 
-          // Save new commit first so after reload we don't reload again
+          if (window._isReloading) return;
+          window._isReloading = true;
+          localStorage.setItem("app_last_reload_time", Date.now().toString());
           localStorage.setItem("app_commit_sha", latestCommit);
 
           // 1. Purge browser Cache Storage (Service Worker & Cache API)
@@ -82,12 +88,15 @@ export default function PWARegister() {
 
       // Prevent double-refresh on startup: only reload when an existing controller updates after the initial page load window
       navigator.serviceWorker.addEventListener("controllerchange", async () => {
-        if (!hadInitialController || Date.now() - pageLoadTime < 3000) {
+        const lastReloadTime = Number(localStorage.getItem("app_last_reload_time") || 0);
+        if (window._isReloading || !hadInitialController || Date.now() - pageLoadTime < 5000 || Date.now() - lastReloadTime < 10000) {
           hadInitialController = true;
           return;
         }
-        if (!refreshing) {
+        if (!refreshing && !window._isReloading) {
           refreshing = true;
+          window._isReloading = true;
+          localStorage.setItem("app_last_reload_time", Date.now().toString());
           console.log("[PWA] Controller changed! Purging old cache and reloading...");
           if ("caches" in window) {
             try {
