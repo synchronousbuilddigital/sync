@@ -70,14 +70,22 @@ export default function LoadingScreen() {
         if (minTimeElapsed && !loading && !dataLoading && isVisible && !isFading) {
             setProgress(100);
             setIsFading(true);
+        }
+    }, [minTimeElapsed, loading, dataLoading, isVisible, isFading]);
+
+    useEffect(() => {
+        if (isFading) {
             const removeTimer = setTimeout(() => {
                 document.body.style.overflow = 'unset';
+                if ('scrollRestoration' in window.history) {
+                    window.history.scrollRestoration = 'auto';
+                }
                 window.scrollTo(0, 0);
                 setIsVisible(false);
             }, 700);
             return () => clearTimeout(removeTimer);
         }
-    }, [minTimeElapsed, loading, dataLoading, isVisible, isFading]);
+    }, [isFading]);
 
     if (!mounted || !isVisible) return null;
 

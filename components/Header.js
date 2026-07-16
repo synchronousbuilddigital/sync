@@ -137,8 +137,8 @@ export default function Header() {
                   onClick={() => setNotifOpen(!notifOpen)}
                   title="Notifications"
                   className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
-                      ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
-                      : 'bg-black/5 border-black/5 text-slate-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
+                    ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
+                    : 'bg-black/5 border-black/5 text-slate-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
                     }`}
                 >
                   <Bell className="w-4 h-4" />
@@ -156,8 +156,8 @@ export default function Header() {
               onClick={toggleTheme}
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
               className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
-                  ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
-                  : 'bg-black/5 border-black/5 text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
+                ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
+                : 'bg-black/5 border-black/5 text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
                 }`}
             >
               {isDark
@@ -213,8 +213,8 @@ export default function Header() {
             <button
               onClick={toggleTheme}
               className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark
-                  ? 'text-amber-400 bg-amber-400/10'
-                  : 'text-slate-600 bg-black/5'
+                ? 'text-amber-400 bg-amber-400/10'
+                : 'text-slate-600 bg-black/5'
                 }`}
             >
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
