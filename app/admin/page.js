@@ -612,7 +612,7 @@ export default function AdminDashboard() {
     calculateFeasibility();
   }, [selectedSteps, customTasks, newTask.internId, tasks]);
 
-  if ((loading || dataLoading) && !user) return <div className="min-h-screen bg-slate-50 dark:bg-[#050505]" />;
+  if (loading || dataLoading || !user) return <div className="min-h-screen bg-slate-50 dark:bg-[#050505]" />;
 
   if (!user || user.role !== "admin") {
     return <div className="p-20 text-center font-bold text-red-500 uppercase tracking-widest">Access Denied. Unauthorized Personnel.</div>;
