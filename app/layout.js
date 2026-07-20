@@ -3,7 +3,6 @@ import "./globals.css";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoadingScreen from "../components/LoadingScreen";
-import ChatBot from "../components/ChatBot";
 import CTA from "../components/CTA";
 
 const outfit = Outfit({
@@ -81,9 +80,7 @@ export const metadata = {
 import { ThemeProvider } from "../components/ThemeContext";
 import { AuthProvider } from "../components/AuthContext";
 import { ChatProvider } from "../components/ChatContext";
-import PWARegister from "../components/PWARegister";
-import PWAInstallButton from "../components/PWAInstallButton";
-import PullToRefresh from "../components/PullToRefresh";
+import PWALoader from "../components/PWALoader";
 
 export default function RootLayout({ children }) {
 
@@ -97,9 +94,6 @@ export default function RootLayout({ children }) {
         className={`${outfit.className} antialiased min-h-screen flex flex-col`}
         suppressHydrationWarning
       >
-        <PWARegister />
-        <PullToRefresh />
-        <PWAInstallButton floating={true} />
         <ThemeProvider>
           <AuthProvider>
             <ChatProvider>
@@ -110,7 +104,7 @@ export default function RootLayout({ children }) {
               </main>
               <CTA />
               <Footer />
-              <ChatBot />
+              <PWALoader />
             </ChatProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -72,7 +72,7 @@ export default function Process() {
             if (!tracks) return;
             // Increased distance for "mandatory" feel
             const scrollWidth = tracks.scrollWidth - window.innerWidth;
-            const totalScrollDistance = scrollWidth + (window.innerHeight * 2);
+            const totalScrollDistance = scrollWidth + (window.innerHeight * 0.4);
 
             gsap.to(tracks, {
                 x: -scrollWidth,
@@ -115,7 +115,7 @@ export default function Process() {
             ref={sectionRef}
             className={`w-full relative overflow-visible selection:bg-[#F05E23]/20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
         >
-            <div ref={triggerRef} className="min-h-0 lg:h-screen w-full relative overflow-hidden py-12 lg:py-0">
+            <div ref={triggerRef} className="min-h-0 lg:h-screen w-full relative overflow-hidden pt-12 pb-2 sm:pb-12 lg:py-0">
 
                 {/* Mandatory Progress Bar (Right Side) */}
                 <div className="absolute right-6 top-1/2 -translate-y-1/2 h-[30vh] w-1 rounded-full bg-white/5 z-50 overflow-hidden hidden lg:block">

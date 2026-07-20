@@ -134,7 +134,7 @@ export default function AccordionServices() {
             />
 
             <div className="relative z-10 max-w-[1500px] mx-auto px-6 md:px-12 w-full flex flex-col flex-1 overflow-hidden">
-                
+
                 {/* Header Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -154,13 +154,13 @@ export default function AccordionServices() {
                     </h2>
 
                     <p className={`mt-6 text-sm sm:text-base font-light max-w-sm xl:max-w-xl leading-relaxed ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                        We create friendly, high-speed digital systems to help your business grow easily. 
+                        We create friendly, high-speed digital systems to help your business grow easily.
                         Explore our expert services.
                     </p>
                 </motion.div>
 
                 {/* Cards Container */}
-                <div 
+                <div
                     className="relative grid grid-cols-2 lg:flex lg:flex-row gap-4 sm:gap-6 mb-6 lg:mb-12 lg:h-[650px] min-h-[500px]"
                     onMouseLeave={() => setOpenIndex(null)}
                 >
@@ -185,11 +185,11 @@ export default function AccordionServices() {
                                     filter: !isDesktop ? "none" : (isOpen ? "grayscale(0%)" : (isSomethingHovered ? "grayscale(100%)" : "grayscale(0%)")),
                                     opacity: !isDesktop ? 1 : (isOpen ? 1 : (isSomethingHovered ? 0.35 : 1))
                                 }}
-                                transition={{ 
-                                    duration: 0.6, 
+                                transition={{
+                                    duration: 0.6,
                                     ease: [0.16, 1, 0.3, 1],
                                 }}
-                                style={{ 
+                                style={{
                                     willChange: "flex, opacity, filter",
                                 }}
                             >
@@ -197,7 +197,7 @@ export default function AccordionServices() {
                                 {/* Content area */}
                                 <div className="flex-1 overflow-hidden relative h-full">
                                     <div className={`p-6 sm:p-8 lg:p-8 flex flex-col justify-between h-full w-full relative z-10 transition-opacity duration-300 ${!isOpen && isSomethingHovered ? 'opacity-0' : 'opacity-100'}`}>
-                                        
+
                                         <div className="relative z-10 w-full lg:max-w-4xl">
                                             {/* Header Content */}
                                             <div className="mb-4 lg:mb-8">
@@ -207,30 +207,30 @@ export default function AccordionServices() {
                                                         <span className={`text-[0.6rem] font-bold uppercase px-2 py-0.5 rounded border ${isDark ? 'border-neutral-800 text-neutral-600' : 'border-neutral-200 text-neutral-400'}`}>Expert Help</span>
                                                     )}
                                                 </div>
-                                                
+
                                                 <h3 className={`font-black tracking-tight leading-[1.02] transition-all duration-500 ${isDark ? 'text-white' : 'text-black'} ${isOpen ? 'text-2xl sm:text-4xl lg:text-4xl mb-4' : 'text-sm sm:text-xl lg:text-2xl'}`}>
                                                     {service.title}
                                                 </h3>
 
                                                 {!isOpen && (
                                                     <>
-                                                        <motion.p 
+                                                        <motion.p
                                                             initial={{ opacity: 0 }}
                                                             animate={{ opacity: 1 }}
                                                             className={`mt-3 sm:mt-6 text-[0.65rem] sm:text-sm lg:text-base font-light leading-relaxed transition-colors duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-500'} line-clamp-2 md:line-clamp-none`}
                                                         >
                                                             {service.desc}
                                                         </motion.p>
-                                                        
+
                                                         {/* Idle State Image Preview */}
-                                                        <motion.div 
+                                                        <motion.div
                                                             initial={{ opacity: 0, scale: 0.9 }}
                                                             animate={{ opacity: 1, scale: 1 }}
                                                             transition={{ delay: 0.1 }}
                                                             className="mt-4 sm:mt-12 rounded-xl sm:rounded-2xl overflow-hidden aspect-[4/3] sm:aspect-video w-full border border-neutral-500/10 shadow-lg"
                                                         >
-                                                            <img 
-                                                                src={service.image} 
+                                                            <img
+                                                                src={service.image}
                                                                 alt={service.title}
                                                                 className="w-full h-full object-cover opacity-80"
                                                             />
@@ -238,10 +238,10 @@ export default function AccordionServices() {
                                                     </>
                                                 )}
                                             </div>
-                                            
+
                                             {/* Expanded Body Content */}
                                             <motion.div
-                                                animate={{ 
+                                                animate={{
                                                     opacity: isOpen ? 1 : 0,
                                                     y: isOpen ? 0 : 20
                                                 }}
@@ -282,10 +282,10 @@ export default function AccordionServices() {
 
                                                 {/* Full Width Preview Image */}
                                                 <div className="rounded-3xl overflow-hidden border border-[#F05E23]/20 shadow-2xl relative group aspect-video w-full bg-neutral-900/5">
-                                                    <img 
-                                                        src={service.image} 
-                                                        alt={service.title} 
-                                                        className="w-full h-full object-cover object-top transition-transform duration-[1.5s] lg:group-hover:scale-105" 
+                                                    <img
+                                                        src={service.image}
+                                                        alt={service.title}
+                                                        className="w-full h-full object-cover object-top transition-transform duration-[1.5s] lg:group-hover:scale-105"
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-8">
                                                         <div className="flex flex-col gap-1">
@@ -299,8 +299,8 @@ export default function AccordionServices() {
 
                                         <div className="mt-auto relative z-10 w-full border-t border-neutral-500/10 pt-4 sm:pt-6">
                                             {/* Open State Button */}
-                                            <motion.div 
-                                                animate={{ 
+                                            <motion.div
+                                                animate={{
                                                     opacity: isOpen ? 1 : 0,
                                                     y: isOpen ? 0 : 20
                                                 }}
@@ -314,7 +314,7 @@ export default function AccordionServices() {
                                                     <ArrowUpRight strokeWidth={3} className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
                                                 </Link>
                                             </motion.div>
-                                            
+
                                             {/* Unified footer for non-desktop */}
                                             <div className="flex items-center justify-between opacity-30 mt-2 sm:mt-0 lg:hidden">
                                                 <span className="text-[0.5rem] font-bold tracking-[0.1em] uppercase">{isOpen ? 'Active' : 'Details'}</span>
@@ -329,7 +329,7 @@ export default function AccordionServices() {
                 </div>
 
                 {/* Bottom Pagination/Counter */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -338,7 +338,7 @@ export default function AccordionServices() {
                     <div className="flex items-center gap-4">
                         <div className={`w-12 h-[1px] ${isDark ? 'bg-white/20' : 'bg-black/20'}`} />
                     </div>
-                    
+
                     <div className={`text-[0.6rem] font-black uppercase tracking-[0.3em] ${isDark ? 'text-white/40' : 'text-black/40'}`}>
                         Premium Operations
                     </div>

@@ -271,13 +271,18 @@ export default function Hero() {
     const [hoveredIdx, setHoveredIdx] = useState(-1);
     const [isEffortlessHovered, setIsEffortlessHovered] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [shouldRenderCards, setShouldRenderCards] = useState(false);
     const [mobileActiveIdx, setMobileActiveIdx] = useState(-1);
     const [mobileHoveredIdx, setMobileHoveredIdx] = useState(-1);
     const { sendMessage } = useChat();
 
     useEffect(() => {
         setIsMobile(window.innerWidth < 640);
-        const handleResize = () => setIsMobile(window.innerWidth < 640);
+        setShouldRenderCards(window.innerWidth >= 1024);
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 640);
+            setShouldRenderCards(window.innerWidth >= 1024);
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -329,6 +334,9 @@ export default function Hero() {
     const spotX = useSpring(spotlightX, { stiffness: 50, damping: 20 });
     const spotY = useSpring(spotlightY, { stiffness: 50, damping: 20 });
 
+    const transformXLeft = useTransform(springX, x => x * -1.5);
+    const transformXRight = useTransform(springX, x => x * 1.2);
+
     useEffect(() => {
         const handleMouseMove = (e) => {
             const { clientX, clientY } = e;
@@ -370,28 +378,30 @@ export default function Hero() {
                 <div className="relative w-full flex flex-col items-center">
 
                     {/* Left Card Stack - Hidden on mobile/tablet to declutter view */}
-                    <div
-                        className="absolute -top-16 sm:-top-20 left-0 sm:left-2 lg:left-4 xl:left-8 z-40 opacity-40 lg:opacity-100 scale-[0.45] sm:scale-[0.6] lg:scale-100 transition-all pointer-events-none lg:pointer-events-auto hidden lg:block"
-                        onMouseEnter={() => setStackHovered(true)}
-                        onMouseLeave={() => setStackHovered(false)}
-                    >
-                        <motion.div style={{ y: y1, x: useTransform(springX, x => x * -1.5) }} className="relative h-[180px] w-[300px] sm:h-[200px] sm:w-[350px]">
-                            {cardData.map((card, index) => (
-                                <FloatingCard
-                                    key={card.title}
-                                    index={index}
-                                    isStackHovered={isInteracting}
-                                    delay={0.2 + index * 0.2}
-                                    card={card}
-                                    activeIdx={activeIdx}
-                                    hoveredIdx={hoveredIdx}
-                                    setActiveIdx={setActiveIdx}
-                                    setHoveredIdx={setHoveredIdx}
-                                    className={`w-48 sm:w-52 h-32 sm:h-36 rounded-2xl shadow-2xl absolute border ${card.bg} ${card.border}`}
-                                />
-                            ))}
-                        </motion.div>
-                    </div>
+                    {shouldRenderCards && (
+                        <div
+                            className="absolute -top-16 sm:-top-20 left-0 sm:left-2 lg:left-4 xl:left-8 z-40 opacity-40 lg:opacity-100 scale-[0.45] sm:scale-[0.6] lg:scale-100 transition-all pointer-events-none lg:pointer-events-auto hidden lg:block"
+                            onMouseEnter={() => setStackHovered(true)}
+                            onMouseLeave={() => setStackHovered(false)}
+                        >
+                            <motion.div style={{ y: y1, x: transformXLeft }} className="relative h-[180px] w-[300px] sm:h-[200px] sm:w-[350px]">
+                                {cardData.map((card, index) => (
+                                    <FloatingCard
+                                        key={card.title}
+                                        index={index}
+                                        isStackHovered={isInteracting}
+                                        delay={0.2 + index * 0.2}
+                                        card={card}
+                                        activeIdx={activeIdx}
+                                        hoveredIdx={hoveredIdx}
+                                        setActiveIdx={setActiveIdx}
+                                        setHoveredIdx={setHoveredIdx}
+                                        className={`w-48 sm:w-52 h-32 sm:h-36 rounded-2xl shadow-2xl absolute border ${card.bg} ${card.border}`}
+                                    />
+                                ))}
+                            </motion.div>
+                        </div>
+                    )}
 
                     {/* Acquisition Optimized Button - Hidden on mobile/tablet */}
                     <div className="absolute -top-16 sm:-top-20 right-0 sm:right-2 z-40 scale-75 sm:scale-90 lg:scale-100 hidden lg:block">
@@ -441,7 +451,7 @@ export default function Hero() {
                                     const isCardActive = mobileActiveIdx === idx || mobileHoveredIdx === idx;
 
                                     return (
-                                        <motion.div 
+                                        <motion.div
                                             key={card.title}
                                             whileTap={{ scale: 0.95 }}
                                             onHoverStart={() => setMobileHoveredIdx(idx)}
@@ -611,38 +621,40 @@ export default function Hero() {
                     </div>
 
                     {/* Right Side Icons - Hidden on mobile/tablet to focus on text */}
-                    <div className="absolute top-[54%] right-0 lg:right-[1%] xl:right-[3%] -translate-y-1/2 z-20 opacity-20 lg:opacity-100 scale-[0.4] sm:scale-[0.6] lg:scale-100 pointer-events-none lg:pointer-events-auto hidden lg:block">
-                        <motion.div style={{ y: y3, x: useTransform(springX, x => x * 1.2) }} className="space-y-6 sm:space-y-10 flex flex-col items-end">
-                            <Magnetic>
-                                <FloatingCard
-                                    onClick={() => sendMessage("I'm interested in high-velocity growth. How can you help me scale faster?")}
-                                    isActive={activeIdx === 10}
-                                    delay={0.8}
-                                    className={`w-16 h-16 sm:w-24 sm:h-24 rounded-3xl shadow-2xl flex items-center justify-center rotate-12 border transition-all duration-500 ${!isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-black/5'}`}>
-                                    <Zap className={`w-8 h-8 sm:w-12 sm:h-12 fill-yellow-400 ${!isDark ? 'text-yellow-400' : 'text-slate-800'}`} />
-                                </FloatingCard>
-                            </Magnetic>
-                            <Magnetic>
-                                <FloatingCard
-                                    onClick={() => sendMessage("Tell me about your precision targeting and strategy optimization.")}
-                                    isActive={activeIdx === 11}
-                                    delay={1.0}
-                                    className={`w-20 h-20 sm:w-28 sm:h-28 rounded-3xl shadow-2xl flex items-center justify-center rotate-[-8deg] border relative mr-8 sm:mr-16 transition-all duration-500 ${!isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}>
-                                    <Target className={`w-8 h-8 sm:w-12 sm:h-12 ${!isDark ? 'text-slate-800' : 'text-white'}`} />
-                                    <div className={`absolute inset-0 border rounded-3xl animate-ping opacity-10 ${!isDark ? 'border-black' : 'border-white'}`}></div>
-                                </FloatingCard>
-                            </Magnetic>
-                            <Magnetic>
-                                <FloatingCard
-                                    onClick={() => sendMessage("How do you handle market arbitrage and uncovering new growth opportunities?")}
-                                    isActive={activeIdx === 12}
-                                    delay={1.2}
-                                    className={`w-24 h-16 sm:w-32 sm:h-24 bg-[#3B82F6] rounded-3xl shadow-2xl flex items-center justify-center rotate-6 border-b-8 border-blue-700 hover:translate-y-1 transition-transform`}>
-                                    <Search className="w-8 h-8 sm:w-12 sm:h-12 text-white" />
-                                </FloatingCard>
-                            </Magnetic>
-                        </motion.div>
-                    </div>
+                    {shouldRenderCards && (
+                        <div className="absolute top-[54%] right-0 lg:right-[1%] xl:right-[3%] -translate-y-1/2 z-20 opacity-20 lg:opacity-100 scale-[0.4] sm:scale-[0.6] lg:scale-100 pointer-events-none lg:pointer-events-auto hidden lg:block">
+                            <motion.div style={{ y: y3, x: transformXRight }} className="space-y-6 sm:space-y-10 flex flex-col items-end">
+                                <Magnetic>
+                                    <FloatingCard
+                                        onClick={() => sendMessage("I'm interested in high-velocity growth. How can you help me scale faster?")}
+                                        isActive={activeIdx === 10}
+                                        delay={0.8}
+                                        className={`w-16 h-16 sm:w-24 sm:h-24 rounded-3xl shadow-2xl flex items-center justify-center rotate-12 border transition-all duration-500 ${!isDark ? 'bg-[#0A0A0A] border-white/5' : 'bg-white border-black/5'}`}>
+                                        <Zap className={`w-8 h-8 sm:w-12 sm:h-12 fill-yellow-400 ${!isDark ? 'text-yellow-400' : 'text-slate-800'}`} />
+                                    </FloatingCard>
+                                </Magnetic>
+                                <Magnetic>
+                                    <FloatingCard
+                                        onClick={() => sendMessage("Tell me about your precision targeting and strategy optimization.")}
+                                        isActive={activeIdx === 11}
+                                        delay={1.0}
+                                        className={`w-20 h-20 sm:w-28 sm:h-28 rounded-3xl shadow-2xl flex items-center justify-center rotate-[-8deg] border relative mr-8 sm:mr-16 transition-all duration-500 ${!isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}>
+                                        <Target className={`w-8 h-8 sm:w-12 sm:h-12 ${!isDark ? 'text-slate-800' : 'text-white'}`} />
+                                        <div className={`absolute inset-0 border rounded-3xl animate-ping opacity-10 ${!isDark ? 'border-black' : 'border-white'}`}></div>
+                                    </FloatingCard>
+                                </Magnetic>
+                                <Magnetic>
+                                    <FloatingCard
+                                        onClick={() => sendMessage("How do you handle market arbitrage and uncovering new growth opportunities?")}
+                                        isActive={activeIdx === 12}
+                                        delay={1.2}
+                                        className={`w-24 h-16 sm:w-32 sm:h-24 bg-[#3B82F6] rounded-3xl shadow-2xl flex items-center justify-center rotate-6 border-b-8 border-blue-700 hover:translate-y-1 transition-transform`}>
+                                        <Search className="w-8 h-8 sm:w-12 sm:h-12 text-white" />
+                                    </FloatingCard>
+                                </Magnetic>
+                            </motion.div>
+                        </div>
+                    )}
 
                 </div>
             </div>

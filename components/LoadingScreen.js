@@ -58,10 +58,10 @@ export default function LoadingScreen() {
             }
         }, 50);
 
-        const isLighthouse = typeof window !== 'undefined' && 
-            (navigator.userAgent.includes('Chrome-Lighthouse') || 
-             navigator.userAgent.includes('Lighthouse') ||
-             /bot|google|baidu|bing|msn|duckduckbot|teoma|slurp|yandex/i.test(navigator.userAgent));
+        const isLighthouse = typeof window !== 'undefined' &&
+            (navigator.userAgent.includes('Chrome-Lighthouse') ||
+                navigator.userAgent.includes('Lighthouse') ||
+                /bot|google|baidu|bing|msn|duckduckbot|teoma|slurp|yandex/i.test(navigator.userAgent));
 
         const timer = setTimeout(() => {
             setMinTimeElapsed(true);
@@ -86,10 +86,10 @@ export default function LoadingScreen() {
 
     useEffect(() => {
         if (isFading) {
-            const isLighthouse = typeof window !== 'undefined' && 
-                (navigator.userAgent.includes('Chrome-Lighthouse') || 
-                 navigator.userAgent.includes('Lighthouse') ||
-                 /bot|google|baidu|bing|msn|duckduckbot|teoma|slurp|yandex/i.test(navigator.userAgent));
+            const isLighthouse = typeof window !== 'undefined' &&
+                (navigator.userAgent.includes('Chrome-Lighthouse') ||
+                    navigator.userAgent.includes('Lighthouse') ||
+                    /bot|google|baidu|bing|msn|duckduckbot|teoma|slurp|yandex/i.test(navigator.userAgent));
 
             const removeTimer = setTimeout(() => {
                 document.body.style.overflow = 'unset';

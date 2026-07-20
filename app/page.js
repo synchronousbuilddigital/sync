@@ -1,16 +1,17 @@
 "use client";
 
-import Hero from "../components/Hero";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-
-import AccordionServices from "../components/AccordionServices";
-import Process from "../components/Process";
-import WorkShowcase from "../components/WorkShowcase";
-import WhyChooseUs from "../components/WhyChooseUs";
-import Testimonials from "../components/Testimonials";
 import { useTheme } from "../components/ThemeContext";
+import Hero from "../components/Hero";
+import dynamic from "next/dynamic";
+
+const AccordionServices = dynamic(() => import("../components/AccordionServices"), { ssr: true });
+const Process = dynamic(() => import("../components/Process"), { ssr: false });
+const WorkShowcase = dynamic(() => import("../components/WorkShowcase"), { ssr: true });
+const WhyChooseUs = dynamic(() => import("../components/WhyChooseUs"), { ssr: true });
+const Testimonials = dynamic(() => import("../components/Testimonials"), { ssr: true });
 
 // Enhanced Soft Divider for seamless transitions
 const SoftDivider = () => {

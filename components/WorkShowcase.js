@@ -104,7 +104,7 @@ export default function WorkShowcase() {
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveIndex((prev) => (prev + 1) % displayProjects.length);
-        }, 8000); 
+        }, 8000);
         return () => clearInterval(interval);
     }, [displayProjects.length]);
 
@@ -118,7 +118,7 @@ export default function WorkShowcase() {
                 const tabOffsetLeft = activeTab.offsetLeft;
                 const tabWidth = activeTab.offsetWidth;
                 const targetScrollLeft = tabOffsetLeft - (containerWidth / 2) + (tabWidth / 2);
-                
+
                 container.scrollTo({
                     left: targetScrollLeft,
                     behavior: 'smooth'
@@ -128,21 +128,21 @@ export default function WorkShowcase() {
     }, [activeIndex]);
 
     return (
-        <section 
-            className={`relative w-full min-h-screen py-20 sm:py-32 flex flex-col items-center justify-center overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FFF9F5]'}`}
+        <section
+            className={`relative w-full min-h-0 sm:min-h-screen pt-0 pb-20 sm:py-32 flex flex-col items-center justify-start sm:justify-center overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FFF9F5]'}`}
         >
             {/* Soft Light Orange Background Flair */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className={`absolute inset-0 opacity-[0.05] ${isDark ? 'mix-blend-overlay' : ''}`} 
-                    style={{ backgroundImage: 'radial-gradient(#F05E23 1px, transparent 0)', backgroundSize: '50px 50px' }} 
+                <div className={`absolute inset-0 opacity-[0.05] ${isDark ? 'mix-blend-overlay' : ''}`}
+                    style={{ backgroundImage: 'radial-gradient(#F05E23 1px, transparent 0)', backgroundSize: '50px 50px' }}
                 />
-                <motion.div 
-                    animate={{ 
+                <motion.div
+                    animate={{
                         scale: [1, 1.2, 1],
                         opacity: [0.1, 0.2, 0.1]
                     }}
                     transition={{ duration: 12, repeat: Infinity }}
-                    className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full blur-[150px] bg-[#F05E23]/10" 
+                    className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full blur-[150px] bg-[#F05E23]/10"
                 />
             </div>
 
@@ -165,7 +165,7 @@ export default function WorkShowcase() {
                 </motion.div>
 
                 {/* Category Filter */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
@@ -178,10 +178,10 @@ export default function WorkShowcase() {
                                 setFilter(cat);
                                 setActiveIndex(0);
                             }}
-                            className={`px-6 py-2.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-500 border ${filter === cat 
-                                ? 'bg-[#F05E23] border-[#F05E23] text-white shadow-[0_10px_20px_-5px_rgba(240,94,35,0.4)]' 
+                            className={`px-6 py-2.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-500 border ${filter === cat
+                                ? 'bg-[#F05E23] border-[#F05E23] text-white shadow-[0_10px_20px_-5px_rgba(240,94,35,0.4)]'
                                 : (isDark ? 'bg-white/5 border-white/10 text-white/40 hover:text-white/80 hover:bg-white/10' : 'bg-black/5 border-black/5 text-black/40 hover:text-black/80 hover:bg-black/10')
-                            }`}
+                                }`}
                         >
                             {cat}
                         </button>
@@ -202,9 +202,9 @@ export default function WorkShowcase() {
                                 {project.title}
                             </span>
                             {activeIndex === i && (
-                                <motion.div 
+                                <motion.div
                                     layoutId="activeUnderline"
-                                    className="w-full h-[2px] bg-[#F05E23] rounded-full shadow-[0_0_10px_#F05E23]" 
+                                    className="w-full h-[2px] bg-[#F05E23] rounded-full shadow-[0_0_10px_#F05E23]"
                                 />
                             )}
                         </motion.button>
@@ -213,17 +213,17 @@ export default function WorkShowcase() {
             </div>
 
             {/* Carousel Content */}
-            <div className="relative w-full max-w-[95%] sm:max-w-6xl h-auto lg:h-[820px] z-10 flex flex-col">
+            <div className="relative w-full max-w-[95%] sm:max-w-6xl h-[500px] xs:h-[560px] sm:h-[650px] lg:h-[820px] z-10 flex flex-col">
                 <div className="relative w-full overflow-hidden flex-1">
-                    <motion.div 
+                    <motion.div
                         animate={{ x: `-${activeIndex * 100}%` }}
                         transition={{ duration: 1, ease: [0.32, 0.72, 0, 1] }}
                         className="flex w-full h-full"
                     >
                         {displayProjects.map((project, index) => (
                             <div key={index} className="w-full flex-shrink-0 px-2 sm:px-6 lg:px-10 h-full flex items-center justify-center">
-                                <motion.div 
-                                    animate={{ 
+                                <motion.div
+                                    animate={{
                                         scale: activeIndex === index ? 1 : 0.95,
                                         opacity: activeIndex === index ? 1 : 0.3,
                                     }}
@@ -249,7 +249,7 @@ export default function WorkShowcase() {
                                             <h3 className="text-3xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">{project.title}</h3>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Card Content */}
                                     <div className="w-full flex-1 p-6 sm:p-10 sm:pb-12 flex flex-col justify-between gap-6 sm:gap-10">
                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -296,7 +296,7 @@ export default function WorkShowcase() {
                                                     </span>
                                                 ))}
                                             </div>
-                                            <motion.div 
+                                            <motion.div
                                                 whileHover={{ scale: 1.1, rotate: 45 }}
                                                 className="w-12 h-12 rounded-2xl bg-[#F05E23] flex items-center justify-center text-white shadow-xl shadow-[#F05E23]/20 flex-shrink-0"
                                             >
@@ -313,10 +313,10 @@ export default function WorkShowcase() {
                 {/* Progress Indicators */}
                 <div className="flex gap-3 justify-center mt-12 sm:mt-20">
                     {displayProjects.map((_, i) => (
-                        <div 
-                            key={i} 
+                        <div
+                            key={i}
                             onClick={() => setActiveIndex(i)}
-                            className={`h-1.5 rounded-full transition-all duration-700 cursor-pointer ${activeIndex === i ? 'w-12 bg-[#F05E23]' : 'w-3 bg-[#F05E23]/20'}`} 
+                            className={`h-1.5 rounded-full transition-all duration-700 cursor-pointer ${activeIndex === i ? 'w-12 bg-[#F05E23]' : 'w-3 bg-[#F05E23]/20'}`}
                         />
                     ))}
                 </div>
@@ -342,7 +342,7 @@ export default function WorkShowcase() {
                     </motion.button>
                 </div>
             </div>
-            
+
         </section>
     );
 }
