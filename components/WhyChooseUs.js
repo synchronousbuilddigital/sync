@@ -111,15 +111,35 @@ export default function WhyChooseUs() {
     const sectionRef = useRef(null);
     const [activeIdx, setActiveIdx] = useState(0);
     const [autoRotate, setAutoRotate] = useState(true);
+    const timeoutRef = useRef(null);
 
-    // Auto rotate through slices every 4 seconds unless user interacts
+    // Auto rotate through slices every 2 seconds unless user interacts
     useEffect(() => {
         if (!autoRotate) return;
         const interval = setInterval(() => {
             setActiveIdx((prev) => (prev + 1) % advantages.length);
-        }, 4000);
+        }, 2000);
         return () => clearInterval(interval);
     }, [autoRotate]);
+
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
+
+    const handleSliceClick = (index) => {
+        setActiveIdx(index);
+        setAutoRotate(false);
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => {
+            setAutoRotate(true);
+        }, 2000);
+    };
 
     const activeAdv = advantages[activeIdx];
     const IconComponent = activeAdv.icon;
@@ -205,7 +225,7 @@ export default function WhyChooseUs() {
                                     return (
                                         <g 
                                             key={adv.id} 
-                                            onClick={() => { setActiveIdx(i); setAutoRotate(false); }}
+                                            onClick={() => handleSliceClick(i)}
                                             onMouseEnter={() => { setActiveIdx(i); setAutoRotate(false); }}
                                             className="transition-transform duration-500 cursor-pointer group"
                                             style={{ transform: `translate(${popX}px, ${popY}px)` }}
@@ -218,11 +238,15 @@ export default function WhyChooseUs() {
                                                 strokeWidth={isActive ? "3.5" : "1.5"}
                                                 filter={isActive ? "url(#sliceGlow)" : undefined}
                                                 className="transition-all duration-300 group-hover:opacity-100"
+                                                onClick={() => handleSliceClick(i)}
                                             />
 
                                             {/* Slice Content (Icon + Section Title directly on slice) */}
-                                            <foreignObject x={pos.x - 45} y={pos.y - 28} width="90" height="56" className="pointer-events-none overflow-visible">
-                                                <div className="w-full h-full flex flex-col items-center justify-center text-center">
+                                            <foreignObject x={pos.x - 45} y={pos.y - 28} width="90" height="56" className="overflow-visible pointer-events-auto">
+                                                <div 
+                                                    onClick={() => handleSliceClick(i)}
+                                                    className="w-full h-full flex flex-col items-center justify-center text-center cursor-pointer"
+                                                >
                                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 shadow-md transition-all duration-300 ${isActive ? 'scale-110' : ''}`} style={{ backgroundColor: isActive ? adv.color : (isDark ? '#14141F' : '#FFFFFF'), border: `2px solid ${adv.color}` }}>
                                                         <SliceIcon className={`w-4 h-4 ${isActive ? 'text-white' : (isDark ? 'text-white' : 'text-slate-900')}`} />
                                                     </div>
@@ -241,13 +265,13 @@ export default function WhyChooseUs() {
 
                             {/* CENTER HUB: Website Logo Container */}
                             <div 
-                                onClick={() => setAutoRotate(!autoRotate)}
-                                className="absolute inset-0 flex items-center justify-center pointer-events-auto cursor-pointer group"
+                                className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
                             >
                                 <motion.div 
+                                    onClick={() => setAutoRotate(!autoRotate)}
                                     animate={{ scale: [1, 1.05, 1] }}
                                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full flex flex-col items-center justify-center p-2 relative shadow-2xl transition-all"
+                                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full flex flex-col items-center justify-center p-2 relative shadow-2xl transition-all cursor-pointer pointer-events-auto group"
                                 >
                                     {/* Logo Image */}
                                     <div className="relative w-12 h-12 sm:w-14 sm:h-14 mb-0.5">
@@ -270,7 +294,7 @@ export default function WhyChooseUs() {
                             {advantages.map((adv, i) => (
                                 <button
                                     key={adv.id}
-                                    onClick={() => { setActiveIdx(i); setAutoRotate(false); }}
+                                    onClick={() => handleSliceClick(i)}
                                     className={`px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-1.5 border ${activeIdx === i 
                                         ? 'bg-[#F05E23] border-[#F05E23] text-white shadow-md scale-105' 
                                         : (isDark ? 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10' : 'bg-black/5 border-black/5 text-slate-600 hover:bg-black/10')

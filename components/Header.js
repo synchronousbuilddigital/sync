@@ -136,6 +136,7 @@ export default function Header() {
                 <button
                   onClick={() => setNotifOpen(!notifOpen)}
                   title="Notifications"
+                  aria-label="Notifications"
                   className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
                     ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
                     : 'bg-black/5 border-black/5 text-slate-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
@@ -155,6 +156,7 @@ export default function Header() {
             <button
               onClick={toggleTheme}
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              aria-label="Toggle theme"
               className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
                 ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
                 : 'bg-black/5 border-black/5 text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
@@ -198,6 +200,7 @@ export default function Header() {
               <div className="relative">
                 <button
                   onClick={() => setNotifOpen(!notifOpen)}
+                  aria-label="Notifications"
                   className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark ? 'text-white bg-white/5' : 'text-slate-700 bg-black/5'
                     }`}
                 >
@@ -212,6 +215,7 @@ export default function Header() {
             )}
             <button
               onClick={toggleTheme}
+              aria-label="Toggle theme"
               className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark
                 ? 'text-amber-400 bg-amber-400/10'
                 : 'text-slate-600 bg-black/5'
@@ -222,6 +226,7 @@ export default function Header() {
             <button
               className={`relative z-10 p-2 transition-all active:scale-90 ${isScrolled ? 'rounded-full' : 'rounded-xl'} ${isDark ? 'text-white bg-white/5' : 'text-[#111] bg-black/5'}`}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} /> : <Menu className={isScrolled ? 'w-5 h-5' : 'w-6 h-6'} />}
             </button>

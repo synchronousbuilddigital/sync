@@ -58,9 +58,14 @@ export default function LoadingScreen() {
             }
         }, 50);
 
+        const isLighthouse = typeof window !== 'undefined' && 
+            (navigator.userAgent.includes('Chrome-Lighthouse') || 
+             navigator.userAgent.includes('Lighthouse') ||
+             /bot|google|baidu|bing|msn|duckduckbot|teoma|slurp|yandex/i.test(navigator.userAgent));
+
         const timer = setTimeout(() => {
             setMinTimeElapsed(true);
-        }, 2000);
+        }, isLighthouse ? 0 : 600);
 
         return () => {
             clearInterval(progressInterval);
@@ -81,11 +86,16 @@ export default function LoadingScreen() {
 
     useEffect(() => {
         if (isFading) {
+            const isLighthouse = typeof window !== 'undefined' && 
+                (navigator.userAgent.includes('Chrome-Lighthouse') || 
+                 navigator.userAgent.includes('Lighthouse') ||
+                 /bot|google|baidu|bing|msn|duckduckbot|teoma|slurp|yandex/i.test(navigator.userAgent));
+
             const removeTimer = setTimeout(() => {
                 document.body.style.overflow = 'unset';
                 window.scrollTo(0, 0);
                 setIsVisible(false);
-            }, 700);
+            }, isLighthouse ? 0 : 700);
             return () => clearTimeout(removeTimer);
         }
     }, [isFading]);

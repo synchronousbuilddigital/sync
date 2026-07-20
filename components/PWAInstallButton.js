@@ -51,6 +51,7 @@ export default function PWAInstallButton({ isScrolled, isDark, mobile, floating 
           <button
             onClick={handleEnableNotifs}
             title="Enable Phone Notifications"
+            aria-label="Enable Phone Notifications"
             className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#111] dark:bg-white text-white dark:text-[#111] font-black text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(240,94,35,0.35)] border border-[#F05E23] hover:bg-[#F05E23] hover:text-white transition-all group"
           >
             <Bell className="w-4 h-4 shrink-0 text-[#F05E23] group-hover:text-white animate-bounce" />
@@ -103,6 +104,7 @@ export default function PWAInstallButton({ isScrolled, isDark, mobile, floating 
         <button
           onClick={handleEnableNotifs}
           title="Enable Phone Notifications"
+          aria-label="Enable Phone Notifications"
           className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#111] dark:bg-white text-white dark:text-[#111] font-black text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(240,94,35,0.35)] border border-[#F05E23] hover:bg-[#F05E23] hover:text-white transition-all group"
         >
           <Bell className="w-4 h-4 shrink-0 text-[#F05E23] group-hover:text-white animate-bounce" />
@@ -112,6 +114,7 @@ export default function PWAInstallButton({ isScrolled, isDark, mobile, floating 
       <button
         onClick={handleInstall}
         title="Download & Install App"
+        aria-label="Download and Install App"
         className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#111] dark:bg-white text-white dark:text-[#111] font-black text-xs uppercase tracking-widest shadow-[0_10px_30px_rgba(240,94,35,0.35)] border border-[#F05E23] hover:bg-[#F05E23] hover:text-white dark:hover:bg-[#F05E23] dark:hover:text-white hover:scale-105 active:scale-95 transition-all group"
       >
         <Download className="w-4 h-4 shrink-0 text-[#F05E23] group-hover:text-white transition-colors animate-bounce" />

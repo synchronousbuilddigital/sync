@@ -128,11 +128,11 @@ export default function Footer() {
                         <h5 className={`text-[0.65rem] font-black uppercase tracking-[0.4em] mb-8 transition-colors duration-500 ${isDark ? 'text-white/60' : 'text-black'}`}>Connect</h5>
                         <div className="flex flex-row items-center gap-4">
                             {[
-                                { icon: Linkedin, href: "https://www.linkedin.com/in/devam-srivastava/" },
-                                { icon: Instagram, href: "https://www.instagram.com/synchronous.build.digital/" },
-                                { icon: Mail, href: "mailto:synchronous.build.digital@gmail.com" }
+                                { icon: Linkedin, href: "https://www.linkedin.com/in/devam-srivastava/", label: "LinkedIn Profile" },
+                                { icon: Instagram, href: "https://www.instagram.com/synchronous.build.digital/", label: "Instagram Profile" },
+                                { icon: Mail, href: "mailto:synchronous.build.digital@gmail.com", label: "Email Address" }
                             ].map((social, i) => (
-                                <a key={i} href={social.href} target="_blank" rel="noopener noreferrer" className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all duration-500 shadow-sm group ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white hover:text-[#111]' : 'bg-white border-slate-200 text-slate-600 hover:text-white hover:bg-black hover:border-black'}`}>
+                                <a key={i} href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.label} className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all duration-500 shadow-sm group ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white hover:text-[#111]' : 'bg-white border-slate-200 text-slate-600 hover:text-white hover:bg-black hover:border-black'}`}>
                                     <social.icon className="w-4.5 h-4.5 group-hover:scale-110 transition-transform" strokeWidth={2.5} />
                                 </a>
                             ))}
