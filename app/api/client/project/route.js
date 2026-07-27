@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req) {
   try {
     const decoded = verifyToken(req);
-    if (!decoded || decoded.role !== "client") return Response.json({ success: false, message: "Client only" }, { status: 401 });
+    if (!decoded || decoded.role !== "brand_manager") return Response.json({ success: false, message: "Brand manager only" }, { status: 401 });
 
     await dbConnect();
     const project = await ClientProject.findOne({ clientId: decoded.userId }).populate("clientId", "name email");
@@ -23,7 +23,7 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const decoded = verifyToken(req);
-    if (!decoded || decoded.role !== "client") return Response.json({ success: false, message: "Client only" }, { status: 401 });
+    if (!decoded || decoded.role !== "brand_manager") return Response.json({ success: false, message: "Brand manager only" }, { status: 401 });
 
     await dbConnect();
     const { message, feed } = await req.json();
@@ -52,7 +52,7 @@ export async function POST(req) {
 export async function PATCH(req) {
   try {
     const decoded = verifyToken(req);
-    if (!decoded || decoded.role !== "client") return Response.json({ success: false, message: "Client only" }, { status: 401 });
+    if (!decoded || decoded.role !== "brand_manager") return Response.json({ success: false, message: "Brand manager only" }, { status: 401 });
 
     await dbConnect();
     const body = await req.json();

@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import Company from "@/models/Company";
 import bcrypt from "bcryptjs";
 import { verifyToken } from "@/lib/auth";
 import { sendOnboardingEmail } from "@/lib/mail";

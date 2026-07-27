@@ -10,9 +10,10 @@ import {
   Send, UserPlus, ClipboardList, TrendingUp,
   Mail, X, Check, Search, AlertCircle, Calendar, Briefcase, Shield,
   ExternalLink, MessageSquare, Save, Activity, PlusCircle, Zap, FileText,
-  Globe, ChevronRight, Trophy, Table, Film, Video
+  Globe, ChevronRight, Trophy, Table, Film, Video, UserCheck
 } from "lucide-react";
 import AdminHiring from "../../components/AdminHiring";
+import AdminMeetings from "../../components/AdminMeetings";
 import NotificationToaster from "../../components/NotificationToaster";
 
 const parseCustomDate = (val) => {
@@ -173,6 +174,7 @@ export default function AdminDashboard() {
   }, [tasks]);
 
   const [activeTab, setActiveTab] = useState("interns");
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   // Handle notification deep-link navigation
   useEffect(() => {
@@ -247,6 +249,52 @@ export default function AdminDashboard() {
   const [monthFilter, setMonthFilter] = useState("");
   const [dateFilterType, setDateFilterType] = useState("All");
   const [fromDate, setFromDate] = useState("");
+
+  // Attendance HQ States
+  const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [attendanceRoster, setAttendanceRoster] = useState([]);
+  const [attendanceSummary, setAttendanceSummary] = useState({ total: 0, present: 0, onLeave: 0, absent: 0, pending: 0 });
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+
+  const fetchAttendanceRoster = async (date) => {
+    setAttendanceLoading(true);
+    try {
+      const authToken = token || localStorage.getItem("sync_token") || "";
+      const res = await fetch(`/api/admin/attendance?date=${date}`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAttendanceRoster(data.roster || []);
+        setAttendanceSummary(data.summary || { total: 0, present: 0, onLeave: 0, absent: 0, pending: 0 });
+      }
+    } catch (e) { /* silent */ } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "attendance" && token) {
+      fetchAttendanceRoster(attendanceDate);
+    }
+  }, [activeTab, attendanceDate, token]);
+
+
+  const [visibleTabsCount, setVisibleTabsCount] = useState(3);
+  useEffect(() => {
+    const handleResize = () => {
+      // Lowering thresholds to ensure tabs never squish and 'More' dropdown is visible
+      if (window.innerWidth >= 1536) setVisibleTabsCount(8); // 2xl
+      else if (window.innerWidth >= 1280) setVisibleTabsCount(7); // xl
+      else if (window.innerWidth >= 1024) setVisibleTabsCount(6); // lg
+      else if (window.innerWidth >= 768) setVisibleTabsCount(5); // md
+      else if (window.innerWidth >= 480) setVisibleTabsCount(4); // sm
+      else setVisibleTabsCount(3); // mobile < 480px
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [toDate, setToDate] = useState("");
   const [ptMonthFilter, setPtMonthFilter] = useState("All");
   const [ptTimeframeFilter, setPtTimeframeFilter] = useState("All");
@@ -469,6 +517,8 @@ export default function AdminDashboard() {
     production: "Production HQ",
     brands: "Clients",
     hiring: "Hiring",
+    meetings: "Meetings",
+    attendance: "Attendance",
     overview: "Overview"
   };
 
@@ -1151,9 +1201,11 @@ export default function AdminDashboard() {
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const internStats = interns.map(intern => {
-      const internTasks = tasks.filter(t => t.internId?._id === intern._id);
-      const weekTasks = internTasks.filter(t => new Date(t.updatedAt || t.createdAt) >= oneWeekAgo && t.status === "Complete");
-      const monthTasks = internTasks.filter(t => new Date(t.updatedAt || t.createdAt) >= oneMonthAgo && t.status === "Complete");
+      const internTasks = tasks.filter(t => t.internId && String(t.internId._id || t.internId) === String(intern._id));
+      const completedStatuses = ["Done", "Completed", "Complete", "Approved"];
+      
+      const weekTasks = internTasks.filter(t => new Date(t.updatedAt || t.createdAt) >= oneWeekAgo && completedStatuses.includes(t.status));
+      const monthTasks = internTasks.filter(t => new Date(t.updatedAt || t.createdAt) >= oneMonthAgo && completedStatuses.includes(t.status));
 
       // Calculate efficiency (completed vs assigned in that period)
       const assignedWeek = internTasks.filter(t => new Date(t.createdAt) >= oneWeekAgo).length;
@@ -1167,16 +1219,20 @@ export default function AdminDashboard() {
       };
     });
 
-    const internOfWeek = [...internStats].sort((a, b) => b.weekCount - a.weekCount || b.efficiency - a.efficiency)[0];
-    const internOfMonth = [...internStats].sort((a, b) => b.monthCount - a.monthCount)[0];
+    const internOfWeekSorted = [...internStats].sort((a, b) => b.weekCount - a.weekCount || b.efficiency - a.efficiency);
+    const internOfWeek = internOfWeekSorted.length > 0 && internOfWeekSorted[0].weekCount > 0 ? internOfWeekSorted[0] : null;
+
+    const internOfMonthSorted = [...internStats].sort((a, b) => b.monthCount - a.monthCount);
+    const internOfMonth = internOfMonthSorted.length > 0 && internOfMonthSorted[0].monthCount > 0 ? internOfMonthSorted[0] : null;
 
     return { internOfWeek, internOfMonth };
   };
 
   const generateAIInsight = (intern) => {
-    const internTasks = tasks.filter(t => t.internId?._id === intern._id);
-    const pending = internTasks.filter(t => t.status !== "Complete").length;
-    const completed = internTasks.filter(t => t.status === "Complete").length;
+    const internTasks = tasks.filter(t => t.internId && String(t.internId._id || t.internId) === String(intern._id));
+    const completedStatuses = ["Done", "Completed", "Complete", "Approved"];
+    const pending = internTasks.filter(t => !completedStatuses.includes(t.status)).length;
+    const completed = internTasks.filter(t => completedStatuses.includes(t.status)).length;
     const blockers = internTasks.filter(t => ["Need Credentials", "Need Meeting"].includes(t.status)).length;
     const highPriority = internTasks.filter(t => t.priority === "High" && t.status !== "Complete").length;
 
@@ -1252,42 +1308,117 @@ export default function AdminDashboard() {
         {statCards.map((stat, i) => (
           <motion.div key={i} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.1 }} className="bg-white dark:bg-white/3 border border-black/5 dark:border-white/5 p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] shadow-sm hover:border-[#F05E23]/20 transition-all group relative overflow-hidden backdrop-blur-sm flex flex-col justify-between">
             <div className={`absolute top-0 right-0 w-24 h-24 bg-${stat.color}-500/[0.025] rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700`} />
-            <div className="flex items-center justify-between mb-4 sm:mb-6 relative z-10">
-              <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 group-hover:border-[#F05E23]/20 transition-all`}>
+            <div className="relative z-10 flex flex-col items-start">
+              <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 group-hover:border-[#F05E23]/20 transition-all shrink-0 mb-4 sm:mb-6`}>
                 <stat.icon className={`w-4 sm:w-5 h-4 sm:h-5 text-${stat.color === 'orange' ? '[#F05E23]' : stat.color + '-500'}`} />
               </div>
-              <span className="text-[0.5rem] sm:text-[0.55rem] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-slate-400 dark:text-white/20">{stat.label}</span>
-            </div>
-            <div>
-              <div className="text-3xl sm:text-5xl font-black mb-1 sm:mb-2 relative z-10 tracking-tighter italic text-slate-900 dark:text-white">{stat.val}</div>
-              <p className="text-[0.5rem] sm:text-[0.55rem] font-bold text-slate-400 dark:text-white/10 uppercase tracking-widest relative z-10">{stat.desc}</p>
+              <div className="text-3xl sm:text-5xl font-black mb-1 tracking-tighter italic text-slate-900 dark:text-white">{stat.val}</div>
+              <h3 className="text-[0.55rem] sm:text-[0.6rem] font-black uppercase tracking-[0.1em] sm:tracking-[0.15em] text-slate-800 dark:text-white mt-1 mb-1 leading-tight">{stat.label}</h3>
+              <p className="text-[0.5rem] sm:text-[0.55rem] font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest">{stat.desc}</p>
             </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="flex gap-2 sm:gap-3 mb-10 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        {[
-          { id: "interns", icon: Users },
-          { id: "tasks", icon: ClipboardList },
-          { id: "post_tracker", icon: Clock },
-          { id: "sheet", icon: Table },
-          { id: "holidays", icon: Calendar },
-          { id: "portfolio", icon: Briefcase },
-          { id: "production", icon: Film },
-          { id: "brands", icon: Shield },
-          { id: "hiring", icon: UserPlus },
-          { id: "overview", icon: TrendingUp }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-[0.6rem] sm:text-[0.65rem] transition-all relative flex items-center gap-2 sm:gap-3 shrink-0 ${activeTab === tab.id ? "bg-[#F05E23] text-white shadow-lg shadow-[#F05E23]/30" : "bg-white dark:bg-white/5 text-slate-400 hover:text-slate-600 dark:hover:text-white border border-black/5 dark:border-white/10"}`}
-          >
-            <tab.icon className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-            {tabLabels[tab.id]}
-          </button>
-        ))}
+      <div className="w-full flex justify-center mb-12 sm:mb-16">
+        <div className="flex items-center p-1.5 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full shadow-sm max-w-full relative z-20">
+          {(() => {
+            const allTabs = [
+              { id: "interns", icon: Users },
+              { id: "tasks", icon: ClipboardList },
+              { id: "post_tracker", icon: Clock },
+              { id: "sheet", icon: Table },
+              { id: "holidays", icon: Calendar },
+              { id: "portfolio", icon: Briefcase },
+              { id: "production", icon: Film },
+              { id: "brands", icon: Shield },
+              { id: "hiring", icon: UserPlus },
+              { id: "meetings", icon: Video },
+              { id: "attendance", icon: UserCheck },
+              { id: "overview", icon: TrendingUp }
+            ];
+            
+            // Ensure the active tab is always in the visible list
+            let visibleTabs = [];
+            let dropdownTabs = [];
+            
+            const activeIndex = allTabs.findIndex(t => t.id === activeTab);
+            
+            if (allTabs.length <= visibleTabsCount) {
+               visibleTabs = allTabs;
+            } else {
+               // If active tab is outside the visible range, swap it with the last visible slot
+               const baseVisible = [...allTabs];
+               if (activeIndex >= visibleTabsCount - 1) {
+                  const temp = baseVisible[visibleTabsCount - 2];
+                  baseVisible[visibleTabsCount - 2] = baseVisible[activeIndex];
+                  baseVisible[activeIndex] = temp;
+               }
+               visibleTabs = baseVisible.slice(0, visibleTabsCount - 1);
+               dropdownTabs = baseVisible.slice(visibleTabsCount - 1);
+            }
+
+            // Whether any dropdown tab is currently active (for More button indicator)
+            const hasActiveDropdownTab = dropdownTabs.some(t => t.id === activeTab);
+
+            return (
+              <>
+                {visibleTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setActiveTab(tab.id); setMoreMenuOpen(false); }}
+                    className={`px-3 sm:px-7 py-3 rounded-full font-black uppercase tracking-widest text-[0.6rem] sm:text-[0.65rem] transition-all flex items-center gap-1.5 sm:gap-2 shrink-0 ${activeTab === tab.id ? "bg-[#F05E23] text-white shadow-md shadow-[#F05E23]/30" : "text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"}`}
+                  >
+                    <tab.icon className={`w-3.5 h-3.5 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`} />
+                    <span className="hidden sm:inline-block">{tabLabels[tab.id]}</span>
+                    <span className="sm:hidden">{tabLabels[tab.id].split(' ')[0]}</span>
+                  </button>
+                ))}
+
+                
+                {dropdownTabs.length > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                      className={`px-3 sm:px-6 py-3 rounded-full font-black uppercase tracking-widest text-[0.6rem] sm:text-[0.65rem] transition-all flex items-center gap-1.5 sm:gap-2 shrink-0 ${
+                        hasActiveDropdownTab
+                          ? "bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/30"
+                          : moreMenuOpen
+                          ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white"
+                          : "text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      More
+                      <ChevronRight className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform ${moreMenuOpen ? "rotate-90" : ""}`} />
+
+                    </button>
+                    
+                    {moreMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setMoreMenuOpen(false)}></div>
+                        <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#111] border border-black/5 dark:border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden py-2 flex flex-col">
+                          {dropdownTabs.map((tab) => (
+                            <button
+                              key={tab.id}
+                              onClick={() => { setActiveTab(tab.id); setMoreMenuOpen(false); }}
+                              className={`px-6 py-3.5 text-left font-black uppercase tracking-widest text-[0.6rem] transition-all flex items-center gap-3 ${activeTab === tab.id ? "bg-[#F05E23]/10 text-[#F05E23]" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"}`}
+                            >
+                              <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-[#F05E23]' : 'text-slate-400'}`} />
+                              {tabLabels[tab.id]}
+                              {activeTab === tab.id && (
+                                <span className="ml-auto w-1.5 h-1.5 bg-[#F05E23] rounded-full" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
       </div>
 
 
@@ -1296,7 +1427,7 @@ export default function AdminDashboard() {
           <select
             value={taskCompanyFilter}
             onChange={(e) => setTaskCompanyFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
+            className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
           >
             <option value="">All Companies</option>
             {uniqueTaskCompanies.map(c => <option key={c} value={c}>{c}</option>)}
@@ -1304,7 +1435,7 @@ export default function AdminDashboard() {
           <select
             value={taskDepartmentFilter}
             onChange={(e) => setTaskDepartmentFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
+            className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
           >
             <option value="">All Departments</option>
             {uniqueTaskDepartments.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1312,7 +1443,7 @@ export default function AdminDashboard() {
           <select
             value={teamDepartmentFilter}
             onChange={(e) => setTeamDepartmentFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
+            className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
           >
             <option value="">All Team Departments</option>
             {uniqueTeamDepartments.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1320,7 +1451,7 @@ export default function AdminDashboard() {
           <select
             value={taskTeamMemberFilter}
             onChange={(e) => setTaskTeamMemberFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
+            className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 focus:border-[#F05E23]/50 outline-none text-xs font-bold text-slate-600 dark:text-white transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]"
           >
             <option value="">All Team Members</option>
             {uniqueTaskTeamMembers.map(m => <option key={m} value={m}>{m}</option>)}
@@ -2488,28 +2619,44 @@ export default function AdminDashboard() {
                         &quot;{leave.reason}&quot;
                       </p>
                     </div>
-                    {leave.status === 'Pending' && (
-                      <div className="flex gap-4 pt-4 border-t border-black/5 dark:border-white/10">
+                    {/* Status actions — always visible so admin can change any status */}
+                    <div className="pt-4 border-t border-black/5 dark:border-white/10 space-y-3">
+                      <p className="text-[0.55rem] font-black uppercase tracking-widest text-slate-400 dark:text-white/30">
+                        Current Status: <span className={`${leave.status === 'Approved' ? 'text-green-500' : leave.status === 'Rejected' ? 'text-red-500' : 'text-yellow-500'}`}>{leave.status}</span>
+                      </p>
+                      <div className="flex gap-3">
                         <button
                           onClick={() => {
                             approveLeave(leave._id, "Approved");
                             setExpandedHoliday(null);
                           }}
-                          className="flex-1 bg-green-500 text-white px-6 py-3 rounded-xl font-black uppercase text-[0.6rem] tracking-widest shadow-lg shadow-green-500/20 hover:scale-105 transition-all"
+                          disabled={leave.status === "Approved"}
+                          className={`flex-1 px-6 py-3 rounded-xl font-black uppercase text-[0.6rem] tracking-widest transition-all ${leave.status === "Approved" ? "bg-green-500 text-white cursor-default shadow-lg shadow-green-500/20" : "bg-green-500/10 border border-green-500/30 text-green-600 hover:bg-green-500 hover:text-white"}`}
                         >
-                          Grant
+                          {leave.status === "Approved" ? "✓ Approved" : "Approve"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            approveLeave(leave._id, "Pending");
+                            setExpandedHoliday(null);
+                          }}
+                          disabled={leave.status === "Pending"}
+                          className={`flex-1 px-6 py-3 rounded-xl font-black uppercase text-[0.6rem] tracking-widest transition-all ${leave.status === "Pending" ? "bg-yellow-500 text-white cursor-default shadow-lg shadow-yellow-500/20" : "bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 hover:bg-yellow-500 hover:text-white"}`}
+                        >
+                          {leave.status === "Pending" ? "⏳ Pending" : "Set Pending"}
                         </button>
                         <button
                           onClick={() => {
                             approveLeave(leave._id, "Rejected");
                             setExpandedHoliday(null);
                           }}
-                          className="flex-1 bg-transparent border border-red-500/30 text-red-500 px-6 py-3 rounded-xl font-black uppercase text-[0.6rem] tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                          disabled={leave.status === "Rejected"}
+                          className={`flex-1 px-6 py-3 rounded-xl font-black uppercase text-[0.6rem] tracking-widest transition-all ${leave.status === "Rejected" ? "bg-red-500 text-white cursor-default shadow-lg shadow-red-500/20" : "bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white"}`}
                         >
-                          Deny
+                          {leave.status === "Rejected" ? "✕ Rejected" : "Reject"}
                         </button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </motion.div>
               )
@@ -2519,42 +2666,232 @@ export default function AdminDashboard() {
 
         {activeTab === "hiring" && <AdminHiring />}
 
+        {activeTab === "meetings" && <AdminMeetings />}
+
+        {activeTab === "attendance" && (
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="flex flex-col gap-4">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Attendance HQ</h2>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest mt-1">Daily Intern Roster — Present / On Leave / Absent</p>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <input
+                  type="date"
+                  value={attendanceDate}
+                  max={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setAttendanceDate(e.target.value)}
+                  className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold border bg-white dark:bg-white/5 border-black/10 dark:border-white/10 text-slate-700 dark:text-white outline-none cursor-pointer"
+                />
+                <button
+                  onClick={() => fetchAttendanceRoster(attendanceDate)}
+                  className="shrink-0 px-5 py-2.5 bg-[#F05E23] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: "Total Interns", val: attendanceSummary.total, color: "slate", icon: Users },
+                { label: "Present", val: attendanceSummary.present, color: "green", icon: UserCheck },
+                { label: "On Leave", val: attendanceSummary.onLeave, color: "blue", icon: Calendar },
+                { label: "Absent", val: attendanceSummary.absent, color: "red", icon: AlertCircle },
+                { label: "Pending", val: attendanceSummary.pending || 0, color: "amber", icon: Clock },
+              ].map((s, i) => (
+                <div key={i} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex sm:flex-col items-center sm:items-start gap-3">
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${
+                    s.color === "green" ? "bg-green-500/10 text-green-500" :
+                    s.color === "blue" ? "bg-blue-500/10 text-blue-500" :
+                    s.color === "red" ? "bg-red-500/10 text-red-500" :
+                    "bg-slate-500/10 text-slate-500"
+                  }`}>
+                    <s.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <div>
+                    <div className={`text-2xl sm:text-4xl font-black tracking-tighter italic ${
+                      s.color === "green" ? "text-green-600" :
+                      s.color === "blue" ? "text-blue-600" :
+                      s.color === "red" ? "text-red-500" :
+                      "text-slate-800 dark:text-white"
+                    }`}>{s.val}</div>
+                    <p className="text-[0.5rem] sm:text-[0.55rem] font-black uppercase tracking-widest text-slate-400 dark:text-white/30 mt-0.5">{s.label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Roster */}
+            {attendanceLoading ? (
+              <div className="py-20 flex justify-center">
+                <div className="w-8 h-8 border-4 border-[#F05E23] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : attendanceRoster.length === 0 ? (
+              <div className="py-20 text-center text-slate-400 font-bold text-sm uppercase tracking-widest">No interns found.</div>
+            ) : (
+              <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl overflow-hidden">
+                {/* Desktop table header — hidden on mobile */}
+                <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-black/5 dark:border-white/5 text-[0.6rem] font-black uppercase tracking-widest text-slate-400 dark:text-white/30">
+                  <div className="col-span-5">Intern</div>
+                  <div className="col-span-2">Dept</div>
+                  <div className="col-span-3">Status</div>
+                  <div className="col-span-2">Time</div>
+                </div>
+                {attendanceRoster.map((intern) => {
+                  const statusBadge = intern.status === "Present" ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 text-green-600 border border-green-500/20 rounded-full text-[0.6rem] font-black uppercase tracking-widest whitespace-nowrap">
+                      <UserCheck className="w-3 h-3 shrink-0" /> Present
+                    </span>
+                  ) : intern.status === "On Leave" ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 border border-blue-500/20 rounded-full text-[0.6rem] font-black uppercase tracking-widest whitespace-nowrap">
+                      <Calendar className="w-3 h-3 shrink-0" /> On Leave
+                    </span>
+                  ) : intern.status === "Absent" ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full text-[0.6rem] font-black uppercase tracking-widest whitespace-nowrap">
+                      <AlertCircle className="w-3 h-3 shrink-0" /> Absent
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[0.6rem] font-black uppercase tracking-widest whitespace-nowrap">
+                      <Clock className="w-3 h-3 shrink-0" /> Pending
+                    </span>
+                  );
+
+                  const timeLabel = intern.markedAt
+                    ? new Date(intern.markedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })
+                    : intern.status === "On Leave" ? "—" : "—";
+
+                  return (
+                    <div key={intern._id} className="border-b border-black/5 dark:border-white/5 last:border-0">
+                      {/* Mobile card layout */}
+                      <div className="md:hidden p-4 flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 font-black text-sm ${
+                          intern.status === "Present" ? "bg-green-500/10 text-green-600" :
+                          intern.status === "On Leave" ? "bg-blue-500/10 text-blue-600" :
+                          intern.status === "Absent" ? "bg-red-500/10 text-red-500" :
+                          "bg-amber-500/10 text-amber-500"
+                        }`}>
+                          {intern.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="font-black text-sm text-slate-800 dark:text-white truncate">{intern.name}</span>
+                            {statusBadge}
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[0.55rem] font-bold text-slate-400 uppercase tracking-wide">{intern.department}</span>
+                            {intern.markedAt && (
+                              <span className="text-[0.55rem] font-bold text-slate-400">· {timeLabel}</span>
+                            )}
+                            {intern.status === "On Leave" && intern.leaveReason && (
+                              <span className="text-[0.55rem] font-bold text-blue-400 truncate max-w-[120px]" title={intern.leaveReason}>· {intern.leaveReason}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Desktop table row — hidden on mobile */}
+                      <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                        <div className="col-span-5 min-w-0">
+                          <div className="font-black text-sm text-slate-800 dark:text-white">{intern.name}</div>
+                          <div className="text-[0.55rem] text-slate-400 dark:text-white/30 font-bold tracking-wide truncate">{intern.email}</div>
+                        </div>
+                        <div className="col-span-2 text-[0.6rem] font-bold text-slate-500 dark:text-white/40 uppercase tracking-wide">
+                          {intern.department}
+                        </div>
+                        <div className="col-span-3">{statusBadge}</div>
+                        <div className="col-span-2 text-[0.6rem] font-bold text-slate-400 dark:text-white/30">
+                          {intern.markedAt ? timeLabel : intern.status === "On Leave"
+                            ? <span className="text-blue-400 text-[0.55rem]" title={intern.leaveReason}>On Leave</span>
+                            : "—"
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+          </div>
+        )}
+
         {activeTab === "overview" && (
+
           <div className="flex flex-col gap-12">
             {/* Top Row: Chart & Awards */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-              {/* Weekly Analytics */}
-              <div className="lg:col-span-7 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-10 rounded-[3.5rem] relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-10 opacity-5">
+              {/* Employee Task Analytics */}
+              <div className="lg:col-span-7 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 p-6 sm:p-10 rounded-[3.5rem] relative overflow-hidden flex flex-col min-h-[420px]">
+                <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
                   <TrendingUp className="w-40 h-40" />
                 </div>
-                <div className="flex items-center justify-between mb-10 relative z-10">
+                <div className="flex items-center justify-between mb-8 relative z-10 shrink-0">
                   <div>
-                    <h3 className="text-2xl font-black uppercase tracking-tight italic">Operational <span className="text-[#F05E23]">Velocity</span></h3>
-                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest mt-1">7-Day execution matrix</p>
+                    <h3 className="text-2xl font-black uppercase tracking-tight italic">Team <span className="text-[#F05E23]">Velocity</span></h3>
+                    <p className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest mt-1">Intern Task Execution Matrix</p>
                   </div>
-                  <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 px-4 py-2 rounded-2xl">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[0.6rem] font-black uppercase text-green-500 tracking-widest">Live Sync</span>
+                  <div className="flex items-center gap-3 bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-2xl">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                    <span className="text-[0.6rem] font-black uppercase text-blue-500 tracking-widest">Live Sync</span>
                   </div>
                 </div>
-                <div className="h-64 flex items-end gap-4 px-2 relative z-10">
-                  {weeklyData.map((day, i) => (
-                    <div key={i} className="flex-1 group relative h-full flex flex-col justify-end">
-                      <div className="flex-1 bg-slate-50 dark:bg-white/5 rounded-2xl relative overflow-hidden flex items-end mb-4">
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${day.height}%` }}
-                          transition={{ type: "spring", stiffness: 100, damping: 15, delay: i * 0.1 }}
-                          className={`w-full ${day.val > 80 ? 'bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : (day.val > 40 ? 'bg-[#F05E23] shadow-[0_0_20px_rgba(240,94,35,0.3)]' : 'bg-slate-300 dark:bg-white/10')} transition-all`}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                          <span className="bg-black text-white text-[0.6rem] font-black px-2 py-1 rounded-md">{day.val}%</span>
+                
+                <div className="flex-1 w-full relative z-10 flex flex-col justify-end gap-3 sm:gap-4 overflow-y-auto no-scrollbar pr-2">
+                  {(() => {
+                    const internTaskStats = (interns || []).map(intern => {
+                      const internTasks = (tasks || []).filter(t => t.internId && (String(t.internId._id || t.internId) === String(intern._id)));
+                      const completed = internTasks.filter(t => ["Done", "Completed", "Complete", "Approved"].includes(t.status)).length;
+                      const assigned = internTasks.length;
+                      return {
+                        id: intern._id,
+                        name: intern.name.split(' ')[0],
+                        assigned,
+                        completed,
+                        progress: assigned > 0 ? Math.round((completed / assigned) * 100) : 0
+                      };
+                    }).filter(stat => stat.assigned > 0).sort((a, b) => b.completed - a.completed);
+
+                    if (internTaskStats.length === 0) {
+                      return <div className="text-sm font-bold opacity-40 italic text-center my-auto uppercase tracking-widest">No tasks assigned yet</div>;
+                    }
+
+                    const maxTasks = Math.max(...internTaskStats.map(s => s.assigned));
+
+                    return internTaskStats.map((stat, i) => (
+                      <div key={stat.id} className="w-full flex items-center gap-3 sm:gap-4 group">
+                        <div className="w-16 sm:w-20 text-[0.6rem] sm:text-xs font-black uppercase tracking-widest text-slate-700 dark:text-white truncate text-right shrink-0">
+                          {stat.name}
+                        </div>
+                        <div className="flex-1 h-6 sm:h-8 bg-slate-100 dark:bg-white/5 rounded-full relative overflow-hidden flex cursor-crosshair">
+                          {/* Total Assigned Bar (Background) */}
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(stat.assigned / maxTasks) * 100}%` }}
+                            transition={{ type: "spring", stiffness: 100, damping: 15, delay: i * 0.1 }}
+                            className="absolute left-0 top-0 bottom-0 bg-slate-200 dark:bg-white/10 rounded-full"
+                          />
+                          {/* Completed Bar (Foreground) */}
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(stat.completed / maxTasks) * 100}%` }}
+                            transition={{ type: "spring", stiffness: 100, damping: 15, delay: i * 0.1 }}
+                            className={`absolute left-0 top-0 bottom-0 rounded-full ${stat.progress === 100 ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'bg-[#F05E23] shadow-[0_0_15px_rgba(240,94,35,0.3)]'} flex items-center justify-end px-3`}
+                          >
+                            <span className="text-[0.5rem] font-black text-white/90 drop-shadow-md">{stat.progress}%</span>
+                          </motion.div>
+                          
+                          {/* Interactive Tooltip / Label */}
+                          <div className="absolute inset-0 flex justify-between items-center px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 mix-blend-difference">
+                            <span className="text-[0.6rem] font-black uppercase tracking-widest text-white">{stat.completed} Completed</span>
+                            <span className="text-[0.6rem] font-black uppercase tracking-widest text-white">{stat.assigned} Assigned</span>
+                          </div>
                         </div>
                       </div>
-                      <span className="text-[0.6rem] font-black uppercase text-slate-400 text-center">{day.label}</span>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -2578,7 +2915,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm opacity-60 italic mt-8">Analyzing performance data...</p>
+                      <p className="text-sm opacity-60 font-bold uppercase tracking-widest mt-8">No tasks finalized this week</p>
                     )}
                   </div>
                 </div>
@@ -2601,7 +2938,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm opacity-60 italic mt-8">Calculating monthly matrix...</p>
+                      <p className="text-sm opacity-60 font-bold uppercase tracking-widest mt-8">No tasks finalized this month</p>
                     )}
                   </div>
                 </div>
@@ -2873,7 +3210,7 @@ export default function AdminDashboard() {
                           
                           setClientForm(newForm);
                         }}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-300"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-bold uppercase text-sm tracking-wide outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-500"
                         placeholder={input.placeholder}
                       />
                       <div className="absolute inset-y-0 left-0 w-1 bg-[#F05E23] scale-y-0 group-focus-within:scale-y-50 transition-transform rounded-r-full" />
@@ -2884,7 +3221,7 @@ export default function AdminDashboard() {
                       type="text"
                       value={clientForm.password}
                       onChange={e => setClientForm({ ...clientForm, password: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-black uppercase text-[0.65rem] tracking-widest outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-300"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-5 px-8 font-bold uppercase text-sm tracking-wide outline-none focus:border-[#F05E23]/30 transition-all text-slate-800 placeholder:text-slate-500"
                       placeholder="Portal Password"
                     />
                     <div className="absolute inset-y-0 left-0 w-1 bg-[#F05E23] scale-y-0 group-focus-within:scale-y-50 transition-transform rounded-r-full" />
@@ -2918,7 +3255,7 @@ export default function AdminDashboard() {
                       rows={3}
                       value={clientForm.brandDescription}
                       onChange={e => setClientForm({ ...clientForm, brandDescription: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-base text-slate-800 placeholder:text-slate-500 resize-none"
                       placeholder="High-end brand technical description..."
                     />
                   </div>
@@ -2929,7 +3266,7 @@ export default function AdminDashboard() {
                       rows={5}
                       value={clientForm.sop}
                       onChange={e => setClientForm({ ...clientForm, sop: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-mono text-xs text-slate-800 placeholder:text-slate-300 resize-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-mono text-sm text-slate-800 placeholder:text-slate-500 resize-none"
                       placeholder="Custom SOP for this brand..."
                     />
                   </div>
@@ -2957,7 +3294,7 @@ export default function AdminDashboard() {
                                 newReqs[i].content = e.target.value;
                                 setClientForm({ ...clientForm, requirements: newReqs });
                               }}
-                              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[0.6rem] font-bold outline-none focus:border-[#F05E23]/30"
+                              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold outline-none focus:border-[#F05E23]/30 placeholder:text-slate-500"
                             />
                             <button
                               type="button"
@@ -2992,7 +3329,7 @@ export default function AdminDashboard() {
                                 newFeats[i].title = e.target.value;
                                 setClientForm({ ...clientForm, aiFeatures: newFeats });
                               }}
-                              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-[0.6rem] font-bold outline-none focus:border-[#F05E23]/30"
+                              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold outline-none focus:border-[#F05E23]/30 placeholder:text-slate-500"
                             />
                             <button
                               type="button"
@@ -3192,16 +3529,16 @@ export default function AdminDashboard() {
                      const emailPrefix = autoEmail ? autoEmail.replace("@synchronous.com", "") : "";
                      const autoPass = emailPrefix ? `${emailPrefix}123` : "";
                      setNewIntern({ ...newIntern, name: val, email: autoEmail, password: autoPass });
- }} placeholder="Full Identity (e.g. Jayant Kumar)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+ }} placeholder="Full Identity (e.g. Jayant Kumar)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm tracking-wide text-slate-800 placeholder:text-slate-500" />
                  </div>
                  <div className="relative group">
-                   <input type="email" required value={newIntern.email} onChange={e => setNewIntern({ ...newIntern, email: e.target.value })} placeholder="Official Email (@synchronous.com)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                   <input type="email" required value={newIntern.email} onChange={e => setNewIntern({ ...newIntern, email: e.target.value })} placeholder="Official Email (@synchronous.com)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm tracking-wide text-slate-800 placeholder:text-slate-500" />
                  </div>
                 <div className="relative group">
-                   <input type="text" required value={newIntern.password} onChange={e => setNewIntern({ ...newIntern, password: e.target.value })} placeholder="Initial Password (e.g. jayant123)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+                   <input type="text" required value={newIntern.password} onChange={e => setNewIntern({ ...newIntern, password: e.target.value })} placeholder="Initial Password (e.g. jayant123)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm tracking-wide text-slate-800 placeholder:text-slate-500" />
                  </div>
                 <div className="relative group">
- <select required value={newIntern.department} onChange={e => setNewIntern({ ...newIntern, department: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 appearance-none cursor-pointer">
+ <select required value={newIntern.department} onChange={e => setNewIntern({ ...newIntern, department: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm tracking-wide text-slate-800 appearance-none cursor-pointer">
                     <option value="" disabled>Select Main Department</option>
                     <option value="Tech">Tech</option>
                     <option value="Digital Marketing">Digital Marketing</option>
@@ -4226,24 +4563,24 @@ export default function AdminDashboard() {
               <form onSubmit={handleProjectSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="relative group">
- <input type="text" required value={projectForm.title} onChange={e => setProjectForm({ ...projectForm, title: e.target.value })} placeholder="Project Title" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+ <input type="text" required value={projectForm.title} onChange={e => setProjectForm({ ...projectForm, title: e.target.value })} placeholder="Project Title" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm tracking-wide text-slate-800 placeholder:text-slate-500" />
                   </div>
                   <div className="relative group">
- <input type="text" value={projectForm.index} onChange={e => setProjectForm({ ...projectForm, index: e.target.value })} placeholder="Sequence Index (e.g. 01)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-slate-800 placeholder:text-slate-300" />
+ <input type="text" value={projectForm.index} onChange={e => setProjectForm({ ...projectForm, index: e.target.value })} placeholder="Sequence Index (e.g. 01)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm tracking-wide text-slate-800 placeholder:text-slate-500" />
                   </div>
                   <div className="relative group">
- <input type="text" value={projectForm.category} onChange={e => setProjectForm({ ...projectForm, category: e.target.value })} placeholder="Sync Category" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.65rem] tracking-widest text-[#F05E23] placeholder:text-[#F05E23]/20" />
+ <input type="text" value={projectForm.category} onChange={e => setProjectForm({ ...projectForm, category: e.target.value })} placeholder="Sync Category" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm tracking-wide text-[#F05E23] placeholder:text-[#F05E23]/60" />
                   </div>
                 </div>
                 <div className="relative group">
-                  <textarea rows={4} required value={projectForm.description} onChange={e => setProjectForm({ ...projectForm, description: e.target.value })} placeholder="Impact Narrative..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-8 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-sm text-slate-800 placeholder:text-slate-300 resize-none" />
+                  <textarea rows={4} required value={projectForm.description} onChange={e => setProjectForm({ ...projectForm, description: e.target.value })} placeholder="Impact Narrative..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-medium text-base text-slate-800 placeholder:text-slate-500 resize-none" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="relative group">
- <input type="text" value={projectForm.tags} onChange={e => setProjectForm({ ...projectForm, tags: e.target.value })} placeholder="Technological Stack (comma separated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-[#F05E23]/30 transition-all font-black text-[0.6rem] tracking-widest text-slate-500 placeholder:text-slate-300" />
+ <input type="text" value={projectForm.tags} onChange={e => setProjectForm({ ...projectForm, tags: e.target.value })} placeholder="Technological Stack (comma separated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-[#F05E23]/30 transition-all font-bold text-sm tracking-wide text-slate-500 placeholder:text-slate-500" />
                   </div>
                   <div className="relative group">
- <input type="text" value={projectForm.impact} onChange={e => setProjectForm({ ...projectForm, impact: e.target.value })} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 outline-none focus:border-green-500/30 transition-all font-black text-[0.6rem] tracking-widest text-green-600 placeholder:text-green-600/20 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
+ <input type="text" value={projectForm.impact} onChange={e => setProjectForm({ ...projectForm, impact: e.target.value })} placeholder="Critical Output (e.g. $50k Revenue Generated)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 outline-none focus:border-green-500/30 transition-all font-bold text-sm tracking-wide text-green-600 placeholder:text-green-600/60 shadow-[0_0_20px_rgba(34,197,94,0.05)]" />
                   </div>
                 </div>
                 <div className="flex gap-4 pt-10">

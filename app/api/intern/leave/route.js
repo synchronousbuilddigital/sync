@@ -14,6 +14,40 @@ export async function POST(req) {
     await dbConnect();
     const { startDate, endDate, reason } = await req.json();
 
+    if (!startDate || !endDate || !reason) {
+      return Response.json({ success: false, message: "All fields are required" }, { status: 400 });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Reset today's time to start of day for accurate past-date comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+    const startCompare = new Date(start);
+    startCompare.setHours(0, 0, 0, 0);
+
+    if (startCompare < today) {
+      return Response.json({ success: false, message: "Start date cannot be in the past" }, { status: 400 });
+    }
+
+    if (end < start) {
+      return Response.json({ success: false, message: "End date cannot be before start date" }, { status: 400 });
+    }
+
+    // Check for overlapping leaves (either Pending or Approved)
+    const existingLeave = await Leave.findOne({
+      internId: decoded.id,
+      status: { $in: ["Pending", "Approved"] },
+      $or: [
+        { startDate: { $lte: end }, endDate: { $gte: start } }
+      ]
+    });
+
+    if (existingLeave) {
+      return Response.json({ success: false, message: "You already have a leave request overlapping these dates" }, { status: 400 });
+    }
+
     const leave = await Leave.create({
       internId: decoded.id,
       startDate,

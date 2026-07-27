@@ -1,6 +1,5 @@
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
-import bcrypt from "bcryptjs";
 
 export async function GET() {
   try {
@@ -9,10 +8,9 @@ export async function GET() {
     const password = "Devam@56789";
 
     const existingAdmin = await User.findOne({ email });
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     if (existingAdmin) {
-      existingAdmin.password = hashedPassword;
+      existingAdmin.password = password;
       existingAdmin.role = "admin";
       existingAdmin.mustChangePassword = false;
       await existingAdmin.save();
@@ -20,7 +18,7 @@ export async function GET() {
       await User.create({
         name: "Admin",
         email: email,
-        password: hashedPassword,
+        password: password,
         role: "admin",
         mustChangePassword: false
       });

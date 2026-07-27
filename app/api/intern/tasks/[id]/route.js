@@ -22,7 +22,7 @@ export async function PATCH(req, { params }) {
     }
 
     const updateData = { status, note };
-    if (isApproved !== undefined) updateData.isApproved = isApproved;
+    if (isApproved !== undefined && decoded.role === "admin") updateData.isApproved = isApproved;
     if (marketingData !== undefined) {
       // Use dot notation to avoid overwriting the whole object if partial
       for (const [key, value] of Object.entries(marketingData)) {
@@ -37,7 +37,7 @@ export async function PATCH(req, { params }) {
     }
 
     if (status === "Need Meeting") {
-      updateData.meetingLink = "https://meet.google.com/fvx-dgeh-dgb";
+      updateData.meetingLink = `https://meet.jit.si/SyncHQ-Task-${id}`;
     }
 
     const task = await Task.findOneAndUpdate(

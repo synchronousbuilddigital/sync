@@ -7,9 +7,10 @@ import { useTheme } from "@/components/ThemeContext";
 import { 
   CheckCircle2, Clock, Activity, Layout, ChevronDown, Calendar, Building2, UserCircle, 
   Table as TableIcon, LayoutGrid, Search, Filter, ArrowUpRight, ExternalLink,
-  ChevronLeft, ChevronRight, Link2, X, Eye
+  ChevronLeft, ChevronRight, Link2, X, Eye, Users, AlertCircle, FileText, MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import ParticipantMeetings from "../../components/ParticipantMeetings";
 
 export default function BrandManagerDashboard() {
   const { user, token, tasks: contextTasks, taskStore, fetchTasks, companyName, logout, brandManagerReviewTask, refreshBrandData, dataLoading } = useAuth();
@@ -29,19 +30,27 @@ export default function BrandManagerDashboard() {
   // Handle notification deep-link navigation
   useEffect(() => {
     const handleNotifNav = () => {
-      if (!tasks || tasks.length === 0) return;
       const search = typeof window !== 'undefined' ? window.location.search : '';
       if (!search) return;
       const params = new URLSearchParams(search);
       const notifTask = params.get('notif_task');
       if (notifTask) {
-        const task = tasks.find(t => t._id === notifTask);
-        if (task) {
-          setCalendarSelectedTask(task);
+        if (tasks && tasks.length > 0) {
+          const task = tasks.find(t => t._id === notifTask);
+          if (task) {
+            setCalendarSelectedTask(task);
+          }
         }
         const url = new URL(window.location.href);
         url.searchParams.delete('notif_task');
         url.searchParams.delete('notif_action');
+        window.history.replaceState({}, '', url.toString());
+      }
+      const notifSection = params.get('notif_section');
+      if (notifSection === 'meeting') {
+        setActiveTab('Meetings');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('notif_section');
         window.history.replaceState({}, '', url.toString());
       }
     };
@@ -56,6 +65,10 @@ export default function BrandManagerDashboard() {
             if (task) {
               setCalendarSelectedTask(task);
             }
+          }
+          const notifSection = params.get('notif_section');
+          if (notifSection === 'meeting') {
+            setActiveTab('Meetings');
           }
         } catch (e) {}
       }
@@ -322,7 +335,7 @@ export default function BrandManagerDashboard() {
       {/* Controls Bar */}
       <div className={`max-w-[1600px] mx-auto relative z-10 mb-6 sm:mb-12 flex flex-col lg:flex-row justify-between items-center gap-3 sm:gap-6 border rounded-2xl sm:rounded-3xl p-3 sm:p-4 backdrop-blur-md ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10 shadow-sm"}`}>
         <div className="flex gap-1.5 sm:gap-2 overflow-x-auto w-full lg:w-auto scrollbar-hide pb-1 lg:pb-0">
-          {["All", "Pending", "Working", "In Review", "Completed"].map(tab => (
+          {["All", "Pending", "Working", "In Review", "Completed", "Meetings"].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -337,6 +350,7 @@ export default function BrandManagerDashboard() {
           ))}
         </div>
         
+        {activeTab !== "Meetings" && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-4 w-full lg:w-auto">
           <div className="relative flex-1 lg:w-64">
             <Search className={`absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 ${isDark ? "text-white/30" : "text-slate-400"}`} />
@@ -389,9 +403,11 @@ export default function BrandManagerDashboard() {
             </button>
           </div>
         </div>
+        )}
       </div>
 
       {/* Date & Month Filter Bar */}
+      {activeTab !== "Meetings" && (
       <div className="max-w-[1600px] mx-auto relative z-10 mb-6 sm:mb-8 flex flex-wrap items-center gap-2 sm:gap-3">
         <select
           value={monthFilter}
@@ -442,10 +458,13 @@ export default function BrandManagerDashboard() {
           </button>
         )}
       </div>
+      )}
 
       {/* Main Content Area */}
       <div className="max-w-[1600px] mx-auto relative z-10">
-        {displayTasks.length === 0 ? (
+        {activeTab === "Meetings" ? (
+          <ParticipantMeetings apiEndpoint="/api/brand/meetings" />
+        ) : displayTasks.length === 0 ? (
           <div className={`p-24 text-center rounded-[3rem] flex flex-col items-center justify-center backdrop-blur-md border ${isDark ? "border-white/10 bg-white/5" : "border-black/10 bg-white"}`}>
              <Building2 className={`w-20 h-20 mb-8 ${isDark ? "text-white/10" : "text-slate-200"}`} />
              <h2 className="text-3xl font-black uppercase tracking-tighter italic text-slate-400">No Tasks Discovered</h2>

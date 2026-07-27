@@ -1,12 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import NotificationToaster from "./NotificationToaster";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+  const pollIntervalRef = useRef(null);
   const [globalToast, setGlobalToast] = useState({ type: "", msg: "" });
 
   const subscribeToPush = useCallback(async (authToken) => {
@@ -102,6 +103,7 @@ export function AuthProvider({ children }) {
   const [internProjects, setInternProjects] = useState([]); // Projects assigned to intern
   const [companies, setCompanies] = useState([]); // Client companies for task assignment
   const [brandManagers, setBrandManagers] = useState([]); // Brand managers list
+  const [meetings, setMeetings] = useState([]); // Scheduled meetings
   const router = useRouter();
 
   const parseJsonResponse = async (res, fallbackMessage) => {
@@ -166,6 +168,27 @@ export function AuthProvider({ children }) {
       if (data.success) setLeaves(data.leaves);
     } catch (e) {
       console.error("Failed to fetch leaves", e);
+    }
+  }, []);
+
+  const fetchMeetings = useCallback(async (role, authToken) => {
+    try {
+      let endpoint = "";
+      if (role === "admin") endpoint = "/api/admin/meetings";
+      else if (role === "intern") endpoint = "/api/intern/meetings";
+      else if (role === "brand_manager") endpoint = "/api/brand/meetings";
+      else return;
+
+      const res = await fetch(endpoint, {
+        headers: { "Authorization": `Bearer ${authToken}` },
+        cache: "no-store"
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMeetings(data.meetings);
+      }
+    } catch (e) {
+      console.error("Failed to fetch meetings", e);
     }
   }, []);
 
@@ -385,6 +408,7 @@ export function AuthProvider({ children }) {
       setUser(parsedUser);
       setToken(storedToken);
       fetchTasks(parsedUser.role, storedToken);
+      fetchMeetings(parsedUser.role, storedToken);
 
       if (parsedUser.role !== "brand_manager") {
         fetchProjects();
@@ -404,8 +428,10 @@ export function AuthProvider({ children }) {
       if (parsedUser.role === "client") fetchClientProject(storedToken);
 
       // Real-time updates: Poll every 10 seconds
-      const pollInterval = setInterval(() => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = setInterval(() => {
         fetchTasks(parsedUser.role, storedToken);
+        fetchMeetings(parsedUser.role, storedToken);
         fetchLeaves(storedToken);
         fetchProjects();
         if (parsedUser.role === "admin") {
@@ -423,14 +449,19 @@ export function AuthProvider({ children }) {
       setLoading(false);
       // Re-subscribe to web push on every page load so subscriptions stay fresh
       setTimeout(() => requestNotificationPermission(storedToken), 2000);
-      return () => clearInterval(pollInterval);
+      return () => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+      };
     } else {
       fetchProjects(); // Publicly fetch projects if no stored session
       fetchProductionData(); // Publicly fetch production data if no stored session
     }
     setLoading(false);
     setDataLoading(false); // No stored session — nothing to load
-  }, [fetchInterns, fetchTasks, fetchLeaves, fetchBrandManagers, fetchProjects, fetchProductionData]);
+  }, [user?.role, token, fetchInterns, fetchTasks, fetchLeaves, fetchMeetings, fetchBrandManagers, fetchProjects, fetchProductionData]);
 
   const login = async (email, password) => {
     try {
@@ -456,6 +487,7 @@ export function AuthProvider({ children }) {
         }
 
         fetchTasks(data.user.role, data.token);
+        fetchMeetings(data.user.role, data.token);
         if (data.user.role === "admin") {
           fetchInterns(data.token);
           fetchCompanies(data.token);
@@ -480,6 +512,10 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
     setToken(null);
     setUser(null);
     setInterns([]);
@@ -487,6 +523,7 @@ export function AuthProvider({ children }) {
     setTaskStore({ role: null, ownerId: null });
     setCompanyName("");
     setLeaves([]);
+    setMeetings([]);
     setClientProject(null);
     setAdminClientProjects([]);
     setInternProjects([]);
@@ -1079,27 +1116,30 @@ export function AuthProvider({ children }) {
     if (token) {
       fetchInterns(token);
       fetchTasks("admin", token);
+      fetchMeetings("admin", token);
       fetchAdminClientProjects(token);
       fetchCompanies(token);
       fetchBrandManagers(token);
       fetchProjects();
       fetchProductionData();
     }
-  }, [token, fetchInterns, fetchTasks, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, fetchProjects, fetchProductionData]);
+  }, [token, fetchInterns, fetchTasks, fetchMeetings, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, fetchProjects, fetchProductionData]);
 
   const refreshInternData = useCallback(() => {
     if (token) {
       fetchTasks("intern", token);
+      fetchMeetings("intern", token);
       fetchLeaves(token);
       fetchInternProjects(token);
     }
-  }, [token, fetchTasks, fetchLeaves, fetchInternProjects]);
+  }, [token, fetchTasks, fetchMeetings, fetchLeaves, fetchInternProjects]);
 
   const refreshBrandData = useCallback(() => {
     if (token) {
       fetchTasks("brand_manager", token);
+      fetchMeetings("brand_manager", token);
     }
-  }, [token, fetchTasks]);
+  }, [token, fetchTasks, fetchMeetings]);
 
   const refreshClientData = useCallback(() => {
     if (token) {
@@ -1144,6 +1184,11 @@ export function AuthProvider({ children }) {
           list.push({ id: `leave-${l._id}`, title: "New Leave Request", desc: `${l.internName || 'Intern'} requested leave (${l.startDate} to ${l.endDate})`, time: l.createdAt || Date.now(), type: 'leave' });
         }
       });
+      (meetings || []).forEach(m => {
+        if (m.status === "Scheduled") {
+          list.push({ id: `meeting-${m._id}`, title: "Meeting Scheduled", desc: `Admin scheduled "${m.title}" for ${new Date(m.scheduledAt).toLocaleString()}`, time: m.createdAt || Date.now(), type: 'meeting' });
+        }
+      });
     } else if (user.role === "intern") {
       (tasks || []).forEach(t => {
         if (t.status === "Pending") {
@@ -1164,6 +1209,11 @@ export function AuthProvider({ children }) {
           list.push({ id: `leave-${l._id}-${l.status}`, title: `Leave ${l.status}`, desc: `Your leave request for ${l.startDate} was ${l.status.toLowerCase()}`, time: l.updatedAt || l.createdAt || Date.now(), type: 'leave' });
         }
       });
+      (meetings || []).forEach(m => {
+        if (m.status === "Scheduled") {
+          list.push({ id: `meeting-${m._id}`, title: "Meeting Scheduled", desc: `Admin scheduled "${m.title}" for ${new Date(m.scheduledAt).toLocaleString()}`, time: m.createdAt || Date.now(), type: 'meeting' });
+        }
+      });
     } else if (user.role === "brand_manager" || user.role === "client") {
       (tasks || []).forEach(t => {
         const memberName = t.internId?.name || t.assignedTo || 'Team Member';
@@ -1179,6 +1229,11 @@ export function AuthProvider({ children }) {
             const senderName = lastMsg.senderName || memberName;
             list.push({ id: `chat-${t._id}-${lastMsg.timestamp}`, title: `${senderName} • Mission Log`, desc: `${senderName}: "${lastMsg.content}" on "${t.title}"`, time: lastMsg.timestamp || Date.now(), type: 'chat', taskId: t._id });
           }
+        }
+      });
+      (meetings || []).forEach(m => {
+        if (m.status === "Scheduled") {
+          list.push({ id: `meeting-${m._id}`, title: "Meeting Scheduled", desc: `Admin scheduled "${m.title}" for ${new Date(m.scheduledAt).toLocaleString()}`, time: m.createdAt || Date.now(), type: 'meeting' });
         }
       });
     }
@@ -1221,7 +1276,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user, token, loading, dataLoading, login, logout, changePassword, showToast, requestNotificationPermission,
       interns, tasks, taskStore, fetchTasks, fetchInterns, fetchAdminClientProjects, fetchCompanies, fetchBrandManagers, refreshAdminData, refreshInternData, refreshBrandData, refreshClientData, companyName, leaves, projects, addIntern, removeIntern, assignTask,
-      updateTaskStatus, deleteTask, updateTask, reassignTask, approveLeave,
+      updateTaskStatus, deleteTask, updateTask, reassignTask, approveLeave, applyForLeave,
       announceToAll, addProject, updateProject, deleteProject, fetchProductionData,
       productionItems, partnerLogos, productionCategories, productionGalleryItems, addProductionItem, updateProductionItem, deleteProductionItem, addPartnerLogo, updatePartnerLogo, deletePartnerLogo, addProductionCategory, updateProductionCategory, deleteProductionCategory, addProductionGalleryItem, updateProductionGalleryItem, deleteProductionGalleryItem,
       clientProject, adminClientProjects, internProjects, createClient, createClientProject,

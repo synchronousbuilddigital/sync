@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, Zap, Sun, Moon, Bell, CheckCircle2, Clock, MessageSquare, ExternalLink, Calendar, Activity } from "lucide-react";
+import { Menu, X, ArrowRight, Zap, Sun, Moon, Bell, CheckCircle2, Clock, MessageSquare, ExternalLink, Calendar, Activity, Video as VideoIcon } from "lucide-react";
 import { useTheme } from './ThemeContext';
 import { useAuth } from "./AuthContext";
 import PWAInstallButton from "./PWAInstallButton";
@@ -19,6 +19,20 @@ const navLinks = [
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
 ];
+
+const formatRelativeTime = (dateString) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Just now";
+  
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  if (diffInSeconds < 60) return "Just now";
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return date.toLocaleDateString();
+};
 
 export default function Header() {
   const { isDark, toggleTheme } = useTheme();
@@ -54,6 +68,15 @@ export default function Header() {
     } else if (n.type === 'leave') {
       const dashPath = user?.role === 'admin' ? '/admin' : '/intern';
       const targetUrl = `${dashPath}?notif_section=leave`;
+      if (pathname === dashPath) {
+        window.history.pushState({}, '', targetUrl);
+        window.dispatchEvent(new Event('notif_navigation'));
+      } else {
+        router.push(targetUrl);
+      }
+    } else if (n.type === 'meeting') {
+      const dashPath = user?.role === 'admin' ? '/admin' : (user?.role === 'brand_manager' ? '/brand' : '/intern');
+      const targetUrl = `${dashPath}?notif_section=meeting`;
       if (pathname === dashPath) {
         window.history.pushState({}, '', targetUrl);
         window.dispatchEvent(new Event('notif_navigation'));
@@ -279,15 +302,15 @@ export default function Header() {
                     className={`p-3.5 sm:p-4 rounded-2xl transition-all cursor-pointer flex items-start gap-3 ${n.unread ? "bg-[#F05E23]/10 dark:bg-[#F05E23]/15 border border-[#F05E23]/20" : "hover:bg-slate-50 dark:hover:bg-white/5"
                       }`}
                   >
-                    <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${n.type === 'task' ? 'bg-amber-500/10 text-amber-500' : n.type === 'link' ? 'bg-blue-500/10 text-blue-500' : n.type === 'chat' ? 'bg-purple-500/10 text-purple-500' : 'bg-green-500/10 text-green-500'}`}>
-                      {n.type === 'task' ? <Activity className="w-4 h-4" /> : n.type === 'link' ? <ExternalLink className="w-4 h-4" /> : n.type === 'chat' ? <MessageSquare className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
+                    <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${n.type === 'task' ? 'bg-amber-500/10 text-amber-500' : n.type === 'link' ? 'bg-blue-500/10 text-blue-500' : n.type === 'chat' ? 'bg-purple-500/10 text-purple-500' : n.type === 'meeting' ? 'bg-[#F05E23]/10 text-[#F05E23]' : 'bg-green-500/10 text-green-500'}`}>
+                      {n.type === 'task' ? <Activity className="w-4 h-4" /> : n.type === 'link' ? <ExternalLink className="w-4 h-4" /> : n.type === 'chat' ? <MessageSquare className="w-4 h-4" /> : n.type === 'meeting' ? <VideoIcon className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <h4 className="text-xs font-black uppercase tracking-wide truncate text-slate-900 dark:text-white">{n.title}</h4>
                         <span className="text-[0.55rem] font-bold text-slate-400 shrink-0 flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
-                          {new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {formatRelativeTime(n.time)}
                         </span>
                       </div>
                       <p className="text-[0.65rem] font-bold text-slate-600 dark:text-slate-300 mt-1 line-clamp-2 leading-relaxed">{n.desc}</p>

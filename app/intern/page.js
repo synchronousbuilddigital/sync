@@ -9,88 +9,90 @@ import {
    FileText, Calendar, PlusCircle, Activity,
    Layout, ShieldCheck, ChevronDown, Plus, Zap,
    Shield, Globe, Terminal, ExternalLink, Key,
-   Cpu as CpuIcon, Trophy, BookOpen, Newspaper, Box, 
-   Sparkles, Target, Compass, HardDrive, Timer, X
+   Cpu as CpuIcon, Trophy, BookOpen, Newspaper, Box,
+   Sparkles, Target, Compass, HardDrive, Timer, X, Video as VideoIcon,
+   UserCheck
 } from "lucide-react";
 import NotificationToaster from "../../components/NotificationToaster";
+import ParticipantMeetings from "../../components/ParticipantMeetings";
 
 const parseCustomDate = (val) => {
-  if (!val) return null;
-  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
-  const str = String(val).trim();
+   if (!val) return null;
+   if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+   const str = String(val).trim();
 
-  // 1. Check for YYYY-MM-DD
-  const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-  if (ymd) {
-    return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3]));
-  }
+   // 1. Check for YYYY-MM-DD
+   const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+   if (ymd) {
+      return new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3]));
+   }
 
-  // 2. Check for DD-MM-YYYY or DD/MM/YYYY (e.g. 10-06-2026 or 24/06/2026)
-  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-  if (dmy) {
-    let first = parseInt(dmy[1]);
-    let second = parseInt(dmy[2]);
-    let y = parseInt(dmy[3]);
-    if (y < 100) y += 2000;
-
-    if (second > 12) {
-      return new Date(y, first - 1, second);
-    } else {
-      return new Date(y, second - 1, first);
-    }
-  }
-
-  // 3. Check for DD-MMM-YY or DD Month YYYY (e.g. 10-Jun-26 or 08 June 2026)
-  const dmm = str.match(/^(\d{1,2})[\/\-\s]+([A-Za-z]{3,})[\/\-\s]*(\d{0,4})$/);
-  if (dmm) {
-    const day = parseInt(dmm[1]);
-    const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-    const mIdx = monthNames.findIndex(m => dmm[2].toLowerCase().startsWith(m));
-    if (mIdx !== -1) {
-      let y = dmm[3] ? parseInt(dmm[3]) : new Date().getFullYear();
+   // 2. Check for DD-MM-YYYY or DD/MM/YYYY (e.g. 10-06-2026 or 24/06/2026)
+   const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+   if (dmy) {
+      let first = parseInt(dmy[1]);
+      let second = parseInt(dmy[2]);
+      let y = parseInt(dmy[3]);
       if (y < 100) y += 2000;
-      return new Date(y, mIdx, day);
-    }
-  }
 
-  let d = new Date(str);
-  return isNaN(d?.getTime()) ? null : d;
+      if (second > 12) {
+         return new Date(y, first - 1, second);
+      } else {
+         return new Date(y, second - 1, first);
+      }
+   }
+
+   // 3. Check for DD-MMM-YY or DD Month YYYY (e.g. 10-Jun-26 or 08 June 2026)
+   const dmm = str.match(/^(\d{1,2})[\/\-\s]+([A-Za-z]{3,})[\/\-\s]*(\d{0,4})$/);
+   if (dmm) {
+      const day = parseInt(dmm[1]);
+      const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+      const mIdx = monthNames.findIndex(m => dmm[2].toLowerCase().startsWith(m));
+      if (mIdx !== -1) {
+         let y = dmm[3] ? parseInt(dmm[3]) : new Date().getFullYear();
+         if (y < 100) y += 2000;
+         return new Date(y, mIdx, day);
+      }
+   }
+
+   let d = new Date(str);
+   return isNaN(d?.getTime()) ? null : d;
 };
 
 export default function InternDashboard() {
    const { user, tasks, internProjects, leaves, updateTaskStatus, sendDiscussion, applyForLeave, loading, dataLoading, refreshInternData, markChatRead, showToast, token, markTaskNotificationsRead } = useAuth();
-   
+
    const hasUnreadInternMessage = (task) => {
-     if (!task || task._id === chatTaskId) return false;
-     if (task.hasUnreadInternChat === false) return false;
-     if (task.hasUnreadInternChat === true) return true;
-     if (task.hasUnreadInternChat === undefined && (task.discussion || []).length > 0) {
-       return task.discussion[task.discussion.length - 1]?.sender === 'admin';
-     }
-     return false;
+      if (!task || task._id === chatTaskId) return false;
+      if (task.hasUnreadInternChat === false) return false;
+      if (task.hasUnreadInternChat === true) return true;
+      if (task.hasUnreadInternChat === undefined && (task.discussion || []).length > 0) {
+         return task.discussion[task.discussion.length - 1]?.sender === 'admin';
+      }
+      return false;
    };
 
    const triggerNativeAlert = (title, body, tag) => {
-     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-       const options = {
-         body: body || "Tap to view in Sync Command",
-         icon: "/logo.png",
-         badge: "/logo.png",
-         vibrate: [200, 100, 200],
-         tag: tag || `sync-alert-${Date.now()}`,
-         renotify: true,
-         data: { url: "/intern" }
-       };
-       if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-         navigator.serviceWorker.ready.then(reg => {
-           reg.showNotification(title, options);
-         }).catch(() => {
-           new Notification(title, options);
-         });
-       } else {
-         new Notification(title, options);
-       }
-     }
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+         const options = {
+            body: body || "Tap to view in Sync Command",
+            icon: "/logo.png",
+            badge: "/logo.png",
+            vibrate: [200, 100, 200],
+            tag: tag || `sync-alert-${Date.now()}`,
+            renotify: true,
+            data: { url: "/intern" }
+         };
+         if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(reg => {
+               reg.showNotification(title, options);
+            }).catch(() => {
+               new Notification(title, options);
+            });
+         } else {
+            new Notification(title, options);
+         }
+      }
    };
 
    const [prevInternUnreadCount, setPrevInternUnreadCount] = useState(0);
@@ -98,50 +100,50 @@ export default function InternDashboard() {
    const prevTaskIdsRef = useRef(null);
 
    useEffect(() => {
-     const unreadCount = (tasks || []).filter(hasUnreadInternMessage).length;
-     const currentTaskIds = new Set((tasks || []).map(t => t._id));
+      const unreadCount = (tasks || []).filter(hasUnreadInternMessage).length;
+      const currentTaskIds = new Set((tasks || []).map(t => t._id));
 
-     if (dataLoading && (!tasks || tasks.length === 0)) return;
+      if (dataLoading && (!tasks || tasks.length === 0)) return;
 
-     if (isInitialLoadRef.current) {
-       isInitialLoadRef.current = false;
-       setPrevInternUnreadCount(unreadCount);
-       prevTaskIdsRef.current = currentTaskIds;
-       return;
-     }
+      if (isInitialLoadRef.current) {
+         isInitialLoadRef.current = false;
+         setPrevInternUnreadCount(unreadCount);
+         prevTaskIdsRef.current = currentTaskIds;
+         return;
+      }
 
-     // 1. Check for New Mission Log Chat Messages
-     if (unreadCount > prevInternUnreadCount) {
-       if (showToast) showToast("💬 New Mission Log message received from Admin HQ!", "info");
-       triggerNativeAlert("💬 New Mission Log Message", "Admin HQ replied in your Mission Log. Tap to view.", "new-chat-intern");
-     }
-     setPrevInternUnreadCount(unreadCount);
+      // 1. Check for New Mission Log Chat Messages
+      if (unreadCount > prevInternUnreadCount) {
+         if (showToast) showToast("💬 New Mission Log message received from Admin HQ!", "info");
+         triggerNativeAlert("💬 New Mission Log Message", "Admin HQ replied in your Mission Log. Tap to view.", "new-chat-intern");
+      }
+      setPrevInternUnreadCount(unreadCount);
 
-     // 2. Check for Newly Assigned Tasks
-     if (prevTaskIdsRef.current) {
-       const newTasks = (tasks || []).filter(t => !prevTaskIdsRef.current.has(t._id));
-       if (newTasks.length > 0) {
-         const taskTitle = newTasks[0].title || "New Mission";
-         const msgText = newTasks.length === 1 
-           ? `🚀 New Task Assigned: "${taskTitle}" from Admin HQ!`
-           : `🚀 ${newTasks.length} New Tasks Assigned from Admin HQ!`;
+      // 2. Check for Newly Assigned Tasks
+      if (prevTaskIdsRef.current) {
+         const newTasks = (tasks || []).filter(t => !prevTaskIdsRef.current.has(t._id));
+         if (newTasks.length > 0) {
+            const taskTitle = newTasks[0].title || "New Mission";
+            const msgText = newTasks.length === 1
+               ? `🚀 New Task Assigned: "${taskTitle}" from Admin HQ!`
+               : `🚀 ${newTasks.length} New Tasks Assigned from Admin HQ!`;
 
-         if (showToast) {
-           showToast(msgText, "info");
+            if (showToast) {
+               showToast(msgText, "info");
+            }
+
+            const notifTitle = newTasks.length === 1 ? `🚀 New Task: ${taskTitle}` : `🚀 ${newTasks.length} New Tasks Assigned!`;
+            const notifBody = newTasks.length === 1 ? `Priority: ${newTasks[0].priority || "Normal"} • Tap to view in Sync Command` : "Tap to open your task list in Sync Command";
+            triggerNativeAlert(notifTitle, notifBody, `new-task-${newTasks[0]._id || Date.now()}`);
          }
-
-         const notifTitle = newTasks.length === 1 ? `🚀 New Task: ${taskTitle}` : `🚀 ${newTasks.length} New Tasks Assigned!`;
-         const notifBody = newTasks.length === 1 ? `Priority: ${newTasks[0].priority || "Normal"} • Tap to view in Sync Command` : "Tap to open your task list in Sync Command";
-         triggerNativeAlert(notifTitle, notifBody, `new-task-${newTasks[0]._id || Date.now()}`);
-       }
-     }
-     prevTaskIdsRef.current = currentTaskIds;
+      }
+      prevTaskIdsRef.current = currentTaskIds;
    }, [tasks]);
 
    useEffect(() => {
-     if (user?.role === "intern" && refreshInternData) {
-       refreshInternData();
-     }
+      if (user?.role === "intern" && refreshInternData) {
+         refreshInternData();
+      }
    }, [user, refreshInternData]);
 
    const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -160,22 +162,113 @@ export default function InternDashboard() {
    const [chatMsg, setChatMsg] = useState("");
    const [submitting, setSubmitting] = useState(false);
    const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+   const [leaveModalView, setLeaveModalView] = useState("request");
    const [leaveReq, setLeaveReq] = useState({ startDate: "", endDate: "", reason: "" });
    const [statusMsg, setStatusMsg] = useState({ type: "", msg: "" });
    const [aiSuggestion, setAiSuggestion] = useState("");
    const [resolving, setResolving] = useState(false);
    const [activeTool, setActiveTool] = useState(null);
    const [taskFilter, setTaskFilter] = useState("All");
+   const [visibleFiltersCount, setVisibleFiltersCount] = useState(3);
+   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
+   useEffect(() => {
+     const handleResize = () => {
+       if (window.innerWidth < 480) {
+         setVisibleFiltersCount(4);
+       } else if (window.innerWidth < 768) {
+         setVisibleFiltersCount(4);
+       } else if (window.innerWidth < 1024) {
+         setVisibleFiltersCount(5);
+       } else {
+         setVisibleFiltersCount(5);
+       }
+     };
+     handleResize();
+     window.addEventListener("resize", handleResize);
+     return () => window.removeEventListener("resize", handleResize);
+   }, []);
+
    const [viewMode, setViewMode] = useState("cards");
    const [monthFilter, setMonthFilter] = useState("");
    const [dateFilterType, setDateFilterType] = useState("All");
    const [fromDate, setFromDate] = useState("");
    const [toDate, setToDate] = useState("");
+
+   // Attendance states
+   const [attendanceMarked, setAttendanceMarked] = useState(false);
+   const [attendanceMarkedAt, setAttendanceMarkedAt] = useState(null);
+   const [attendanceOnLeave, setAttendanceOnLeave] = useState(false);
+   const [attendanceMarkingNow, setAttendanceMarkingNow] = useState(false);
+   const [attendanceAvailable, setAttendanceAvailable] = useState(false);
+   const [attendanceMissed, setAttendanceMissed] = useState(false);
+
+   // Check if current IST time is between 9:00 AM and 11:00 AM
+   const checkAttendanceAvailability = () => {
+      const now = new Date();
+      // Calculate IST time securely
+      const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const istTime = new Date(utcTime + (330 * 60000)); // +5:30
+      const totalMinutes = istTime.getHours() * 60 + istTime.getMinutes();
+      
+      const isAfter9 = totalMinutes >= 9 * 60;
+      const isBefore11 = totalMinutes < 11 * 60;
+
+      setAttendanceAvailable(isAfter9 && isBefore11);
+      setAttendanceMissed(totalMinutes >= 11 * 60);
+   };
+
+   // Fetch today's attendance status on mount
+   useEffect(() => {
+      const fetchAttendance = async () => {
+         const authToken = token || localStorage.getItem("sync_token") || "";
+         if (!authToken) return;
+         try {
+            const res = await fetch("/api/intern/attendance", {
+               headers: { Authorization: `Bearer ${authToken}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+               setAttendanceMarked(data.marked);
+               setAttendanceMarkedAt(data.markedAt);
+               setAttendanceOnLeave(data.onApprovedLeave);
+            }
+         } catch (e) { /* silent */ }
+      };
+      if (token) fetchAttendance();
+      checkAttendanceAvailability();
+      // Re-check availability every minute
+      const interval = setInterval(checkAttendanceAvailability, 60000);
+      return () => clearInterval(interval);
+   }, [token]);
+
+   const handleMarkPresent = async () => {
+      if (attendanceMarkingNow || attendanceMarked) return;
+      setAttendanceMarkingNow(true);
+      try {
+         const authToken = token || localStorage.getItem("sync_token") || "";
+         const res = await fetch("/api/intern/attendance", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${authToken}` }
+         });
+         const data = await res.json();
+         if (data.success) {
+            setAttendanceMarked(true);
+            setAttendanceMarkedAt(data.attendance?.markedAt);
+            if (showToast) showToast("✅ Attendance marked! Have a great day!", "success");
+         } else {
+            if (showToast) showToast(data.message || "Could not mark attendance", "error");
+         }
+      } catch (e) {
+         if (showToast) showToast("Failed to mark attendance", "error");
+      }
+      setAttendanceMarkingNow(false);
+   };
    const { getAIBlockerSuggestion } = useAuth();
 
    useEffect(() => {
       if (typeof window !== "undefined") {
-         const anyModalOpen = chatTaskId || selectedTaskId || isUpdatingPost || isLeaveModalOpen;
+         const anyModalOpen = chatTaskId || selectedTaskId || isUpdatingPost || isLeaveModalOpen || activeTool !== null;
          document.body.style.overflow = anyModalOpen ? "hidden" : "unset";
       }
       return () => {
@@ -183,7 +276,7 @@ export default function InternDashboard() {
             document.body.style.overflow = "unset";
          }
       };
-   }, [chatTaskId, selectedTaskId, isUpdatingPost, isLeaveModalOpen]);
+   }, [chatTaskId, selectedTaskId, isUpdatingPost, isLeaveModalOpen, activeTool]);
 
    useEffect(() => {
       if (markTaskNotificationsRead) {
@@ -194,87 +287,97 @@ export default function InternDashboard() {
 
    // Handle notification deep-link navigation
    useEffect(() => {
-     const handleNotifNav = () => {
-       if (!tasks || tasks.length === 0) return;
-       const search = typeof window !== 'undefined' ? window.location.search : '';
-       if (!search) return;
-       const params = new URLSearchParams(search);
-       const notifTask = params.get('notif_task');
-       const notifAction = params.get('notif_action');
-       const notifSection = params.get('notif_section');
-       if (notifTask) {
-         const task = tasks.find(t => t._id === notifTask);
-         if (task) {
-           if (notifAction === 'chat') {
-             setChatTaskId(notifTask);
-             if (markChatRead) markChatRead(notifTask);
-           } else {
-             setSelectedTaskId(notifTask);
-             setNote(task.note || '');
-             setMarketingForm({
-               editedLink: task.marketingData?.editedLink || '',
-               rawLink: task.marketingData?.rawLink || '',
-               postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || '',
-               editorStatus: task.marketingData?.editorStatus || ''
-             });
-           }
-         }
-         const url = new URL(window.location.href);
-         url.searchParams.delete('notif_task');
-         url.searchParams.delete('notif_action');
-         window.history.replaceState({}, '', url.toString());
-       }
-       if (notifSection === 'leave') {
-         setIsLeaveModalOpen(true);
-         const url = new URL(window.location.href);
-         url.searchParams.delete('notif_section');
-         window.history.replaceState({}, '', url.toString());
-       }
-     };
-
-     const handleSwMessage = (event) => {
-       if (event.data && event.data.type === 'PUSH_NOTIFICATION_CLICK' && event.data.url) {
-         try {
-           const params = new URLSearchParams(event.data.url.split('?')[1] || '');
-           const notifTask = params.get('notif_task');
-           const notifAction = params.get('notif_action');
-           const notifSection = params.get('notif_section');
-           if (notifTask) {
-             const task = tasks.find(t => t._id === notifTask);
-             if (task) {
+      const handleNotifNav = () => {
+         const search = typeof window !== 'undefined' ? window.location.search : '';
+         if (!search) return;
+         const params = new URLSearchParams(search);
+         const notifTask = params.get('notif_task');
+         const notifAction = params.get('notif_action');
+         const notifSection = params.get('notif_section');
+         if (notifTask) {
+            if (tasks && tasks.length > 0) {
+               const task = tasks.find(t => t._id === notifTask);
+            if (task) {
                if (notifAction === 'chat') {
-                 setChatTaskId(notifTask);
-                 if (markChatRead) markChatRead(notifTask);
+                  setChatTaskId(notifTask);
+                  if (markChatRead) markChatRead(notifTask);
                } else {
-                 setSelectedTaskId(notifTask);
-                 setNote(task.note || '');
-                 setMarketingForm({
-                   editedLink: task.marketingData?.editedLink || '',
-                   rawLink: task.marketingData?.rawLink || '',
-                   postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || '',
-                   editorStatus: task.marketingData?.editorStatus || ''
-                 });
+                  setSelectedTaskId(notifTask);
+                  setNote(task.note || '');
+                  setMarketingForm({
+                     editedLink: task.marketingData?.editedLink || '',
+                     rawLink: task.marketingData?.rawLink || '',
+                     postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || '',
+                     editorStatus: task.marketingData?.editorStatus || ''
+                  });
                }
-             }
-           }
-           if (notifSection === 'leave') {
-             setIsLeaveModalOpen(true);
-           }
-         } catch (e) {}
-       }
-     };
+               }
+            }
+            const url = new URL(window.location.href);
+            url.searchParams.delete('notif_task');
+            url.searchParams.delete('notif_action');
+            window.history.replaceState({}, '', url.toString());
+         }
+         if (notifSection === 'leave') {
+            setIsLeaveModalOpen(true);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('notif_section');
+            window.history.replaceState({}, '', url.toString());
+         }
+         if (notifSection === 'meeting') {
+            setActiveTool('Meetings');
+            const url = new URL(window.location.href);
+            url.searchParams.delete('notif_section');
+            window.history.replaceState({}, '', url.toString());
+         }
+      };
 
-     handleNotifNav();
-     window.addEventListener('notif_navigation', handleNotifNav);
-     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-       navigator.serviceWorker.addEventListener('message', handleSwMessage);
-     }
-     return () => {
-       window.removeEventListener('notif_navigation', handleNotifNav);
-       if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-         navigator.serviceWorker.removeEventListener('message', handleSwMessage);
-       }
-     };
+      const handleSwMessage = (event) => {
+         if (event.data && event.data.type === 'PUSH_NOTIFICATION_CLICK' && event.data.url) {
+            try {
+               const params = new URLSearchParams(event.data.url.split('?')[1] || '');
+               const notifTask = params.get('notif_task');
+               const notifAction = params.get('notif_action');
+               const notifSection = params.get('notif_section');
+               if (notifTask) {
+                  const task = tasks.find(t => t._id === notifTask);
+                  if (task) {
+                     if (notifAction === 'chat') {
+                        setChatTaskId(notifTask);
+                        if (markChatRead) markChatRead(notifTask);
+                     } else {
+                        setSelectedTaskId(notifTask);
+                        setNote(task.note || '');
+                        setMarketingForm({
+                           editedLink: task.marketingData?.editedLink || '',
+                           rawLink: task.marketingData?.rawLink || '',
+                           postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || '',
+                           editorStatus: task.marketingData?.editorStatus || ''
+                        });
+                     }
+                  }
+               }
+               if (notifSection === 'leave') {
+                  setIsLeaveModalOpen(true);
+               }
+               if (notifSection === 'meeting') {
+                  setActiveTool('Meetings');
+               }
+            } catch (e) { }
+         }
+      };
+
+      handleNotifNav();
+      window.addEventListener('notif_navigation', handleNotifNav);
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+         navigator.serviceWorker.addEventListener('message', handleSwMessage);
+      }
+      return () => {
+         window.removeEventListener('notif_navigation', handleNotifNav);
+         if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+         }
+      };
    }, [tasks, markChatRead]);
 
    const handleUpdatePost = async (e) => {
@@ -284,13 +387,13 @@ export default function InternDashboard() {
          const authToken = token || localStorage.getItem("sync_token") || localStorage.getItem("token") || "";
          const res = await fetch("/api/intern/post-tracker", {
             method: "PUT",
-            headers: { 
+            headers: {
                "Content-Type": "application/json",
                "Authorization": `Bearer ${authToken}`
             },
             body: JSON.stringify(updatePostData)
          });
-         
+
          if (res.ok) {
             setIsUpdatingPost(false);
             if (showToast) showToast("Live post status & time updated!", "success");
@@ -313,52 +416,52 @@ export default function InternDashboard() {
    const selectedTask = safeTasks.find(t => t._id === selectedTaskId);
    const chatTask = safeTasks.find(t => t._id === chatTaskId);
    const myTasks = safeTasks.filter(t => {
-     if (t.internId?._id !== user?._id && t.internId !== user?._id) return false;
+      if (t.internId?._id !== user?._id && t.internId !== user?._id) return false;
 
-     if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
-       const dStr = t.dueDate || t.marketingData?.postTracker?.scheduledDate || t.createdAt;
-       let d = parseCustomDate(dStr);
-       const sheetMonth = t.marketingData?.postTracker?.month || "";
+      if (monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) {
+         const dStr = t.dueDate || t.marketingData?.postTracker?.scheduledDate || t.createdAt;
+         let d = parseCustomDate(dStr);
+         const sheetMonth = t.marketingData?.postTracker?.month || "";
 
-       if (monthFilter !== "") {
-         const mIndex = parseInt(monthFilter, 10);
-         const monthsFull = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-         const monthsShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-         const targetFull = monthsFull[mIndex];
-         const targetShort = monthsShort[mIndex];
-         const targetNum = (mIndex + 1).toString();
-         const targetNumPad = targetNum.padStart(2, "0");
+         if (monthFilter !== "") {
+            const mIndex = parseInt(monthFilter, 10);
+            const monthsFull = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+            const monthsShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+            const targetFull = monthsFull[mIndex];
+            const targetShort = monthsShort[mIndex];
+            const targetNum = (mIndex + 1).toString();
+            const targetNumPad = targetNum.padStart(2, "0");
 
-         let monthMatched = false;
-         if (d && d.getMonth() === mIndex) monthMatched = true;
-         if (!monthMatched && sheetMonth) {
-           const sStr = String(sheetMonth).trim().toLowerCase();
-           if (sStr === targetFull || sStr === targetShort || sStr === targetNum || sStr === targetNumPad || sStr.includes(targetFull) || sStr.includes(targetShort)) {
-             monthMatched = true;
-           }
+            let monthMatched = false;
+            if (d && d.getMonth() === mIndex) monthMatched = true;
+            if (!monthMatched && sheetMonth) {
+               const sStr = String(sheetMonth).trim().toLowerCase();
+               if (sStr === targetFull || sStr === targetShort || sStr === targetNum || sStr === targetNumPad || sStr.includes(targetFull) || sStr.includes(targetShort)) {
+                  monthMatched = true;
+               }
+            }
+            if (!monthMatched) return false;
          }
-         if (!monthMatched) return false;
-       }
 
-       if (dateFilterType !== "All" || fromDate || toDate) {
-         if (!d) return false;
-         const now = new Date();
-         if (dateFilterType === "Today" && d.toDateString() !== now.toDateString()) return false;
-         if (dateFilterType === "This Week") {
-           const firstDay = new Date(now);
-           firstDay.setHours(0, 0, 0, 0);
-           firstDay.setDate(now.getDate() - now.getDay());
-           const lastDay = new Date(firstDay);
-           lastDay.setDate(firstDay.getDate() + 6);
-           lastDay.setHours(23, 59, 59, 999);
-           if (d < firstDay || d > lastDay) return false;
+         if (dateFilterType !== "All" || fromDate || toDate) {
+            if (!d) return false;
+            const now = new Date();
+            if (dateFilterType === "Today" && d.toDateString() !== now.toDateString()) return false;
+            if (dateFilterType === "This Week") {
+               const firstDay = new Date(now);
+               firstDay.setHours(0, 0, 0, 0);
+               firstDay.setDate(now.getDate() - now.getDay());
+               const lastDay = new Date(firstDay);
+               lastDay.setDate(firstDay.getDate() + 6);
+               lastDay.setHours(23, 59, 59, 999);
+               if (d < firstDay || d > lastDay) return false;
+            }
+            if (dateFilterType === "This Month" && (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())) return false;
+            if (fromDate && new Date(fromDate + "T00:00:00") > d) return false;
+            if (toDate && new Date(toDate + "T23:59:59") < d) return false;
          }
-         if (dateFilterType === "This Month" && (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())) return false;
-         if (fromDate && new Date(fromDate + "T00:00:00") > d) return false;
-         if (toDate && new Date(toDate + "T23:59:59") < d) return false;
-       }
-     }
-     return true;
+      }
+      return true;
    });
 
    if (loading || dataLoading || !user) return <div className="min-h-screen bg-[#050505]" />;
@@ -441,18 +544,64 @@ export default function InternDashboard() {
                </h1>
                <p className="text-slate-500 dark:text-white/40 font-bold uppercase tracking-[0.4em] text-[0.6rem] mb-6">Bringing ideas to life together.</p>
                <div className="relative inline-block group cursor-default">
-                 <div className="absolute -inset-1 bg-gradient-to-r from-[#F05E23] via-amber-500 to-[#F05E23] rounded-full blur-md opacity-75 group-hover:opacity-100 transition duration-500 animate-pulse" />
-                 <span className="relative flex items-center gap-2 px-6 py-2.5 rounded-full text-[0.7rem] font-black uppercase tracking-[0.25em] bg-gradient-to-r from-[#F05E23] to-[#FF7A45] text-white shadow-xl shadow-[#F05E23]/30 border border-white/20 whitespace-nowrap">
-                   <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                   {user?.department || "Tech"} Unit
-                 </span>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-[#F05E23] via-amber-500 to-[#F05E23] rounded-full blur-md opacity-75 group-hover:opacity-100 transition duration-500 animate-pulse" />
+                  <span className="relative flex items-center gap-2 px-6 py-2.5 rounded-full text-[0.7rem] font-black uppercase tracking-[0.25em] bg-gradient-to-r from-[#F05E23] to-[#FF7A45] text-white shadow-xl shadow-[#F05E23]/30 border border-white/20 whitespace-nowrap">
+                     <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                     {user?.department || "Tech"} Unit
+                  </span>
                </div>
             </div>
 
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 w-full md:w-auto">
-               <button onClick={() => setIsLeaveModalOpen(true)} className="col-span-2 sm:col-span-1 justify-center bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl sm:rounded-[2rem] px-6 sm:px-8 py-4 sm:py-6 flex items-center gap-3 sm:gap-4 shadow-sm hover:scale-105 transition-all text-[#F05E23] font-black uppercase text-[0.6rem] sm:text-[0.65rem] tracking-widest">
+               <button onClick={() => setActiveTool("Meetings")} className="col-span-1 sm:col-span-1 justify-center bg-[#F05E23] text-white border border-[#F05E23]/10 rounded-2xl sm:rounded-[2rem] px-6 sm:px-8 py-4 sm:py-6 flex items-center gap-3 sm:gap-4 shadow-lg hover:scale-105 transition-all font-black uppercase text-[0.6rem] sm:text-[0.65rem] tracking-widest shadow-[#F05E23]/30">
+                  <VideoIcon className="w-4 sm:w-5 h-4 sm:h-5" /> Meetings
+               </button>
+               <button onClick={() => setIsLeaveModalOpen(true)} className="col-span-1 sm:col-span-1 justify-center bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl sm:rounded-[2rem] px-6 sm:px-8 py-4 sm:py-6 flex items-center gap-3 sm:gap-4 shadow-sm hover:scale-105 transition-all text-[#F05E23] font-black uppercase text-[0.6rem] sm:text-[0.65rem] tracking-widest">
                   <Calendar className="w-4 sm:w-5 h-4 sm:h-5" /> Request Leave
                </button>
+
+               {/* Attendance Button — visible between 9 AM - 11 AM, or if already marked/missed */}
+               {(attendanceAvailable || attendanceMarked || attendanceOnLeave || attendanceMissed) && (
+                  attendanceOnLeave ? (
+                     /* On approved leave — show badge, no button */
+                     <div className="col-span-2 sm:col-span-1 justify-center bg-blue-500/10 border border-blue-500/20 rounded-2xl sm:rounded-[2rem] px-6 sm:px-8 py-4 sm:py-6 flex items-center gap-3 sm:gap-4 font-black uppercase text-[0.6rem] sm:text-[0.65rem] tracking-widest text-blue-500">
+                        <Calendar className="w-4 sm:w-5 h-4 sm:h-5" /> On Leave Today
+                     </div>
+                  ) : attendanceMarked ? (
+                     /* Already marked — show success badge */
+                     <div className="col-span-2 sm:col-span-1 justify-center bg-green-500/10 border border-green-500/20 rounded-2xl sm:rounded-[2rem] px-6 sm:px-8 py-4 sm:py-6 flex items-center gap-3 sm:gap-4 font-black uppercase text-[0.6rem] sm:text-[0.65rem] tracking-widest text-green-600">
+                        <UserCheck className="w-4 sm:w-5 h-4 sm:h-5" />
+                        <div>
+                           <div>Present ✓</div>
+                           {attendanceMarkedAt && (
+                              <div className="text-[0.5rem] font-bold text-green-500/70 normal-case tracking-normal mt-0.5">
+                                 Marked at {new Date(attendanceMarkedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              </div>
+                           )}
+                        </div>
+                     </div>
+                  ) : attendanceMissed ? (
+                     /* Missed the 9-11 AM window */
+                     <div className="col-span-2 sm:col-span-1 justify-center bg-red-500/10 border border-red-500/20 rounded-2xl sm:rounded-[2rem] px-6 sm:px-8 py-4 sm:py-6 flex items-center gap-3 sm:gap-4 font-black uppercase text-[0.6rem] sm:text-[0.65rem] tracking-widest text-red-500">
+                        <AlertCircle className="w-4 sm:w-5 h-4 sm:h-5" />
+                        <div>
+                           <div>Absent</div>
+                           <div className="text-[0.5rem] font-bold text-red-500/70 normal-case tracking-normal mt-0.5">Missed the 9-11 AM window</div>
+                        </div>
+                     </div>
+                  ) : (
+                     /* Time gate active (9-11 AM), not yet marked — show button */
+                     <button
+                        onClick={handleMarkPresent}
+                        disabled={attendanceMarkingNow}
+                        className="col-span-2 sm:col-span-1 justify-center bg-gradient-to-r from-green-600 to-emerald-500 text-white border border-green-500/20 rounded-2xl sm:rounded-[2rem] px-6 sm:px-8 py-4 sm:py-6 flex items-center gap-3 sm:gap-4 shadow-lg hover:scale-105 transition-all font-black uppercase text-[0.6rem] sm:text-[0.65rem] tracking-widest shadow-green-500/30 disabled:opacity-70 disabled:cursor-not-allowed"
+                     >
+                        <UserCheck className="w-4 sm:w-5 h-4 sm:h-5" />
+                        {attendanceMarkingNow ? "Marking..." : "Mark Present"}
+                     </button>
+                  )
+               )}
+
                <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 flex items-center gap-3 sm:gap-6 shadow-sm">
                   <div className="p-3 sm:p-4 bg-orange-500/10 rounded-xl sm:rounded-2xl"><Clock className="w-5 sm:w-6 h-5 sm:h-6 text-orange-500" /></div>
                   <div>
@@ -468,666 +617,395 @@ export default function InternDashboard() {
                   </div>
                </div>
             </div>
+
          </div>
 
          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             {/* Primary Hub (Left) */}
             <div className={`space-y-16 transition-all duration-500 ${viewMode === "spreadsheet" ? "lg:col-span-12" : "lg:col-span-8"}`}>
 
-               {/* Task Filters */}
-               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full pb-2">
-                 <div className="flex gap-2 overflow-x-auto scrollbar-hide w-full sm:w-auto pb-1">
-                  {["All", "Pending", "In Progress", "Completed", "Post Tracker"].map(filter => (
-                     <button 
-                        key={filter} 
-                        onClick={() => setTaskFilter(filter)}
-                        className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[0.6rem] sm:text-[0.65rem] font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0 ${
-                           taskFilter === filter 
-                           ? 'bg-[#F05E23] text-white shadow-lg shadow-[#F05E23]/30' 
-                           : 'bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 text-slate-500 hover:border-[#F05E23]/30 hover:text-slate-800 dark:hover:text-white'
-                        }`}
+               {/* Task Filters & Controls */}
+               <div className="flex flex-col gap-4 w-full pb-2">
+                  <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 w-full">
+                     <div className="flex items-center p-1.5 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full shadow-sm max-w-full relative z-20">
+                     {(() => {
+                        const allFilters = ["All", "Pending", "In Progress", "Completed", "Post Tracker"];
+                        let visibleFilters = [];
+                        let dropdownFilters = [];
+                        
+                        const activeIndex = allFilters.findIndex(f => f === taskFilter);
+                        
+                        if (allFilters.length <= visibleFiltersCount) {
+                           visibleFilters = allFilters;
+                        } else {
+                           const baseVisible = [...allFilters];
+                           if (activeIndex >= visibleFiltersCount - 1) {
+                              const temp = baseVisible[visibleFiltersCount - 2];
+                              baseVisible[visibleFiltersCount - 2] = baseVisible[activeIndex];
+                              baseVisible[activeIndex] = temp;
+                           }
+                           visibleFilters = baseVisible.slice(0, visibleFiltersCount - 1);
+                           dropdownFilters = baseVisible.slice(visibleFiltersCount - 1);
+                        }
+
+                        const hasActiveDropdownFilter = dropdownFilters.includes(taskFilter);
+
+                        return (
+                           <>
+                              {visibleFilters.map(filter => (
+                                 <button
+                                    key={filter}
+                                    onClick={() => { setTaskFilter(filter); setMoreMenuOpen(false); }}
+                                    className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[0.6rem] sm:text-[0.65rem] font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0 ${taskFilter === filter
+                                          ? 'bg-[#F05E23] text-white shadow-md shadow-[#F05E23]/30'
+                                          : 'text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'
+                                       }`}
+                                 >
+                                    {filter}
+                                 </button>
+                              ))}
+                              {dropdownFilters.length > 0 && (
+                                 <div className="relative">
+                                    <button
+                                       onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                                       className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full font-black uppercase tracking-widest text-[0.6rem] sm:text-[0.65rem] transition-all flex items-center gap-1.5 shrink-0 ${hasActiveDropdownFilter || moreMenuOpen ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white" : "text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"}`}
+                                    >
+                                       <span>More</span>
+                                       <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${moreMenuOpen ? "rotate-180" : ""}`} />
+                                       {hasActiveDropdownFilter && (
+                                          <div className="w-1.5 h-1.5 rounded-full bg-[#F05E23] absolute top-2 right-3" />
+                                       )}
+                                    </button>
+                                    <AnimatePresence>
+                                       {moreMenuOpen && (
+                                          <motion.div
+                                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                             animate={{ opacity: 1, y: 0, scale: 1 }}
+                                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                             transition={{ duration: 0.15 }}
+                                             className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden z-50 flex flex-col p-1.5"
+                                          >
+                                             {dropdownFilters.map(filter => (
+                                                <button
+                                                   key={filter}
+                                                   onClick={() => { setTaskFilter(filter); setMoreMenuOpen(false); }}
+                                                   className={`px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[0.6rem] transition-all text-left flex items-center gap-3 ${taskFilter === filter ? "bg-[#F05E23]/10 text-[#F05E23]" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white"}`}
+                                                >
+                                                   {filter}
+                                                </button>
+                                             ))}
+                                          </motion.div>
+                                       )}
+                                    </AnimatePresence>
+                                 </div>
+                              )}
+                           </>
+                        );
+                     })()}
+                  </div>
+                  <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
+                     <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
+                        <button
+                           onClick={() => setViewMode("cards")}
+                           className={`p-2 rounded-lg transition-all ${viewMode === "cards" ? "bg-[#F05E23] text-white shadow-md" : "text-slate-400 hover:text-white"}`}
+                        >
+                           <Layout className="w-4 h-4" />
+                        </button>
+                        <button
+                           onClick={() => setViewMode("spreadsheet")}
+                           className={`p-2 rounded-lg transition-all ${viewMode === "spreadsheet" ? "bg-[#F05E23] text-white shadow-md" : "text-slate-400 hover:text-white"}`}
+                        >
+                           <ListTodo className="w-4 h-4" />
+                        </button>
+                     </div>
+                  </div>
+                  </div> {/* End of Top Row */}
+
+                  {/* Date & Month Filter Bar */}
+                  <div className="flex flex-wrap items-center gap-3 w-full pt-1">
+                     <select
+                        value={monthFilter}
+                        onChange={(e) => setMonthFilter(e.target.value)}
+                        className="px-4 py-2 rounded-xl text-xs font-bold outline-none cursor-pointer border bg-white dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-700 dark:text-white transition-all"
                      >
-                        {filter}
-                     </button>
-                  ))}
-                 </div>
-                 <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
-                   <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
-                     <button 
-                     onClick={() => setViewMode("cards")}
-                     className={`p-2 rounded-lg transition-all ${viewMode === "cards" ? "bg-[#F05E23] text-white shadow-md" : "text-slate-400 hover:text-white"}`}
-                   >
-                     <Layout className="w-4 h-4" />
-                   </button>
-                   <button 
-                     onClick={() => setViewMode("spreadsheet")}
-                     className={`p-2 rounded-lg transition-all ${viewMode === "spreadsheet" ? "bg-[#F05E23] text-white shadow-md" : "text-slate-400 hover:text-white"}`}
-                   >
-                     <ListTodo className="w-4 h-4" />
-                   </button>
-                 </div>
+                        <option value="">All Months</option>
+                        {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, idx) => (
+                           <option key={idx} value={idx.toString()}>{m}</option>
+                        ))}
+                     </select>
+
+                     <div className="flex items-center p-1 rounded-xl border bg-white dark:bg-white/5 border-black/5 dark:border-white/10">
+                        {["All", "Today", "This Week", "This Month"].map((type) => (
+                           <button
+                              key={type}
+                              onClick={() => { setDateFilterType(type); setFromDate(""); setToDate(""); }}
+                              className={`px-3 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-widest transition-all ${dateFilterType === type && !fromDate && !toDate ? "bg-[#F05E23] text-white shadow-sm" : "text-slate-400 hover:text-slate-700 dark:hover:text-white"}`}
+                           >
+                              {type}
+                           </button>
+                        ))}
+                     </div>
+
+                     <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-bold bg-white dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-700 dark:text-white">
+                        <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black">From</span>
+                        <input
+                           type="date"
+                           value={fromDate}
+                           onChange={(e) => { setFromDate(e.target.value); setDateFilterType("Custom"); }}
+                           className="bg-transparent outline-none text-xs font-bold cursor-pointer"
+                        />
+                        <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black ml-1">To</span>
+                        <input
+                           type="date"
+                           value={toDate}
+                           onChange={(e) => { setToDate(e.target.value); setDateFilterType("Custom"); }}
+                           className="bg-transparent outline-none text-xs font-bold cursor-pointer"
+                        />
+                     </div>
+
+                     {(monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) && (
+                        <button
+                           onClick={() => { setMonthFilter(""); setDateFilterType("All"); setFromDate(""); setToDate(""); }}
+                           className="text-xs font-bold text-[#F05E23] underline underline-offset-2 ml-1"
+                        >
+                           Clear Date Filter
+                        </button>
+                     )}
+                  </div>
                </div>
-
-               {/* Date & Month Filter Bar */}
-               <div className="flex flex-wrap items-center gap-3 pt-2">
-                 <select
-                   value={monthFilter}
-                   onChange={(e) => setMonthFilter(e.target.value)}
-                   className="px-4 py-2 rounded-xl text-xs font-bold outline-none cursor-pointer border bg-white dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-700 dark:text-white transition-all"
-                 >
-                   <option value="">All Months</option>
-                   {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, idx) => (
-                     <option key={idx} value={idx.toString()}>{m}</option>
-                   ))}
-                 </select>
-
-                 <div className="flex items-center p-1 rounded-xl border bg-white dark:bg-white/5 border-black/5 dark:border-white/10">
-                   {["All", "Today", "This Week", "This Month"].map((type) => (
-                     <button
-                       key={type}
-                       onClick={() => { setDateFilterType(type); setFromDate(""); setToDate(""); }}
-                       className={`px-3 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-widest transition-all ${dateFilterType === type && !fromDate && !toDate ? "bg-[#F05E23] text-white shadow-sm" : "text-slate-400 hover:text-slate-700 dark:hover:text-white"}`}
-                     >
-                       {type}
-                     </button>
-                   ))}
-                 </div>
-
-                 <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-bold bg-white dark:bg-white/5 border-black/5 dark:border-white/10 text-slate-700 dark:text-white">
-                   <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black">From</span>
-                   <input
-                     type="date"
-                     value={fromDate}
-                     onChange={(e) => { setFromDate(e.target.value); setDateFilterType("Custom"); }}
-                     className="bg-transparent outline-none text-xs font-bold cursor-pointer"
-                   />
-                   <span className="text-[0.65rem] text-slate-400 uppercase tracking-widest font-black ml-1">To</span>
-                   <input
-                     type="date"
-                     value={toDate}
-                     onChange={(e) => { setToDate(e.target.value); setDateFilterType("Custom"); }}
-                     className="bg-transparent outline-none text-xs font-bold cursor-pointer"
-                   />
-                 </div>
-
-                 {(monthFilter !== "" || dateFilterType !== "All" || fromDate || toDate) && (
-                   <button
-                     onClick={() => { setMonthFilter(""); setDateFilterType("All"); setFromDate(""); setToDate(""); }}
-                     className="text-xs font-bold text-[#F05E23] underline underline-offset-2 ml-1"
-                   >
-                     Clear Date Filter
-                   </button>
-                 )}
-               </div>
-             </div>
 
                {viewMode === "cards" && (<>
-               {/* Active Projects */}
-               {(taskFilter === "All" || taskFilter === "In Progress" || taskFilter === "Pending") && (
-                  safeProjects.length === 0 && safeTasks.filter(t => !t.clientProjectId).length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-24 text-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-[4rem] bg-white/5">
-                     <Activity className="w-16 h-16 text-slate-300 mx-auto mb-6 opacity-20" />
-                     <p className="text-slate-400 font-black uppercase tracking-widest text-[0.65rem]">No active projects assigned at this time.</p>
-                  </motion.div>
-               ) : (
-                  <div className="space-y-16">
-                     {safeProjects.map((project) => {
-                        const projectTasks = safeTasks.filter(t => t.clientProjectId?._id === project._id || t.clientProjectId === project._id);
-                        return (
-                           <motion.section
-                              key={project._id}
-                              initial={{ y: 20, opacity: 0 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              className="bg-white dark:bg-[#050505] border border-black/5 dark:border-white/10 rounded-[4rem] overflow-hidden shadow-2xl relative"
-                           >
-                              {/* Project Header */}
-                              <div className="p-10 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-10 relative overflow-hidden">
-                                 <div className="absolute top-0 right-0 w-96 h-96 bg-[#F05E23]/10 blur-[100px]" />
-                                 <div className="space-y-4 relative z-10">
-                                    <div className="flex items-center gap-4">
-                                       <span className="px-4 py-1.5 bg-[#F05E23] text-white text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#F05E23]/20">Active Project</span>
-                                       <h2 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter italic leading-none">{project.projectName}</h2>
+                  {/* Active Projects */}
+                  {(taskFilter === "All" || taskFilter === "In Progress" || taskFilter === "Pending") && (
+                     safeProjects.length === 0 && safeTasks.filter(t => !t.clientProjectId).length === 0 ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-24 text-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-[4rem] bg-white/5">
+                           <Activity className="w-16 h-16 text-slate-300 mx-auto mb-6 opacity-20" />
+                           <p className="text-slate-400 font-black uppercase tracking-widest text-[0.65rem]">No active projects assigned at this time.</p>
+                        </motion.div>
+                     ) : (
+                        <div className="space-y-16">
+                           {safeProjects.map((project) => {
+                              const projectTasks = safeTasks.filter(t => t.clientProjectId?._id === project._id || t.clientProjectId === project._id);
+                              return (
+                                 <motion.section
+                                    key={project._id}
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    className="bg-white dark:bg-[#050505] border border-black/5 dark:border-white/10 rounded-[4rem] overflow-hidden shadow-2xl relative"
+                                 >
+                                    {/* Project Header */}
+                                    <div className="p-10 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-10 relative overflow-hidden">
+                                       <div className="absolute top-0 right-0 w-96 h-96 bg-[#F05E23]/10 blur-[100px]" />
+                                       <div className="space-y-4 relative z-10">
+                                          <div className="flex items-center gap-4">
+                                             <span className="px-4 py-1.5 bg-[#F05E23] text-white text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[#F05E23]/20">Active Project</span>
+                                             <h2 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter italic leading-none">{project.projectName}</h2>
+                                          </div>
+                                       </div>
+                                       <div className="flex items-center gap-6 relative z-10">
+                                          <div className="text-right">
+                                             <span className="block text-3xl font-black italic">{Math.round(((project.workflow || []).filter(s => s.status === 'Complete').length / ((project.workflow || []).length || 1)) * 100)}%</span>
+                                             <span className="text-[8px] font-black uppercase text-green-500 tracking-widest">{project.status}</span>
+                                          </div>
+                                          <div className="w-1.5 h-12 bg-white/10 rounded-full overflow-hidden">
+                                             <motion.div initial={{ height: 0 }} animate={{ height: `${((project.workflow || []).filter(s => s.status === 'Complete').length / ((project.workflow || []).length || 1)) * 100}%` }} className="w-full bg-[#F05E23] rounded-full" />
+                                          </div>
+                                       </div>
                                     </div>
-                                 </div>
-                                 <div className="flex items-center gap-6 relative z-10">
-                                    <div className="text-right">
-                                       <span className="block text-3xl font-black italic">{Math.round(((project.workflow || []).filter(s => s.status === 'Complete').length / ((project.workflow || []).length || 1)) * 100)}%</span>
-                                       <span className="text-[8px] font-black uppercase text-green-500 tracking-widest">{project.status}</span>
-                                    </div>
-                                    <div className="w-1.5 h-12 bg-white/10 rounded-full overflow-hidden">
-                                       <motion.div initial={{ height: 0 }} animate={{ height: `${((project.workflow || []).filter(s => s.status === 'Complete').length / ((project.workflow || []).length || 1)) * 100}%` }} className="w-full bg-[#F05E23] rounded-full" />
-                                    </div>
-                                 </div>
-                              </div>
 
-                              <div className="p-10 space-y-12">
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="p-8 bg-slate-50 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[2.5rem] space-y-4">
-                                       <div className="flex items-center gap-3">
-                                          <FileText className="w-4 h-4 text-blue-500" />
-                                          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Project Overview</h4>
-                                       </div>
-                                       <p className="text-xs text-slate-500 font-bold italic leading-relaxed">"{project.description}"</p>
-                                    </div>
-                                    <div className="p-8 bg-slate-50 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[2.5rem] space-y-4">
-                                       <div className="flex items-center gap-3">
-                                          <ShieldCheck className="w-4 h-4 text-[#F05E23]" />
-                                          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Instructions</h4>
-                                       </div>
-                                       <div className="text-[10px] font-mono text-slate-500 max-h-24 overflow-y-auto scrollbar-hide whitespace-pre-wrap">
-                                          {project.sop || "Follow standard guides for this project. Check with the team for more info."}
-                                       </div>
-                                    </div>
-                                 </div>
-
-                                 {/* Project Steps */}
-                                 <div className="space-y-10">
-                                    <div className="flex items-center gap-4">
-                                       <ListTodo className="w-5 h-5 text-[#F05E23]" />
-                                       <h3 className="text-2xl font-black uppercase tracking-tighter italic">Project <span className="text-[#F05E23]">Steps</span></h3>
-                                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-white/5 px-4 py-1.5 rounded-full ml-auto">
-                                          {(project.workflow || []).filter(s => s.status === 'Complete').length} / {(project.workflow || []).length} Done
-                                       </span>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                       {(project.workflow || []).map((step, idx) => (
-                                          <div key={idx} className="relative p-6 bg-slate-50 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-3xl group">
-                                             <div className="flex items-start gap-4">
-                                                <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${step.status === 'Complete' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' :
-                                                      (step.status === 'In Progress' ? 'bg-[#F05E23] animate-pulse' : 'bg-slate-300')
-                                                   }`} />
-                                                <div className="space-y-2">
-                                                   <div className="flex items-center gap-3">
-                                                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Step {idx + 1}</span>
-                                                      {step.status === 'In Progress' && <span className="px-2 py-0.5 bg-[#F05E23]/10 text-[#F05E23] text-[7px] font-black uppercase tracking-widest rounded animate-pulse">Current Focus</span>}
-                                                   </div>
-                                                   <h4 className={`text-xl font-black uppercase tracking-tighter italic ${step.status === 'Complete' ? 'line-through opacity-30' : ''}`}>{step.title}</h4>
-                                                   <p className="text-xs text-slate-500 font-bold italic opacity-60">"{step.description}"</p>
-                                                </div>
+                                    <div className="p-10 space-y-12">
+                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                          <div className="p-8 bg-slate-50 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[2.5rem] space-y-4">
+                                             <div className="flex items-center gap-3">
+                                                <FileText className="w-4 h-4 text-blue-500" />
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Project Overview</h4>
+                                             </div>
+                                             <p className="text-xs text-slate-500 font-bold italic leading-relaxed">"{project.description}"</p>
+                                          </div>
+                                          <div className="p-8 bg-slate-50 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[2.5rem] space-y-4">
+                                             <div className="flex items-center gap-3">
+                                                <ShieldCheck className="w-4 h-4 text-[#F05E23]" />
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Instructions</h4>
+                                             </div>
+                                             <div className="text-[10px] font-mono text-slate-500 max-h-24 overflow-y-auto scrollbar-hide whitespace-pre-wrap">
+                                                {project.sop || "Follow standard guides for this project. Check with the team for more info."}
                                              </div>
                                           </div>
-                                       ))}
-                                    </div>
-                                 </div>
+                                       </div>
 
-                                 {/* Tasks */}
-                                 <div className="space-y-8 pt-8 border-t border-black/5 dark:border-white/5">
-                                    <div className="flex items-center gap-4">
-                                       <Zap className="w-5 h-5 text-blue-500" />
-                                       <h3 className="text-xl font-black uppercase tracking-tighter italic">Extra <span className="text-blue-500">Tasks</span></h3>
-                                    </div>
-                                    <div className="space-y-4">
-                                       {projectTasks.filter(t => t.status !== 'Complete').length === 0 ? (
-                                          <div className="p-10 text-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl opacity-20 text-[9px] font-black uppercase tracking-widest">
-                                             No additional tasks assigned.
+                                       {/* Project Steps */}
+                                       <div className="space-y-10">
+                                          <div className="flex items-center gap-4">
+                                             <ListTodo className="w-5 h-5 text-[#F05E23]" />
+                                             <h3 className="text-2xl font-black uppercase tracking-tighter italic">Project <span className="text-[#F05E23]">Steps</span></h3>
+                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-white/5 px-4 py-1.5 rounded-full ml-auto">
+                                                {(project.workflow || []).filter(s => s.status === 'Complete').length} / {(project.workflow || []).length} Done
+                                             </span>
                                           </div>
-                                       ) : (
-                                          projectTasks.filter(t => t.status !== 'Complete').map((task) => (
-                                             <div key={task._id} className={`p-8 bg-slate-50 dark:bg-white/[0.03] border border-black/5 dark:border-white/10 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${task.status === 'Complete' ? 'opacity-40 grayscale' : ''}`}>
-                                                <div className="space-y-2">
-                                                   <div className="flex items-center gap-3 flex-wrap">
-                                                      <div className="flex justify-between items-start mb-6">
-                                                         <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
-                                                            {task.priority}
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                             {(project.workflow || []).map((step, idx) => (
+                                                <div key={idx} className="relative p-6 bg-slate-50 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-3xl group">
+                                                   <div className="flex items-start gap-4">
+                                                      <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${step.status === 'Complete' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' :
+                                                         (step.status === 'In Progress' ? 'bg-[#F05E23] animate-pulse' : 'bg-slate-300')
+                                                         }`} />
+                                                      <div className="space-y-2">
+                                                         <div className="flex items-center gap-3">
+                                                            <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Step {idx + 1}</span>
+                                                            {step.status === 'In Progress' && <span className="px-2 py-0.5 bg-[#F05E23]/10 text-[#F05E23] text-[7px] font-black uppercase tracking-widest rounded animate-pulse">Current Focus</span>}
                                                          </div>
-                                                         {task.createdAt && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-4">Created: {new Date(task.createdAt).toLocaleDateString()}</span>}
+                                                         <h4 className={`text-xl font-black uppercase tracking-tighter italic ${step.status === 'Complete' ? 'line-through opacity-30' : ''}`}>{step.title}</h4>
+                                                         <p className="text-xs text-slate-500 font-bold italic opacity-60">"{step.description}"</p>
                                                       </div>
-                                                      {task.contentId && (
-                                                         <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23]">
-                                                            {task.contentId}
-                                                         </div>
-                                                      )}
-                                                      {task.marketingData?.companyId?.name && (
-                                                         <div className="text-[7px] font-black uppercase tracking-widest text-slate-500">
-                                                            {task.marketingData.companyId.name}
-                                                         </div>
-                                                      )}
                                                    </div>
-                                                   <h4 className="text-xl font-black uppercase tracking-tighter italic leading-none">{task.title}</h4>
-                                                   <p className="text-[11px] text-slate-500 font-bold italic mb-3">&quot;{task.description}&quot;</p>
-                                                   {task.dueDate && (
-                                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded-lg text-[0.6rem] font-black uppercase tracking-widest">
-                                                         <span>Due Date: {new Date(task.dueDate).toLocaleDateString()}</span>
-                                                      </div>
-                                                   )}
-                                                   {task.marketingData && (
-                                                      <div className="mt-4 p-3 bg-white/5 border border-white/10 rounded-xl space-y-2 w-full max-w-sm">
-                                                         {task.marketingData.topic && (
-                                                            <p className="text-[0.65rem] font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
-                                                         )}
-                                                         {task.marketingData.rawLink && (
-                                                            <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.6rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
-                                                               <ExternalLink className="w-3 h-3" /> Raw Asset
-                                                            </a>
-                                                         )}
-                                                         {task.marketingData.editedLink && (
-                                                            <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.6rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
-                                                               <ExternalLink className="w-3 h-3" /> Edited Output
-                                                            </a>
-                                                         )}
-                                                         {(task.marketingData.platforms || []).length > 0 && (
-                                                            <div className="flex gap-2 pt-1 flex-wrap">
-                                                               {task.marketingData.platforms.map(p => (
-                                                                  <span key={p} className="text-[0.5rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
-                                                               ))}
+                                                </div>
+                                             ))}
+                                          </div>
+                                       </div>
+
+                                       {/* Tasks */}
+                                       <div className="space-y-8 pt-8 border-t border-black/5 dark:border-white/5">
+                                          <div className="flex items-center gap-4">
+                                             <Zap className="w-5 h-5 text-blue-500" />
+                                             <h3 className="text-xl font-black uppercase tracking-tighter italic">Extra <span className="text-blue-500">Tasks</span></h3>
+                                          </div>
+                                          <div className="space-y-4">
+                                             {projectTasks.filter(t => t.status !== 'Complete').length === 0 ? (
+                                                <div className="p-10 text-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl opacity-20 text-[9px] font-black uppercase tracking-widest">
+                                                   No additional tasks assigned.
+                                                </div>
+                                             ) : (
+                                                projectTasks.filter(t => t.status !== 'Complete').map((task) => (
+                                                   <div key={task._id} className={`p-8 bg-slate-50 dark:bg-white/[0.03] border border-black/5 dark:border-white/10 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${task.status === 'Complete' ? 'opacity-40 grayscale' : ''}`}>
+                                                      <div className="space-y-2">
+                                                         <div className="flex items-center gap-3 flex-wrap">
+                                                            <div className="flex justify-between items-start mb-6">
+                                                               <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                                                  {task.priority}
+                                                               </div>
+                                                               {task.createdAt && <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-4">Created: {new Date(task.createdAt).toLocaleDateString()}</span>}
+                                                            </div>
+                                                            {task.contentId && (
+                                                               <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23]">
+                                                                  {task.contentId}
+                                                               </div>
+                                                            )}
+                                                            {task.marketingData?.companyId?.name && (
+                                                               <div className="text-[7px] font-black uppercase tracking-widest text-slate-500">
+                                                                  {task.marketingData.companyId.name}
+                                                               </div>
+                                                            )}
+                                                         </div>
+                                                         <h4 className="text-xl font-black uppercase tracking-tighter italic leading-none">{task.title}</h4>
+                                                         <p className="text-[11px] text-slate-500 font-bold italic mb-3">&quot;{task.description}&quot;</p>
+                                                         {task.dueDate && (
+                                                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded-lg text-[0.6rem] font-black uppercase tracking-widest">
+                                                               <span>Due Date: {new Date(task.dueDate).toLocaleDateString()}</span>
                                                             </div>
                                                          )}
-                                                         {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
-                                                            <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/10">
-                                                               {task.marketingData.editorStatus && (
-                                                                  <div className="text-[0.5rem] font-black uppercase tracking-widest text-slate-500">
-                                                                     Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                                         {task.marketingData && (
+                                                            <div className="mt-4 p-3 bg-white/5 border border-white/10 rounded-xl space-y-2 w-full max-w-sm">
+                                                               {task.marketingData.topic && (
+                                                                  <p className="text-[0.65rem] font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
+                                                               )}
+                                                               {task.marketingData.rawLink && (
+                                                                  <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.6rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
+                                                                     <ExternalLink className="w-3 h-3" /> Raw Asset
+                                                                  </a>
+                                                               )}
+                                                               {task.marketingData.editedLink && (
+                                                                  <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.6rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
+                                                                     <ExternalLink className="w-3 h-3" /> Edited Output
+                                                                  </a>
+                                                               )}
+                                                               {(task.marketingData.platforms || []).length > 0 && (
+                                                                  <div className="flex gap-2 pt-1 flex-wrap">
+                                                                     {task.marketingData.platforms.map(p => (
+                                                                        <span key={p} className="text-[0.5rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
+                                                                     ))}
                                                                   </div>
                                                                )}
-                                                               {task.marketingData.reviewStatus && (
-                                                                  <div className="text-[0.5rem] font-black uppercase tracking-widest text-slate-500">
-                                                                     Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                               {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
+                                                                  <div className="flex justify-between items-center pt-2 mt-2 border-t border-white/10">
+                                                                     {task.marketingData.editorStatus && (
+                                                                        <div className="text-[0.5rem] font-black uppercase tracking-widest text-slate-500">
+                                                                           Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                                                        </div>
+                                                                     )}
+                                                                     {task.marketingData.reviewStatus && (
+                                                                        <div className="text-[0.5rem] font-black uppercase tracking-widest text-slate-500">
+                                                                           Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                                        </div>
+                                                                     )}
                                                                   </div>
                                                                )}
                                                             </div>
                                                          )}
                                                       </div>
-                                                   )}
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                   <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[8px] font-black uppercase text-blue-500 hover:scale-110 transition-transform">Update</button>
-                                                   <button onClick={() => handleOpenChat(task._id)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all relative">
-                                                      <MessageSquare className="w-4 h-4" />
-                                                      {hasUnreadInternMessage(task) && (
-                                                         <span className="flex h-2 w-2 absolute top-1 right-1">
-                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
-                                                         </span>
-                                                      )}
-                                                   </button>
-                                                </div>
-                                             </div>
-                                          ))
-                                       )}
-                                    </div>
-                                 </div>
-
-                                 {/* Passwords & Links */}
-                                 <div className="space-y-6 pt-10 border-t border-black/5 dark:border-white/5">
-                                    <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[#F05E23] flex items-center gap-3">
-                                       <Shield className="w-4 h-4" /> Passwords & Links
-                                    </h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                       {[
-                                          { id: 'github', label: 'GitHub', icon: Terminal, color: 'blue', value: project.credentials?.github },
-                                          { id: 'vercel', label: 'Vercel', icon: Activity, color: 'orange', value: project.credentials?.vercel?.email },
-                                          { id: 'gmail', label: 'Email', icon: MessageSquare, color: 'red', value: project.credentials?.gmail?.email },
-                                          { id: 'drive', label: 'Files', icon: FileText, color: 'green', value: project.googleDriveLink }
-                                       ].filter(v => v.value).map(vault => (
-                                          <div key={vault.id} className="p-5 bg-slate-900 border border-white/5 rounded-3xl group/vault hover:border-white/20 transition-all cursor-pointer" onClick={() => vault.value && window.open(vault.value.startsWith('http') ? vault.value : `mailto:${vault.value}`, '_blank')}>
-                                             <div className="flex items-center justify-between mb-3">
-                                                <vault.icon className={`w-3.5 h-3.5 text-${vault.color === 'orange' ? '[#F05E23]' : vault.color + '-500'}`} />
-                                                <ExternalLink className="w-3 h-3 text-white/20 group-hover/vault:text-white/60" />
-                                             </div>
-                                             <span className="block text-[8px] font-black uppercase text-white/40 mb-1">{vault.label}</span>
-                                             <span className="text-[10px] font-mono text-white/80 truncate block">{vault.value}</span>
-                                          </div>
-                                       ))}
-                                    </div>
-                                 </div>
-                              </div>
-                           </motion.section>
-                        );
-                     })}
-                  </div>
-               ))}
-
-               {/* Pending Tasks */}
-                     {(taskFilter === "All" || taskFilter === "Pending") && safeTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).length > 0 && (
-                        <section className="space-y-10 pt-10">
-                           <div className="flex items-center gap-6">
-                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">Pending <span className="text-red-500">Tasks</span></h2>
-                              <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                           </div>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {safeTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).map((task) => {
-                                 const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
-                                 const dObj = parseCustomDate(dueDateVal);
-                                 const isOverdue = dObj && dObj < new Date(new Date().setHours(0,0,0,0));
-                                 return (
-                                  <div key={task._id} className={`bg-white dark:bg-white/5 border ${isOverdue ? 'border-red-500/60 bg-red-500/5' : 'border-black/5 dark:border-white/10'} rounded-[3rem] p-10`}>
-                                     <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                           <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
-                                              {task.priority}
-                                           </div>
-                                           {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
-                                              <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
-                                                 {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
-                                              </div>
-                                           )}
-                                           {isOverdue && (
-                                              <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white animate-pulse">
-                                                 🚨 DEADLINE MISSED ({dObj ? dObj.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : dueDateVal})
-                                              </div>
-                                           )}
-                                        </div>
-                                     </div>
-                                     <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
-                                     <p className="text-xs text-slate-500 font-bold italic mb-4">&quot;{task.description}&quot;</p>
-                                     {task.dueDate && (
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-6 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded-lg text-[0.65rem] font-black uppercase tracking-widest">
-                                           <span>Due Date: {(() => { const pd = parseCustomDate(task.dueDate); return pd ? pd.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : task.dueDate; })()}</span>
-                                        </div>
-                                     )}
-                                    {task.marketingData && (
-                                       <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
-                                          {task.marketingData.topic && (
-                                             <p className="text-xs font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
-                                          )}
-                                          {task.marketingData.rawLink && (
-                                             <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
-                                                <ExternalLink className="w-3 h-3" /> Access Raw Asset
-                                             </a>
-                                          )}
-                                          {task.marketingData.editedLink && (
-                                             <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
-                                                <ExternalLink className="w-3 h-3" /> Edited Output
-                                             </a>
-                                          )}
-                                          {(task.marketingData.platforms || []).length > 0 && (
-                                             <div className="flex gap-2 pt-1 flex-wrap">
-                                                {task.marketingData.platforms.map(p => (
-                                                   <span key={p} className="text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
-                                                ))}
-                                             </div>
-                                          )}
-                                          {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
-                                             <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10">
-                                                {task.marketingData.editorStatus && (
-                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                      Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                                      <div className="flex items-center gap-4">
+                                                         <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", postedLink: task.marketingData?.postedLink || task.marketingData?.postTracker?.postedLink || task.liveLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[8px] font-black uppercase text-blue-500 hover:scale-110 transition-transform">Update</button>
+                                                         <button onClick={() => handleOpenChat(task._id)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all relative">
+                                                            <MessageSquare className="w-4 h-4" />
+                                                            {hasUnreadInternMessage(task) && (
+                                                               <span className="flex h-2 w-2 absolute top-1 right-1">
+                                                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
+                                                               </span>
+                                                            )}
+                                                         </button>
+                                                      </div>
                                                    </div>
-                                                )}
-                                                {task.marketingData.reviewStatus && (
-                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                      Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
-                                                   </div>
-                                                )}
-                                             </div>
-                                          )}
-                                          {task.contentId && (
-                                             <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
-                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
-                                                   <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                   <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
-                                                   {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
-                                                      <a href={task.marketingData?.postTracker?.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
-                                                   )}
-                                                   <button onClick={() => {
-                                                      setUpdatePostData({
-                                                         taskId: task._id,
-                                                         contentId: task.contentId || "",
-                                                         finalLink: task.marketingData?.postTracker?.finalLink || "",
-                                                         postedLink: task.marketingData?.postTracker?.postedLink || "",
-                                                         status: task.marketingData?.postTracker?.status || "Pending",
-                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
-                                                         postingTime: task.marketingData?.postTracker?.postingTime || ""
-                                                      });
-                                                      setIsUpdatingPost(true);
-                                                   }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
-                                                      Update Live Post
-                                                   </button>
-                                                </div>
-                                             </div>
-                                          )}
-                                       </div>
-                                    )}
-                                    <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
-                                       <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
-                                       <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
-                                          <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
-                                          {hasUnreadInternMessage(task) && (
-                                             <span className="flex h-2 w-2 relative">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin HQ"></span>
-                                             </span>
-                                          )}
-                                       </button>
-                                    </div>
-                                 </div>
-                                 );
-                              })}
-                           </div>
-                        </section>
-                     )}
-
-               {/* In Progress Tasks */}
-                     {(taskFilter === "All" || taskFilter === "In Progress") && safeTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').length > 0 && (
-                        <section className="space-y-10 pt-10">
-                           <div className="flex items-center gap-6">
-                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">In-Progress <span className="text-[#F05E23]">Tasks</span></h2>
-                              <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                           </div>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {safeTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').map((task) => {
-                                 const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
-                                 const dObj = parseCustomDate(dueDateVal);
-                                 const isOverdue = dObj && dObj < new Date(new Date().setHours(0,0,0,0));
-                                 return (
-                                  <div key={task._id} className={`bg-white dark:bg-white/5 border ${isOverdue ? 'border-red-500/60 bg-red-500/5' : 'border-black/5 dark:border-white/10'} rounded-[3rem] p-10`}>
-                                     <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                           <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
-                                              {task.priority}
-                                           </div>
-                                           {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
-                                              <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
-                                                 {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
-                                              </div>
-                                           )}
-                                           {isOverdue && (
-                                              <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white animate-pulse">
-                                                 🚨 DEADLINE MISSED ({dObj ? dObj.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : dueDateVal})
-                                              </div>
-                                           )}
-                                        </div>
-                                     </div>
-                                    <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
-                                    <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
-                                    {task.marketingData && (
-                                       <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
-                                          {task.marketingData.topic && (
-                                             <p className="text-xs font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
-                                          )}
-                                          {task.marketingData.rawLink && (
-                                             <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
-                                                <ExternalLink className="w-3 h-3" /> Access Raw Asset
-                                             </a>
-                                          )}
-                                          {task.marketingData.editedLink && (
-                                             <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
-                                                <ExternalLink className="w-3 h-3" /> Edited Output
-                                             </a>
-                                          )}
-                                          {(task.marketingData.platforms || []).length > 0 && (
-                                             <div className="flex gap-2 pt-1 flex-wrap">
-                                                {task.marketingData.platforms.map(p => (
-                                                   <span key={p} className="text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
-                                                ))}
-                                             </div>
-                                          )}
-                                          {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
-                                             <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10">
-                                                {task.marketingData.editorStatus && (
-                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                      Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
-                                                   </div>
-                                                )}
-                                                {task.marketingData.reviewStatus && (
-                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                      Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
-                                                   </div>
-                                                )}
-                                             </div>
-                                          )}
-                                          {task.contentId && (
-                                             <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
-                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
-                                                   <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                   <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
-                                                   {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
-                                                      <a href={task.marketingData?.postTracker?.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
-                                                   )}
-                                                   <button onClick={() => {
-                                                      setUpdatePostData({
-                                                         taskId: task._id,
-                                                         contentId: task.contentId || "",
-                                                         finalLink: task.marketingData?.postTracker?.finalLink || "",
-                                                         postedLink: task.marketingData?.postTracker?.postedLink || "",
-                                                         status: task.marketingData?.postTracker?.status || "Pending",
-                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
-                                                         postingTime: task.marketingData?.postTracker?.postingTime || ""
-                                                      });
-                                                      setIsUpdatingPost(true);
-                                                   }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
-                                                      Update Live Post
-                                                   </button>
-                                                </div>
-                                             </div>
-                                          )}
-                                       </div>
-                                    )}
-                                    <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
-                                       <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
-                                       <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
-                                          <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
-                                          {hasUnreadInternMessage(task) && (
-                                             <span className="flex h-2 w-2 relative">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin HQ"></span>
-                                             </span>
-                                          )}
-                                       </button>
-                                    </div>
-                                 </div>
-                                 );
-                              })}
-                           </div>
-                        </section>
-                     )}
-
-                     {(taskFilter === "Post Tracker") && safeTasks.filter(t => t.contentId).length > 0 && (
-                        <div className="space-y-6 pt-10 border-t border-white/5">
-                           <div className="flex items-center gap-4 mb-8">
-                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">Post <span className="text-[#F05E23]">Tracker</span></h2>
-                              <div className="h-px bg-white/10 flex-1" />
-                              <span className="text-[0.6rem] font-black uppercase tracking-widest text-slate-500">{safeTasks.filter(t => t.contentId).length} Tasks</span>
-                           </div>
-                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                              {safeTasks.filter(t => t.contentId).map((task) => (
-                                 <div key={task._id} className="group bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 hover:border-[#F05E23]/30 transition-all shadow-sm relative overflow-hidden flex flex-col min-h-[320px]">
-                                    <div className="flex-1">
-                                       <div className="flex justify-between items-start mb-6">
-                                          <div className="flex items-center gap-2">
-                                             <span className="text-[0.55rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border bg-[#F05E23]/10 border-[#F05E23]/20 text-[#F05E23]">
-                                                {task.priority}
-                                             </span>
-                                             {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
-                                                <div className="text-[0.55rem] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
-                                                   {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
-                                                </div>
+                                                ))
                                              )}
                                           </div>
                                        </div>
-                                       
-                                       <div className="flex justify-between items-start mb-2 gap-2">
-                                          <h4 className="text-2xl font-black uppercase tracking-tighter italic leading-none">
-                                             <span>{task.title}</span>
-                                          </h4>
-                                          {task.contentId && (
-                                             <span className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] px-2 py-1 bg-[#F05E23]/10 rounded-md border border-[#F05E23]/20 shrink-0">
-                                                {task.contentId}
-                                             </span>
-                                          )}
-                                       </div>
-                                       
-                                       <p className="text-[0.65rem] text-slate-500 font-bold uppercase tracking-widest leading-relaxed mb-4 line-clamp-2">
-                                          "{task.description}"
-                                       </p>
 
-                                       {(task.marketingData?.platforms || []).length > 0 && (
-                                          <div className="flex flex-wrap gap-1 mb-6">
-                                             {task.marketingData.platforms.map((platform, idx) => (
-                                                <span key={idx} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border bg-blue-500/10 border-blue-500/20 text-blue-400">
-                                                   {platform}
-                                                </span>
+                                       {/* Passwords & Links */}
+                                       <div className="space-y-6 pt-10 border-t border-black/5 dark:border-white/5">
+                                          <h3 className="text-sm font-black uppercase tracking-[0.3em] text-[#F05E23] flex items-center gap-3">
+                                             <Shield className="w-4 h-4" /> Passwords & Links
+                                          </h3>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                             {[
+                                                { id: 'github', label: 'GitHub', icon: Terminal, color: 'blue', value: project.credentials?.github },
+                                                { id: 'vercel', label: 'Vercel', icon: Activity, color: 'orange', value: project.credentials?.vercel?.email },
+                                                { id: 'gmail', label: 'Email', icon: MessageSquare, color: 'red', value: project.credentials?.gmail?.email },
+                                                { id: 'drive', label: 'Files', icon: FileText, color: 'green', value: project.googleDriveLink }
+                                             ].filter(v => v.value).map(vault => (
+                                                <div key={vault.id} className="p-5 bg-slate-900 border border-white/5 rounded-3xl group/vault hover:border-white/20 transition-all cursor-pointer" onClick={() => vault.value && window.open(vault.value.startsWith('http') ? vault.value : `mailto:${vault.value}`, '_blank')}>
+                                                   <div className="flex items-center justify-between mb-3">
+                                                      <vault.icon className={`w-3.5 h-3.5 text-${vault.color === 'orange' ? '[#F05E23]' : vault.color + '-500'}`} />
+                                                      <ExternalLink className="w-3 h-3 text-white/20 group-hover/vault:text-white/60" />
+                                                   </div>
+                                                   <span className="block text-[8px] font-black uppercase text-white/40 mb-1">{vault.label}</span>
+                                                   <span className="text-[10px] font-mono text-white/80 truncate block">{vault.value}</span>
+                                                </div>
                                              ))}
                                           </div>
-                                       )}
-
-                                       {task.contentId && (
-                                          <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
-                                             <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
-                                                <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
-                                             </div>
-                                             <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
-                                                {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
-                                                   <a href={task.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
-                                                )}
-                                                <button onClick={() => {
-                                                   setUpdatePostData({
-                                                      taskId: task._id,
-                                                      contentId: task.contentId || "",
-                                                      finalLink: task.marketingData?.postTracker?.finalLink || "",
-                                                      postedLink: task.marketingData?.postTracker?.postedLink || "",
-                                                      status: task.marketingData?.postTracker?.status || "Pending",
-                                                      clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
-                                                      postingTime: task.marketingData?.postTracker?.postingTime || ""
-                                                   });
-                                                   setIsUpdatingPost(true);
-                                                }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
-                                                   Update Live Post
-                                                </button>
-                                             </div>
-                                          </div>
-                                       )}
+                                       </div>
                                     </div>
-
-                                    <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
-                                       <button onClick={() => setSelectedTaskId(task._id)} className="text-[9px] font-black uppercase text-[#F05E23] hover:text-[#F05E23]/80 transition-colors tracking-widest">
-                                          Update
-                                       </button>
-                                       <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
-                                          <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
-                                          {hasUnreadInternMessage(task) && (
-                                             <span className="flex h-2 w-2 relative">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
-                                             </span>
-                                          )}
-                                       </button>
-                                    </div>
-                                 </div>
-                              ))}
-                           </div>
+                                 </motion.section>
+                              );
+                           })}
                         </div>
-                     )}
+                     ))}
 
-                     {(taskFilter === "All" || taskFilter === "Completed") && safeTasks.filter(t => t.status === 'Complete').length > 0 && (
-                        <section className="space-y-10 pt-10">
-                           <div className="flex items-center gap-6">
-                              <h2 className="text-3xl font-black uppercase tracking-tighter italic">Task <span className="text-green-500">History</span></h2>
-                              <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                           </div>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                              {safeTasks.filter(t => t.status === 'Complete').map((task) => (
-                                 <div key={task._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
-                                    <div className="flex justify-between items-start mb-6">
-                                       <div className="flex items-center gap-2">
+                  {/* Pending Tasks */}
+                  {(taskFilter === "All" || taskFilter === "Pending") && safeTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).length > 0 && (
+                     <section className="space-y-10 pt-10">
+                        <div className="flex items-center gap-6">
+                           <h2 className="text-3xl font-black uppercase tracking-tighter italic">Pending <span className="text-red-500">Tasks</span></h2>
+                           <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                           {safeTasks.filter(t => !t.clientProjectId && (t.status === 'Pending' || t.status === 'Need Credentials' || t.status === 'Need Meeting')).map((task) => {
+                              const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
+                              const dObj = parseCustomDate(dueDateVal);
+                              const isOverdue = dObj && dObj < new Date(new Date().setHours(0, 0, 0, 0));
+                              return (
+                                 <div key={task._id} className={`bg-white dark:bg-white/5 border ${isOverdue ? 'border-red-500/60 bg-red-500/5' : 'border-black/5 dark:border-white/10'} rounded-[3rem] p-10`}>
+                                    <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
+                                       <div className="flex items-center gap-2 flex-wrap">
                                           <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
                                              {task.priority}
                                           </div>
@@ -1136,8 +1014,135 @@ export default function InternDashboard() {
                                                 {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
                                              </div>
                                           )}
+                                          {isOverdue && (
+                                             <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white animate-pulse">
+                                                🚨 DEADLINE MISSED ({dObj ? dObj.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : dueDateVal})
+                                             </div>
+                                          )}
                                        </div>
-                                       <span className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-green-500/30 text-green-500 bg-green-500/10">Complete</span>
+                                    </div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
+                                    <p className="text-xs text-slate-500 font-bold italic mb-4">&quot;{task.description}&quot;</p>
+                                    {task.dueDate && (
+                                       <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-6 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded-lg text-[0.65rem] font-black uppercase tracking-widest">
+                                          <span>Due Date: {(() => { const pd = parseCustomDate(task.dueDate); return pd ? pd.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : task.dueDate; })()}</span>
+                                       </div>
+                                    )}
+                                    {task.marketingData && (
+                                       <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+                                          {task.marketingData.topic && (
+                                             <p className="text-xs font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
+                                          )}
+                                          {task.marketingData.rawLink && (
+                                             <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" /> Access Raw Asset
+                                             </a>
+                                          )}
+                                          {task.marketingData.editedLink && (
+                                             <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="w-3 h-3" /> Edited Output
+                                             </a>
+                                          )}
+                                          {(task.marketingData.platforms || []).length > 0 && (
+                                             <div className="flex gap-2 pt-1 flex-wrap">
+                                                {task.marketingData.platforms.map(p => (
+                                                   <span key={p} className="text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
+                                                ))}
+                                             </div>
+                                          )}
+                                          {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
+                                             <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10">
+                                                {task.marketingData.editorStatus && (
+                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                      Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                                   </div>
+                                                )}
+                                                {task.marketingData.reviewStatus && (
+                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                      Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                   </div>
+                                                )}
+                                             </div>
+                                          )}
+                                          {task.contentId && (
+                                             <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
+                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
+                                                   <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
+                                                   {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
+                                                      <a href={task.marketingData?.postTracker?.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
+                                                   )}
+                                                   <button onClick={() => {
+                                                      setUpdatePostData({
+                                                         taskId: task._id,
+                                                         contentId: task.contentId || "",
+                                                         finalLink: task.marketingData?.postTracker?.finalLink || "",
+                                                         postedLink: task.marketingData?.postTracker?.postedLink || "",
+                                                         status: task.marketingData?.postTracker?.status || "Pending",
+                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
+                                                         postingTime: task.marketingData?.postTracker?.postingTime || ""
+                                                      });
+                                                      setIsUpdatingPost(true);
+                                                   }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
+                                                      Update Live Post
+                                                   </button>
+                                                </div>
+                                             </div>
+                                          )}
+                                       </div>
+                                    )}
+                                    <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
+                                       <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
+                                       <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
+                                          <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
+                                          {hasUnreadInternMessage(task) && (
+                                             <span className="flex h-2 w-2 relative">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin HQ"></span>
+                                             </span>
+                                          )}
+                                       </button>
+                                    </div>
+                                 </div>
+                              );
+                           })}
+                        </div>
+                     </section>
+                  )}
+
+                  {/* In Progress Tasks */}
+                  {(taskFilter === "All" || taskFilter === "In Progress") && safeTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').length > 0 && (
+                     <section className="space-y-10 pt-10">
+                        <div className="flex items-center gap-6">
+                           <h2 className="text-3xl font-black uppercase tracking-tighter italic">In-Progress <span className="text-[#F05E23]">Tasks</span></h2>
+                           <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                           {safeTasks.filter(t => !t.clientProjectId && t.status === 'In Progress').map((task) => {
+                              const dueDateVal = task.dueDate || task.marketingData?.postTracker?.scheduledDate;
+                              const dObj = parseCustomDate(dueDateVal);
+                              const isOverdue = dObj && dObj < new Date(new Date().setHours(0, 0, 0, 0));
+                              return (
+                                 <div key={task._id} className={`bg-white dark:bg-white/5 border ${isOverdue ? 'border-red-500/60 bg-red-500/5' : 'border-black/5 dark:border-white/10'} rounded-[3rem] p-10`}>
+                                    <div className="flex justify-between items-start mb-6 flex-wrap gap-2">
+                                       <div className="flex items-center gap-2 flex-wrap">
+                                          <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                             {task.priority}
+                                          </div>
+                                          {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                             <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                                {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                             </div>
+                                          )}
+                                          {isOverdue && (
+                                             <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white animate-pulse">
+                                                🚨 DEADLINE MISSED ({dObj ? dObj.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : dueDateVal})
+                                             </div>
+                                          )}
+                                       </div>
                                     </div>
                                     <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
                                     <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
@@ -1148,42 +1153,250 @@ export default function InternDashboard() {
                                           )}
                                           {task.marketingData.rawLink && (
                                              <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
-                                                <ExternalLink className="w-3 h-3" /> Raw Asset
+                                                <ExternalLink className="w-3 h-3" /> Access Raw Asset
                                              </a>
                                           )}
                                           {task.marketingData.editedLink && (
                                              <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
-                                                <ExternalLink className="w-3 h-3" /> Final Output
+                                                <ExternalLink className="w-3 h-3" /> Edited Output
                                              </a>
                                           )}
-                                          {task.marketingData.reviewRemarks && (
-                                             <p className="text-[0.6rem] font-bold text-slate-400 italic">Admin Feedback: <span className="text-white">{task.marketingData.reviewRemarks}</span></p>
+                                          {(task.marketingData.platforms || []).length > 0 && (
+                                             <div className="flex gap-2 pt-1 flex-wrap">
+                                                {task.marketingData.platforms.map(p => (
+                                                   <span key={p} className="text-[0.55rem] font-black uppercase tracking-widest px-2 py-1 bg-[#F05E23]/20 text-[#F05E23] rounded">{p}</span>
+                                                ))}
+                                             </div>
                                           )}
-                                          {task.marketingData.reviewStatus && (
+                                          {(task.marketingData.editorStatus || task.marketingData.reviewStatus) && (
                                              <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10">
-                                                <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
-                                                   Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                {task.marketingData.editorStatus && (
+                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                      Edit: <span className={task.marketingData.editorStatus === 'Completed' ? 'text-green-500' : 'text-amber-500'}>{task.marketingData.editorStatus}</span>
+                                                   </div>
+                                                )}
+                                                {task.marketingData.reviewStatus && (
+                                                   <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                      Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                                   </div>
+                                                )}
+                                             </div>
+                                          )}
+                                          {task.contentId && (
+                                             <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
+                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
+                                                   <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                   <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
+                                                   {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
+                                                      <a href={task.marketingData?.postTracker?.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
+                                                   )}
+                                                   <button onClick={() => {
+                                                      setUpdatePostData({
+                                                         taskId: task._id,
+                                                         contentId: task.contentId || "",
+                                                         finalLink: task.marketingData?.postTracker?.finalLink || "",
+                                                         postedLink: task.marketingData?.postTracker?.postedLink || "",
+                                                         status: task.marketingData?.postTracker?.status || "Pending",
+                                                         clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
+                                                         postingTime: task.marketingData?.postTracker?.postingTime || ""
+                                                      });
+                                                      setIsUpdatingPost(true);
+                                                   }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
+                                                      Update Live Post
+                                                   </button>
                                                 </div>
                                              </div>
                                           )}
                                        </div>
                                     )}
                                     <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
+                                       <button onClick={() => { setSelectedTaskId(task._id); setNote(task.note || ""); setMarketingForm({ editedLink: task.marketingData?.editedLink || "", rawLink: task.marketingData?.rawLink || "", editorStatus: task.marketingData?.editorStatus || "" }); }} className="text-[9px] font-black uppercase text-[#F05E23]">Update</button>
                                        <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
-                                          <MessageSquare className="w-4 h-4" /> View Chat ({task.discussion?.length || 0})
+                                          <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
                                           {hasUnreadInternMessage(task) && (
                                              <span className="flex h-2 w-2 relative">
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin HQ"></span>
                                              </span>
                                           )}
                                        </button>
                                     </div>
                                  </div>
-                              ))}
-                           </div>
-                        </section>
-                     )}
+                              );
+                           })}
+                        </div>
+                     </section>
+                  )}
+
+                  {(taskFilter === "Post Tracker") && safeTasks.filter(t => t.contentId).length > 0 && (
+                     <div className="space-y-6 pt-10 border-t border-white/5">
+                        <div className="flex items-center gap-4 mb-8">
+                           <h2 className="text-3xl font-black uppercase tracking-tighter italic">Post <span className="text-[#F05E23]">Tracker</span></h2>
+                           <div className="h-px bg-white/10 flex-1" />
+                           <span className="text-[0.6rem] font-black uppercase tracking-widest text-slate-500">{safeTasks.filter(t => t.contentId).length} Tasks</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                           {safeTasks.filter(t => t.contentId).map((task) => (
+                              <div key={task._id} className="group bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 hover:border-[#F05E23]/30 transition-all shadow-sm relative overflow-hidden flex flex-col min-h-[320px]">
+                                 <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-6">
+                                       <div className="flex items-center gap-2">
+                                          <span className="text-[0.55rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border bg-[#F05E23]/10 border-[#F05E23]/20 text-[#F05E23]">
+                                             {task.priority}
+                                          </span>
+                                          {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                             <div className="text-[0.55rem] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                                {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                             </div>
+                                          )}
+                                       </div>
+                                    </div>
+
+                                    <div className="flex justify-between items-start mb-2 gap-2">
+                                       <h4 className="text-2xl font-black uppercase tracking-tighter italic leading-none">
+                                          <span>{task.title}</span>
+                                       </h4>
+                                       {task.contentId && (
+                                          <span className="text-[10px] font-black uppercase tracking-widest text-[#F05E23] px-2 py-1 bg-[#F05E23]/10 rounded-md border border-[#F05E23]/20 shrink-0">
+                                             {task.contentId}
+                                          </span>
+                                       )}
+                                    </div>
+
+                                    <p className="text-[0.65rem] text-slate-500 font-bold uppercase tracking-widest leading-relaxed mb-4 line-clamp-2">
+                                       "{task.description}"
+                                    </p>
+
+                                    {(task.marketingData?.platforms || []).length > 0 && (
+                                       <div className="flex flex-wrap gap-1 mb-6">
+                                          {task.marketingData.platforms.map((platform, idx) => (
+                                             <span key={idx} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border bg-blue-500/10 border-blue-500/20 text-blue-400">
+                                                {platform}
+                                             </span>
+                                          ))}
+                                       </div>
+                                    )}
+
+                                    {task.contentId && (
+                                       <div className="pt-3 mt-3 border-t border-white/10 flex flex-col gap-1.5">
+                                          <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                             <span>Scheduled: <span className="text-[#F05E23]">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span> <span>Time: <span className="text-amber-500">{task.marketingData?.postTracker?.postingTime || "TBA"}</span></span>
+                                             <span>Status: <span className={task.marketingData?.postTracker?.status?.includes('Posted') ? 'text-green-500' : 'text-amber-500'}>{task.marketingData?.postTracker?.status || "Pending"}</span></span>
+                                          </div>
+                                          <div className="flex justify-between items-center text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                             <span>Type: {task.marketingData?.postTracker?.postType || "-"}</span>
+                                             {task.marketingData?.postTracker?.postedLink && task.marketingData?.postTracker?.postedLink.trim() !== "" && (
+                                                <a href={task.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">View Post</a>
+                                             )}
+                                             <button onClick={() => {
+                                                setUpdatePostData({
+                                                   taskId: task._id,
+                                                   contentId: task.contentId || "",
+                                                   finalLink: task.marketingData?.postTracker?.finalLink || "",
+                                                   postedLink: task.marketingData?.postTracker?.postedLink || "",
+                                                   status: task.marketingData?.postTracker?.status || "Pending",
+                                                   clientRemarks: task.marketingData?.postTracker?.clientRemarks || "",
+                                                   postingTime: task.marketingData?.postTracker?.postingTime || ""
+                                                });
+                                                setIsUpdatingPost(true);
+                                             }} className="px-3 py-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:scale-105 transition-all text-white rounded font-black uppercase tracking-widest text-[0.45rem]">
+                                                Update Live Post
+                                             </button>
+                                          </div>
+                                       </div>
+                                    )}
+                                 </div>
+
+                                 <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
+                                    <button onClick={() => setSelectedTaskId(task._id)} className="text-[9px] font-black uppercase text-[#F05E23] hover:text-[#F05E23]/80 transition-colors tracking-widest">
+                                       Update
+                                    </button>
+                                    <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
+                                       <MessageSquare className="w-4 h-4" /> Chat ({task.discussion?.length || 0})
+                                       {hasUnreadInternMessage(task) && (
+                                          <span className="flex h-2 w-2 relative">
+                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
+                                          </span>
+                                       )}
+                                    </button>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
+
+                  {(taskFilter === "All" || taskFilter === "Completed") && safeTasks.filter(t => t.status === 'Complete').length > 0 && (
+                     <section className="space-y-10 pt-10">
+                        <div className="flex items-center gap-6">
+                           <h2 className="text-3xl font-black uppercase tracking-tighter italic">Task <span className="text-green-500">History</span></h2>
+                           <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                           {safeTasks.filter(t => t.status === 'Complete').map((task) => (
+                              <div key={task._id} className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3rem] p-10 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+                                 <div className="flex justify-between items-start mb-6">
+                                    <div className="flex items-center gap-2">
+                                       <div className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${priorityColors[task.priority] || priorityColors.Medium}`}>
+                                          {task.priority}
+                                       </div>
+                                       {(task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName) && (
+                                          <div className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest bg-[#F05E23]/10 text-[#F05E23] border border-[#F05E23]/20">
+                                             {task.marketingData?.companyId?.name || task.marketingData?.postTracker?.companyName}
+                                          </div>
+                                       )}
+                                    </div>
+                                    <span className="text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-green-500/30 text-green-500 bg-green-500/10">Complete</span>
+                                 </div>
+                                 <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-3">{task.title}</h3>
+                                 <p className="text-xs text-slate-500 font-bold italic mb-8">&quot;{task.description}&quot;</p>
+                                 {task.marketingData && (
+                                    <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+                                       {task.marketingData.topic && (
+                                          <p className="text-xs font-bold text-slate-300 italic text-[#F05E23]">{task.marketingData.topic}</p>
+                                       )}
+                                       {task.marketingData.rawLink && (
+                                          <a href={task.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-blue-400 hover:underline flex items-center gap-1">
+                                             <ExternalLink className="w-3 h-3" /> Raw Asset
+                                          </a>
+                                       )}
+                                       {task.marketingData.editedLink && (
+                                          <a href={task.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="text-[0.65rem] font-black uppercase text-purple-400 hover:underline flex items-center gap-1">
+                                             <ExternalLink className="w-3 h-3" /> Final Output
+                                          </a>
+                                       )}
+                                       {task.marketingData.reviewRemarks && (
+                                          <p className="text-[0.6rem] font-bold text-slate-400 italic">Admin Feedback: <span className="text-white">{task.marketingData.reviewRemarks}</span></p>
+                                       )}
+                                       {task.marketingData.reviewStatus && (
+                                          <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10">
+                                             <div className="text-[0.6rem] font-black uppercase tracking-widest text-slate-400">
+                                                Rev: <span className={task.marketingData.reviewStatus === 'Approved' ? 'text-green-500' : 'text-red-500'}>{task.marketingData.reviewStatus}</span>
+                                             </div>
+                                          </div>
+                                       )}
+                                    </div>
+                                 )}
+                                 <div className="flex items-center gap-6 pt-6 border-t border-black/5 dark:border-white/5">
+                                    <button onClick={() => handleOpenChat(task._id)} className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-2 hover:text-[#F05E23] transition-colors relative">
+                                       <MessageSquare className="w-4 h-4" /> View Chat ({task.discussion?.length || 0})
+                                       {hasUnreadInternMessage(task) && (
+                                          <span className="flex h-2 w-2 relative">
+                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" title="New message from Admin"></span>
+                                          </span>
+                                       )}
+                                    </button>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     </section>
+                  )}
                </>)}
 
                {viewMode === "spreadsheet" && (
@@ -1202,7 +1415,7 @@ export default function InternDashboard() {
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                              {safeTasks.filter(t => taskFilter === "All" || 
+                              {safeTasks.filter(t => taskFilter === "All" ||
                                  (taskFilter === "Pending" && (t.status === "Pending" || t.status === "Need Credentials" || t.status === "Need Meeting")) ||
                                  (taskFilter === "In Progress" && t.status === "In Progress") ||
                                  (taskFilter === "Completed" && t.status === "Complete") ||
@@ -1243,7 +1456,7 @@ export default function InternDashboard() {
                                           <span className="text-xs font-bold text-slate-500">-</span>
                                        )}
                                     </td>
-                                     <td className="px-8 py-6">
+                                    <td className="px-8 py-6">
                                        {task.contentId ? (
                                           <div className="flex flex-col gap-1">
                                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Sch: <span className="text-[#F05E23] font-black">{task.marketingData?.postTracker?.scheduledDate || "TBA"}</span></span>
@@ -1331,17 +1544,18 @@ export default function InternDashboard() {
          <AnimatePresence>
             {activeTool && (
                <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 backdrop-blur-3xl bg-black/80">
-                  <motion.div 
-                     initial={{ scale: 0.9, opacity: 0, y: 20 }} 
-                     animate={{ scale: 1, opacity: 1, y: 0 }} 
-                     exit={{ scale: 0.9, opacity: 0, y: 20 }} 
-                     className="relative w-full max-w-4xl bg-white dark:bg-[#0A0A0E] rounded-[4rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[85vh]"
+                  <motion.div
+                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                     animate={{ scale: 1, opacity: 1, y: 0 }}
+                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                     className="relative w-full max-w-7xl bg-white dark:bg-[#0A0A0E] rounded-[4rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[85vh]"
                   >
                      {/* Tool Header */}
                      <div className="p-10 bg-slate-900 text-white flex items-center justify-between relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#F05E23]/10 blur-[80px]" />
                         <div className="flex items-center gap-6 relative z-10">
                            <div className="p-4 bg-[#F05E23] rounded-2xl shadow-xl shadow-[#F05E23]/20">
+                              {activeTool === "Meetings" && <VideoIcon className="w-8 h-8" />}
                               {activeTool === "Sync AI" && <CpuIcon className="w-8 h-8" />}
                               {activeTool === "Leaderboard" && <Trophy className="w-8 h-8" />}
                            </div>
@@ -1357,6 +1571,10 @@ export default function InternDashboard() {
 
                      {/* Tool Content Container */}
                      <div className="flex-grow overflow-y-auto p-12 space-y-10 scrollbar-hide">
+                        {activeTool === "Meetings" && (
+                           <ParticipantMeetings apiEndpoint="/api/intern/meetings" />
+                        )}
+
                         {activeTool === "Sync AI" && (
                            <div className="flex flex-col h-[50vh]">
                               <div className="flex-grow bg-slate-50 dark:bg-white/5 rounded-[3rem] p-10 mb-6 overflow-y-auto scrollbar-hide space-y-6">
@@ -1380,7 +1598,7 @@ export default function InternDashboard() {
                                  { name: "Alex Rivera", score: 2450, rank: 1, avatar: "AR" },
                                  { name: "Priya Sharma", score: 2320, rank: 2, avatar: "PS" },
                                  { name: "Jordan Lee", score: 2180, rank: 3, avatar: "JL" },
-                                 { name: "You", score: 1850, rank: 4, avatar: user?.name ? user.name.split(' ').filter(Boolean).map(n=>n[0]).join('') : 'U' }
+                                 { name: "You", score: 1850, rank: 4, avatar: user?.name ? user.name.split(' ').filter(Boolean).map(n => n[0]).join('') : 'U' }
                               ].map((item, i) => (
                                  <div key={i} className={`p-8 rounded-[2.5rem] border flex items-center justify-between transition-all ${item.name === 'You' ? 'bg-[#F05E23] border-[#F05E23] text-white shadow-xl scale-[1.02]' : 'bg-slate-50 dark:bg-white/5 border-black/5 dark:border-white/5'}`}>
                                     <div className="flex items-center gap-6">
@@ -1424,19 +1642,19 @@ export default function InternDashboard() {
 
                      <div className="space-y-5">
                         <div className="space-y-2.5">
-                              <label className="text-[9px] font-black uppercase tracking-widest text-[#F05E23] pl-1">Asset Links & Updates</label>
-                              <input type="url" value={marketingForm.rawLink} onChange={e => setMarketingForm({ ...marketingForm, rawLink: e.target.value })} placeholder="Raw Asset Link (Drive)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
-                              <input type="url" value={marketingForm.editedLink} onChange={e => setMarketingForm({ ...marketingForm, editedLink: e.target.value })} placeholder="Final Output Link (Drive/Canva)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
-                              <input type="url" value={marketingForm.postedLink || ""} onChange={e => setMarketingForm({ ...marketingForm, postedLink: e.target.value })} placeholder="Live Posted Link (Insta/FB/LinkedIn)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
-                              {user.department === 'Digital Marketing' && (
-                                 <select value={marketingForm.editorStatus} onChange={e => setMarketingForm({ ...marketingForm, editorStatus: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white appearance-none cursor-pointer">
-                                    <option value="">Select Editor Remarks...</option>
-                                    <option value="Editing in process">Editing in process</option>
-                                    <option value="1st Edit Completed">1st Edit Completed</option>
-                                    <option value="Completed">Completed</option>
-                                 </select>
-                              )}
-                           </div>
+                           <label className="text-[9px] font-black uppercase tracking-widest text-[#F05E23] pl-1">Asset Links & Updates</label>
+                           <input type="url" value={marketingForm.rawLink} onChange={e => setMarketingForm({ ...marketingForm, rawLink: e.target.value })} placeholder="Raw Asset Link (Drive)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
+                           <input type="url" value={marketingForm.editedLink} onChange={e => setMarketingForm({ ...marketingForm, editedLink: e.target.value })} placeholder="Final Output Link (Drive/Canva)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
+                           <input type="url" value={marketingForm.postedLink || ""} onChange={e => setMarketingForm({ ...marketingForm, postedLink: e.target.value })} placeholder="Live Posted Link (Insta/FB/LinkedIn)" className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white placeholder:text-slate-400" />
+                           {user.department === 'Digital Marketing' && (
+                              <select value={marketingForm.editorStatus} onChange={e => setMarketingForm({ ...marketingForm, editorStatus: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl p-3.5 outline-none focus:border-[#F05E23]/50 transition-all font-bold text-xs tracking-wide text-slate-800 dark:text-white appearance-none cursor-pointer">
+                                 <option value="">Select Editor Remarks...</option>
+                                 <option value="Editing in process">Editing in process</option>
+                                 <option value="1st Edit Completed">1st Edit Completed</option>
+                                 <option value="Completed">Completed</option>
+                              </select>
+                           )}
+                        </div>
                         <div className="space-y-2.5">
                            <label className="text-[9px] font-black uppercase tracking-widest text-[#F05E23] pl-1">Choose Status</label>
                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1463,11 +1681,11 @@ export default function InternDashboard() {
                      <div className="relative p-4 sm:p-5 bg-gradient-to-r from-[#F05E23] to-amber-500 text-white flex flex-col gap-3 shrink-0 pr-14 sm:pr-16">
                         {/* Cross Option Strictly at Top Right Corner */}
                         <button
-                          onClick={() => setChatTaskId(null)}
-                          title="Close Modal"
-                          className="absolute top-3.5 sm:top-4 right-3.5 sm:right-4 p-2 sm:p-2.5 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all shadow-md active:scale-95 z-20"
+                           onClick={() => setChatTaskId(null)}
+                           title="Close Modal"
+                           className="absolute top-3.5 sm:top-4 right-3.5 sm:right-4 p-2 sm:p-2.5 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all shadow-md active:scale-95 z-20"
                         >
-                          <X className="w-5 h-5 sm:w-5 sm:h-5" />
+                           <X className="w-5 h-5 sm:w-5 sm:h-5" />
                         </button>
 
                         {/* Main Task Title & Badges */}
@@ -1486,16 +1704,16 @@ export default function InternDashboard() {
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/20 text-[0.55rem] font-black uppercase tracking-widest">
                            <div className="flex flex-wrap items-center gap-1.5">
                               {chatTask?.marketingData?.postTracker?.companyName && (
-                                <span className="bg-black/20 px-2 py-1 rounded-md">📌 {chatTask.marketingData.postTracker.companyName}: <span className="text-amber-200">{chatTask.marketingData.postTracker.scheduledDate || "TBA"}</span></span>
+                                 <span className="bg-black/20 px-2 py-1 rounded-md">📌 {chatTask.marketingData.postTracker.companyName}: <span className="text-amber-200">{chatTask.marketingData.postTracker.scheduledDate || "TBA"}</span></span>
                               )}
                               {chatTask?.marketingData?.rawLink && (
-                                <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Raw Asset</a>
+                                 <a href={chatTask.marketingData.rawLink} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Raw Asset</a>
                               )}
                               {chatTask?.marketingData?.editedLink && (
-                                <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Edited Output</a>
+                                 <a href={chatTask.marketingData.editedLink} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Edited Output</a>
                               )}
                               {chatTask?.marketingData?.postTracker?.postedLink && (
-                                <a href={chatTask.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600/80 hover:bg-blue-600 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Live Link</a>
+                                 <a href={chatTask.marketingData.postTracker.postedLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600/80 hover:bg-blue-600 px-2 py-1 rounded-md flex items-center gap-1 underline"><ExternalLink className="w-2.5 h-2.5" /> Live Link</a>
                               )}
                            </div>
                         </div>
@@ -1531,28 +1749,71 @@ export default function InternDashboard() {
 
             {isLeaveModalOpen && (
                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 backdrop-blur-3xl bg-black/80 overflow-y-auto">
-                  <motion.div key="leave-request-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-8 shadow-2xl border border-white/10 my-auto max-h-[90vh] overflow-y-auto">
-                     <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter mb-5 sm:mb-6 italic">Request <span className="text-[#F05E23]">Leave</span></h2>
-                     <form onSubmit={handleApplyLeave} className="space-y-5">
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">Start Date</label>
-                              <input type="date" required value={leaveReq.startDate} onChange={e => setLeaveReq({ ...leaveReq, startDate: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold text-xs" />
+                  <motion.div key="leave-request-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-[#0A0A0E] rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-8 shadow-2xl border border-white/10 my-auto max-h-[90vh] flex flex-col">
+                     <div className="flex justify-between items-center mb-5 sm:mb-6 shrink-0">
+                        <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter italic">
+                           {leaveModalView === 'request' ? 'Request ' : 'Leave '}<span className="text-[#F05E23]">{leaveModalView === 'request' ? 'Leave' : 'History'}</span>
+                        </h2>
+                        <button onClick={() => setLeaveModalView(leaveModalView === 'request' ? 'history' : 'request')} className="px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all">
+                           {leaveModalView === 'request' ? 'View History' : 'New Request'}
+                        </button>
+                     </div>
+                     
+                     {leaveModalView === 'request' ? (
+                        <form onSubmit={handleApplyLeave} className="space-y-5">
+                           <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">Start Date</label>
+                                 <input type="date" required value={leaveReq.startDate} onChange={e => setLeaveReq({ ...leaveReq, startDate: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold text-xs" />
+                              </div>
+                              <div className="space-y-2">
+                                 <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">End Date</label>
+                                 <input type="date" required value={leaveReq.endDate} onChange={e => setLeaveReq({ ...leaveReq, endDate: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold text-xs" />
+                              </div>
                            </div>
                            <div className="space-y-2">
-                              <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">End Date</label>
-                              <input type="date" required value={leaveReq.endDate} onChange={e => setLeaveReq({ ...leaveReq, endDate: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold text-xs" />
+                              <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">Reason</label>
+                              <textarea rows={3} required value={leaveReq.reason} onChange={e => setLeaveReq({ ...leaveReq, reason: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold placeholder:opacity-40 text-xs" placeholder="Tell us why you need leave..." />
+                           </div>
+                           <div className="flex gap-3 pt-2">
+                              <button type="button" onClick={() => setIsLeaveModalOpen(false)} className="flex-1 py-3.5 border border-black/10 dark:border-white/10 rounded-xl font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-xs">Cancel</button>
+                              <button type="submit" disabled={submitting} className="flex-[2] bg-gradient-to-r from-[#F05E23] to-[#ff7e47] text-white py-3.5 rounded-xl font-black uppercase tracking-widest hover:opacity-95 transition-all shadow-lg shadow-[#F05E23]/20 text-xs">{submitting ? "Sending..." : "Send Request"}</button>
+                           </div>
+                        </form>
+                     ) : (
+                        <div className="space-y-4 overflow-y-auto pr-2 flex-grow max-h-[50vh] scrollbar-hide">
+                           {(leaves || []).filter(l => l.internId?._id === (user?.id || user?._id) || l.internId === (user?.id || user?._id)).length === 0 ? (
+                              <div className="py-10 text-center opacity-40">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">No leave history found.</p>
+                              </div>
+                           ) : (
+                              (leaves || []).filter(l => l.internId?._id === (user?.id || user?._id) || l.internId === (user?.id || user?._id)).map((leave, idx) => (
+                                 <div key={idx} className="p-4 bg-slate-50 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-2xl flex flex-col gap-2">
+                                    <div className="flex justify-between items-start">
+                                       <div>
+                                          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                             {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                                          </div>
+                                       </div>
+                                       <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${leave.status === 'Approved' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : leave.status === 'Rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20'}`}>
+                                          {leave.status || 'Pending'}
+                                       </span>
+                                    </div>
+                                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300 italic">"{leave.reason}"</p>
+                                    {leave.adminNote && (
+                                       <div className="mt-1 pt-2 border-t border-black/5 dark:border-white/5">
+                                          <span className="text-[8px] font-black uppercase text-[#F05E23] tracking-widest">Admin Note:</span>
+                                          <p className="text-[10px] font-bold text-slate-500 mt-0.5">{leave.adminNote}</p>
+                                       </div>
+                                    )}
+                                 </div>
+                              ))
+                           )}
+                           <div className="pt-4">
+                              <button type="button" onClick={() => setIsLeaveModalOpen(false)} className="w-full py-3.5 border border-black/10 dark:border-white/10 rounded-xl font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-xs">Close</button>
                            </div>
                         </div>
-                        <div className="space-y-2">
-                           <label className="text-[9px] font-black uppercase text-[#F05E23] pl-1 tracking-widest">Reason</label>
-                           <textarea rows={3} required value={leaveReq.reason} onChange={e => setLeaveReq({ ...leaveReq, reason: e.target.value })} className="w-full bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3.5 outline-none font-bold placeholder:opacity-40 text-xs" placeholder="Tell us why you need leave..." />
-                        </div>
-                        <div className="flex gap-3 pt-2">
-                           <button type="button" onClick={() => setIsLeaveModalOpen(false)} className="flex-1 py-3.5 border border-black/10 dark:border-white/10 rounded-xl font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-xs">Cancel</button>
-                           <button type="submit" disabled={submitting} className="flex-[2] bg-gradient-to-r from-[#F05E23] to-[#ff7e47] text-white py-3.5 rounded-xl font-black uppercase tracking-widest hover:opacity-95 transition-all shadow-lg shadow-[#F05E23]/20 text-xs">{submitting ? "Sending..." : "Send Request"}</button>
-                        </div>
-                     </form>
+                     )}
                   </motion.div>
                </div>
             )}
@@ -1577,15 +1838,15 @@ export default function InternDashboard() {
                      <div className="grid grid-cols-1 gap-6">
                         <div>
                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Final Output Link</label>
-                           <input type="url" value={updatePostData.finalLink} onChange={(e) => setUpdatePostData({...updatePostData, finalLink: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" placeholder="Drive/Dropbox link" />
+                           <input type="url" value={updatePostData.finalLink} onChange={(e) => setUpdatePostData({ ...updatePostData, finalLink: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" placeholder="Drive/Dropbox link" />
                         </div>
                         <div>
                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Live Posted Link</label>
-                           <input type="url" value={updatePostData.postedLink} onChange={(e) => setUpdatePostData({...updatePostData, postedLink: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" placeholder="Insta/FB link" />
+                           <input type="url" value={updatePostData.postedLink} onChange={(e) => setUpdatePostData({ ...updatePostData, postedLink: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" placeholder="Insta/FB link" />
                         </div>
                         <div>
                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Status</label>
-                           <select value={updatePostData.status} onChange={(e) => setUpdatePostData({...updatePostData, status: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all">
+                           <select value={updatePostData.status} onChange={(e) => setUpdatePostData({ ...updatePostData, status: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all">
                               <option value="Pending">Pending</option>
                               <option value="Posted">Posted</option>
                               <option value="Client Review">Client Review</option>
@@ -1593,7 +1854,7 @@ export default function InternDashboard() {
                         </div>
                         <div>
                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Time Clock (Posting Time)</label>
-                           <input type="time" value={updatePostData.postingTime || ""} onChange={(e) => setUpdatePostData({...updatePostData, postingTime: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" />
+                           <input type="time" value={updatePostData.postingTime || ""} onChange={(e) => setUpdatePostData({ ...updatePostData, postingTime: e.target.value })} className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/5 focus:border-[#F05E23]/50 outline-none text-sm font-bold text-white transition-all" />
                         </div>
                      </div>
                      <button disabled={isSubmittingPostUpdate} type="submit" className="w-full py-5 bg-gradient-to-r from-[#F05E23] to-[#FF7B47] text-white rounded-2xl font-black uppercase tracking-widest text-[0.7rem] hover:shadow-[0_0_40px_rgba(240,94,35,0.4)] transition-all disabled:opacity-50">

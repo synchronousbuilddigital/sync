@@ -4,11 +4,12 @@ import { verifyToken } from "@/lib/auth";
 
 export async function DELETE(req, { params }) {
   try {
+    const { id } = await params;
     const decoded = verifyToken(req);
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
     await dbConnect();
-    await User.findByIdAndDelete(params.id);
+    await User.findByIdAndDelete(id);
     
     return Response.json({ success: true, message: "Brand manager deleted" });
   } catch (err) {
@@ -18,6 +19,7 @@ export async function DELETE(req, { params }) {
 
 export async function PATCH(req, { params }) {
   try {
+    const { id } = await params;
     const decoded = verifyToken(req);
     if (!decoded || decoded.role !== "admin") return Response.json({ success: false, message: "Admin only" }, { status: 401 });
 
@@ -34,7 +36,7 @@ export async function PATCH(req, { params }) {
       updateData.password = await bcrypt.hash(updateData.password, salt);
     }
 
-    const updated = await User.findByIdAndUpdate(params.id, updateData, { new: true });
+    const updated = await User.findByIdAndUpdate(id, updateData, { new: true });
     
     return Response.json({ success: true, client: updated });
   } catch (err) {
