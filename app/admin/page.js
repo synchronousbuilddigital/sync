@@ -279,6 +279,39 @@ export default function AdminDashboard() {
     }
   }, [activeTab, attendanceDate, token]);
 
+  // Attendance Graph States
+  const [graphTimeRange, setGraphTimeRange] = useState("7");
+  const [graphInternId, setGraphInternId] = useState("all");
+  const [graphData, setGraphData] = useState([]);
+  const [graphLoading, setGraphLoading] = useState(false);
+
+  const fetchAttendanceGraph = async () => {
+    setGraphLoading(true);
+    try {
+      const authToken = token || localStorage.getItem("sync_token") || "";
+      const isMonth = graphTimeRange.includes("-");
+      const url = isMonth 
+        ? `/api/admin/attendance/graph?month=${graphTimeRange}&internId=${graphInternId}`
+        : `/api/admin/attendance/graph?days=${graphTimeRange}&internId=${graphInternId}`;
+        
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGraphData(data.graphData || []);
+      }
+    } catch (e) { /* silent */ } finally {
+      setGraphLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "attendance" && token) {
+      fetchAttendanceGraph();
+    }
+  }, [activeTab, graphTimeRange, graphInternId, token]);
+
 
   const [visibleTabsCount, setVisibleTabsCount] = useState(3);
   useEffect(() => {
@@ -2724,8 +2757,97 @@ export default function AdminDashboard() {
               ))}
             </div>
 
+            {/* Graph Section */}
+            <div className="bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-white">Attendance Trends</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Visualizing daily presence</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={graphInternId}
+                    onChange={(e) => setGraphInternId(e.target.value)}
+                    className="px-3 py-2 rounded-xl text-xs font-bold border bg-slate-50 dark:bg-white/5 border-black/10 dark:border-white/10 text-slate-700 dark:text-white outline-none cursor-pointer"
+                  >
+                    <option value="all">All Interns</option>
+                    {attendanceRoster.map(i => (
+                      <option key={i._id} value={i._id}>{i.name}</option>
+                    ))}
+                  </select>
+                  <select 
+                    value={graphTimeRange}
+                    onChange={(e) => setGraphTimeRange(e.target.value)}
+                    className="px-3 py-2 rounded-xl text-xs font-bold border bg-slate-50 dark:bg-white/5 border-black/10 dark:border-white/10 text-slate-700 dark:text-white outline-none cursor-pointer"
+                  >
+                    <optgroup label="Days">
+                      <option value="7">Last 7 Days</option>
+                      <option value="14">Last 14 Days</option>
+                      <option value="30">Last 30 Days</option>
+                    </optgroup>
+                    <optgroup label="Months">
+                      {Array.from({ length: 6 }).map((_, i) => {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() - i);
+                        const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const lbl = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        return <option key={val} value={val}>{lbl}</option>;
+                      })}
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+
+              {graphLoading ? (
+                <div className="h-48 sm:h-64 flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-[#F05E23] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : graphData.length === 0 ? (
+                <div className="h-48 sm:h-64 flex items-center justify-center text-xs font-bold text-slate-400 uppercase tracking-widest">No data available</div>
+              ) : (
+                <div className="flex justify-center items-end gap-1.5 sm:gap-2 h-48 sm:h-64 pt-8 border-b border-black/5 dark:border-white/10 pb-2">
+                  {graphData.map((day, idx) => {
+                    const total = day.total || 1; // Prevent div by zero
+                    const pPct = (day.present / total) * 100;
+                    const aPct = (day.absent / total) * 100;
+                    const lPct = (day.onLeave / total) * 100;
+                    const pendPct = (day.pending / total) * 100;
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`flex-1 max-w-[40px] sm:max-w-[50px] flex flex-col justify-end h-full group relative cursor-pointer hover:scale-[1.02] transition-transform ${attendanceDate === day.date ? 'ring-2 ring-[#F05E23] ring-offset-2 dark:ring-offset-slate-900 rounded-lg' : ''}`}
+                        onClick={() => {
+                          setAttendanceDate(day.date);
+                          document.getElementById('attendance-roster')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                      >
+                        <div className="flex flex-col-reverse w-full h-full rounded-lg overflow-hidden gap-0.5">
+                          {pPct > 0 && <motion.div initial={{height:0}} animate={{height: `${pPct}%`}} transition={{duration: 0.5, delay: idx * 0.02}} className="bg-green-500 w-full" />}
+                          {lPct > 0 && <motion.div initial={{height:0}} animate={{height: `${lPct}%`}} transition={{duration: 0.5, delay: idx * 0.02}} className="bg-blue-500 w-full" />}
+                          {pendPct > 0 && <motion.div initial={{height:0}} animate={{height: `${pendPct}%`}} transition={{duration: 0.5, delay: idx * 0.02}} className="bg-amber-500 w-full" />}
+                          {aPct > 0 && <motion.div initial={{height:0}} animate={{height: `${aPct}%`}} transition={{duration: 0.5, delay: idx * 0.02}} className="bg-red-500 w-full" />}
+                        </div>
+                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] font-bold py-2 px-3 rounded-xl whitespace-nowrap pointer-events-none z-10 shadow-xl">
+                          <div className="mb-1 border-b border-white/10 pb-1">{day.displayDate}</div>
+                          {day.present > 0 && <div className="text-green-400">Present: {day.present}</div>}
+                          {day.absent > 0 && <div className="text-red-400">Absent: {day.absent}</div>}
+                          {day.onLeave > 0 && <div className="text-blue-400">Leave: {day.onLeave}</div>}
+                          {day.pending > 0 && <div className="text-amber-400">Pending: {day.pending}</div>}
+                        </div>
+                        <div className="mt-2 text-center text-[7px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                          {day.displayDate.split(' ')[0]}<br/>{day.displayDate.split(' ')[1]}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Roster */}
-            {attendanceLoading ? (
+            <div id="attendance-roster" className="scroll-mt-6">
+              {attendanceLoading ? (
               <div className="py-20 flex justify-center">
                 <div className="w-8 h-8 border-4 border-[#F05E23] border-t-transparent rounded-full animate-spin" />
               </div>
@@ -2814,7 +2936,7 @@ export default function AdminDashboard() {
                 })}
               </div>
             )}
-
+            </div>
           </div>
         )}
 
