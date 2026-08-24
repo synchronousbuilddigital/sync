@@ -446,6 +446,21 @@ export function AuthProvider({ children }) {
         if (parsedUser.role === "client") fetchClientProject(storedToken);
       }, 10000);
 
+      // Auto-logout at midnight
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+      const msUntilMidnight = midnight.getTime() - now.getTime();
+      
+      const midnightTimeout = setTimeout(() => {
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem("sync_user");
+        localStorage.removeItem("sync_token");
+        router.push("/login");
+        setTimeout(() => window.location.reload(), 500);
+      }, msUntilMidnight);
+
       setLoading(false);
       // Re-subscribe to web push on every page load so subscriptions stay fresh
       setTimeout(() => requestNotificationPermission(storedToken), 2000);
@@ -454,6 +469,7 @@ export function AuthProvider({ children }) {
           clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
         }
+        if (midnightTimeout) clearTimeout(midnightTimeout);
       };
     } else {
       fetchProjects(); // Publicly fetch projects if no stored session

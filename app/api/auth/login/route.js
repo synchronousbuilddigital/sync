@@ -18,10 +18,14 @@ export async function POST(req) {
       return Response.json({ success: false, message: "Invalid password" }, { status: 401 });
     }
 
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+    const secondsUntilMidnight = Math.floor((midnight.getTime() - now.getTime()) / 1000);
+
     const token = jwt.sign(
       { id: user._id, role: user.role, mustChangePassword: user.mustChangePassword },
       process.env.JWT_SECRET || "sync_secret",
-      { expiresIn: "10d" }
+      { expiresIn: secondsUntilMidnight }
     );
 
     return Response.json({ 
