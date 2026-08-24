@@ -145,6 +145,15 @@ export function AuthProvider({ children }) {
         setTaskStore({ role, ownerId: role === "brand_manager" ? "brand_manager" : role });
         if (data.companyName) setCompanyName(data.companyName);
       } else {
+        if (res.status === 401 || data.message === "Unauthorized") {
+          showToast("Session expired. Please log in again.", "error");
+          setToken(null);
+          setUser(null);
+          localStorage.removeItem("sync_user");
+          localStorage.removeItem("sync_token");
+          router.push("/login");
+          return;
+        }
         // Do not wipe tasks or taskStore during background polling if we already have loaded tasks
         setTasks(prev => Array.isArray(prev) && prev.length > 0 ? prev : []);
         setTaskStore(prev => prev?.role ? prev : { role: null, ownerId: null });
@@ -156,7 +165,7 @@ export function AuthProvider({ children }) {
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [showToast, router]);
 
   const fetchLeaves = useCallback(async (authToken) => {
     try {
@@ -453,12 +462,12 @@ export function AuthProvider({ children }) {
       
       const midnightTimeout = setTimeout(() => {
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        showToast("Session expired. Please log in again.", "error");
         setToken(null);
         setUser(null);
         localStorage.removeItem("sync_user");
         localStorage.removeItem("sync_token");
         router.push("/login");
-        setTimeout(() => window.location.reload(), 500);
       }, msUntilMidnight);
 
       setLoading(false);
