@@ -147,7 +147,7 @@ export default function WorkShowcase() {
             </div>
 
             {/* Title */}
-            <div className="max-w-7xl mx-auto px-6 w-full mb-10 sm:mb-16 relative z-20 text-center">
+            <div className="max-w-7xl mx-auto px-6 w-full mb-6 sm:mb-16 relative z-20 text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}

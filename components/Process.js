@@ -65,12 +65,12 @@ export default function Process() {
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
-        // Only run GSAP ScrollTrigger horizontal pin on desktop screens (>= 1024px)
-        if (window.innerWidth < 1024) return;
-
         gsap.registerPlugin(ScrollTrigger);
 
-        let ctx = gsap.context(() => {
+        let mm = gsap.matchMedia();
+
+        // Only run GSAP ScrollTrigger horizontal pin on desktop screens (>= 1024px)
+        mm.add("(min-width: 1024px)", () => {
             const tracks = trackRef.current;
             const trigger = triggerRef.current;
             if (!tracks || !trigger) return;
@@ -92,15 +92,15 @@ export default function Process() {
                     anticipatePin: 1
                 }
             });
-        }, sectionRef);
+        });
 
         const timer = setTimeout(() => {
             ScrollTrigger.refresh();
-        }, 400);
+        }, 300);
 
         return () => {
             clearTimeout(timer);
-            ctx.revert();
+            mm.revert();
         };
     }, []);
 
