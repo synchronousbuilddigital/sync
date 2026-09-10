@@ -356,7 +356,7 @@ export default function Hero() {
         <section
             ref={containerRef}
             onClick={() => setActiveIdx(-1)}
-            className={`relative w-full min-h-0 sm:min-h-[90vh] flex flex-col items-center justify-start sm:justify-center pt-2 sm:pt-32 pb-8 sm:pb-16 overflow-hidden group/hero transition-colors duration-500 ${!isDark ? 'bg-[#F9F9F9]' : 'bg-[#0A0A0A]'}`}
+            className={`relative w-full min-h-0 sm:min-h-[90vh] flex flex-col items-center justify-start sm:justify-center pt-2 sm:pt-32 pb-3 sm:pb-4 overflow-hidden group/hero transition-colors duration-500 ${!isDark ? 'bg-[#F9F9F9]' : 'bg-[#0A0A0A]'}`}
         >
             <motion.div
                 className="pointer-events-none fixed inset-0 z-50 opacity-0 group-hover/hero:opacity-100 transition-opacity duration-1000"
@@ -600,7 +600,7 @@ export default function Hero() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.8, duration: 0.8 }}
-                            className="mt-10 sm:mt-16 lg:mt-20 w-full flex justify-center px-4 sm:px-6 relative z-50"
+                            className="mt-6 sm:mt-8 lg:mt-10 w-full flex justify-center px-4 sm:px-6 relative z-50"
                         >
                             <Magnetic>
                                 <a

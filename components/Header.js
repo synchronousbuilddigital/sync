@@ -5,19 +5,26 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, Zap, Sun, Moon, Bell, CheckCircle2, Clock, MessageSquare, ExternalLink, Calendar, Activity, Video as VideoIcon } from "lucide-react";
+import { Menu, X, ArrowRight, Zap, Sun, Moon, Bell, CheckCircle2, Clock, MessageSquare, ExternalLink, Calendar, Activity, Video as VideoIcon, ChevronDown } from "lucide-react";
 import { useTheme } from './ThemeContext';
 import { useAuth } from "./AuthContext";
 import PWAInstallButton from "./PWAInstallButton";
 
 const navLinks = [
   { name: 'Home', href: '/' },
-  { name: 'Services', href: '/services' },
-  { name: 'Process', href: '/process' },
-  { name: 'Work', href: '/work' },
+  { name: 'Services', href: '/services', isDropdown: true },
+  // { name: 'Work', href: '/work' },
   { name: 'Production', href: '/production' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
+];
+
+const serviceSubItems = [
+  { name: 'Seller Onboarding', href: '/services/seller-onboarding', desc: 'Amazon, Flipkart & Marketplace Setup' },
+  { name: 'Key Account Management', href: '/services/key-account-management', desc: 'Catalog Growth & Ad Scaling' },
+  { name: 'Website Development', href: '/services/website-development', desc: 'High-Speed Web Platforms & Apps' },
+  { name: 'Digital Marketing', href: '/services/digital-marketing', desc: 'SEO, Ads & Content Architecture' },
+  { name: 'Business Solution', href: '/services/business-solution', desc: 'ERP, CRM & AI Automations' },
 ];
 
 const formatRelativeTime = (dateString) => {
@@ -40,6 +47,8 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [servicesDropdownOpen, setServicesDropdownOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -105,14 +114,14 @@ export default function Header() {
           ? 'bg-[#0A0A0A]/85 backdrop-blur-md border border-white/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] max-w-6xl py-2'
           : 'bg-white/85 backdrop-blur-md border border-black/10 rounded-full shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)] max-w-6xl py-2'
         : isDark
-          ? 'bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
-          : 'bg-[#F9F9F9]/90 backdrop-blur-xl border-b border-transparent py-6 max-w-full rounded-none'
+          ? 'bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-white/10 py-3 sm:py-4 max-w-full rounded-none'
+          : 'bg-[#F9F9F9]/90 backdrop-blur-xl border-b border-black/5 py-3 sm:py-4 max-w-full rounded-none'
         }`}>
 
         <motion.nav
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className={`w-full mx-auto flex items-center justify-between transition-all duration-500 ${isScrolled ? 'px-4 sm:px-6 h-12 sm:h-14' : 'px-6 sm:px-10 max-w-7xl h-16 sm:h-20'}`}
+          className={`w-full mx-auto flex items-center justify-between transition-all duration-500 ${isScrolled ? 'px-4 sm:px-6 h-12 sm:h-14' : 'px-6 sm:px-10 max-w-7xl h-14 sm:h-16'}`}
         >
           {/* Logo Section */}
           <Link href="/" className="relative z-10 flex items-center group shrink-0 mr-2 sm:mr-3 xl:mr-4">
@@ -138,12 +147,84 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation Link Pill */}
-          <div className={`hidden xl:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'} mx-1 xl:mx-1.5`}>
-            {navLinks.map((link) => (
-              <NavLink key={link.name} href={link.href} active={pathname === link.href} isDark={isDark} isScrolled={isScrolled}>
-                {link.name}
-              </NavLink>
-            ))}
+          <div className={`hidden xl:flex items-center gap-1 ${isScrolled ? 'p-1 rounded-full' : 'p-1.5 rounded-2xl'} border transition-all duration-500 ${isDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'} mx-1 xl:mx-1.5 shrink-0`}>
+            {navLinks.map((link) => {
+              if (link.isDropdown) {
+                const isServiceActive = pathname.startsWith('/services');
+                return (
+                  <div
+                    key={link.name}
+                    className="relative shrink-0"
+                    onMouseEnter={() => setServicesDropdownOpen(true)}
+                    onMouseLeave={() => setServicesDropdownOpen(false)}
+                  >
+                    <Link
+                      href={link.href}
+                      className={`relative flex items-center gap-1.5 whitespace-nowrap ${isScrolled ? 'px-4 py-2 text-[0.65rem]' : 'px-5 py-2.5 text-[0.75rem]'} font-bold uppercase tracking-widest transition-all duration-300 ${isServiceActive ? (isDark ? 'text-[#111]' : 'text-white') : (isDark ? 'text-white/50 hover:text-white' : 'text-slate-500 hover:text-slate-900')}`}
+                    >
+                      <span className="relative z-10">{link.name}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 relative z-10 ${servicesDropdownOpen ? 'rotate-180' : ''}`} />
+                      {isServiceActive && (
+                        <motion.div
+                          layoutId="nav-pill"
+                          className={`absolute inset-0 ${isScrolled ? 'rounded-full' : 'rounded-xl'} shadow-lg border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
+                          transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                        />
+                      )}
+                    </Link>
+
+                    {/* Services Popover Dropdown */}
+                    <AnimatePresence>
+                      {servicesDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-84 p-3 rounded-2xl border shadow-2xl backdrop-blur-3xl z-[100] ${isDark ? 'bg-[#0A0A0E]/95 border-white/10 shadow-black/80' : 'bg-white/95 border-black/10 shadow-slate-300/50'}`}
+                        >
+                          <div className="flex items-center justify-between px-3 py-1.5 mb-1 border-b border-white/5 dark:border-white/5">
+                            <span className="text-[0.6rem] font-black uppercase tracking-[0.2em] text-[#F05E23]">
+                              Our Core Services
+                            </span>
+                            <Link 
+                              href="/services" 
+                              onClick={() => setServicesDropdownOpen(false)}
+                              className="text-[0.55rem] font-bold uppercase tracking-wider text-slate-400 hover:text-[#F05E23] transition-colors"
+                            >
+                              View All →
+                            </Link>
+                          </div>
+                          <div className="space-y-1">
+                            {serviceSubItems.map((sub) => {
+                              const isSubActive = pathname === sub.href;
+                              return (
+                                <Link
+                                  key={sub.name}
+                                  href={sub.href}
+                                  onClick={() => setServicesDropdownOpen(false)}
+                                  className={`flex flex-col p-2.5 rounded-xl transition-all group/item ${isSubActive
+                                    ? (isDark ? 'bg-[#F05E23]/20 text-white border border-[#F05E23]/30' : 'bg-[#F05E23]/10 text-[#111] border border-[#F05E23]/20')
+                                    : (isDark ? 'hover:bg-white/5 text-slate-300 hover:text-white' : 'hover:bg-slate-100/80 text-slate-700 hover:text-[#111]')}`}
+                                >
+                                  <span className="text-[0.7rem] font-black uppercase tracking-wider truncate">{sub.name}</span>
+                                  <span className={`text-[0.62rem] font-medium leading-tight mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{sub.desc}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+              return (
+                <NavLink key={link.name} href={link.href} active={pathname === link.href} isDark={isDark} isScrolled={isScrolled}>
+                  {link.name}
+                </NavLink>
+              );
+            })}
             {user && (
               <NavLink href={user.role === 'admin' ? '/admin' : (user.role === 'client' ? '/client' : (user.role === 'brand_manager' ? '/brand' : '/intern'))} active={pathname === '/admin' || pathname === '/intern' || pathname === '/client' || pathname === '/brand'} isDark={isDark} isScrolled={isScrolled}>
                 Dashboard
@@ -152,15 +233,15 @@ export default function Header() {
           </div>
 
           {/* Action Button Section Area */}
-          <div className="hidden xl:flex items-center gap-2.5 lg:gap-4 ml-1.5 xl:ml-2">
+          <div className="hidden xl:flex items-center gap-2 lg:gap-3 ml-1.5 xl:ml-2 shrink-0">
             {/* Notification Bell */}
             {user && (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setNotifOpen(!notifOpen)}
                   title="Notifications"
                   aria-label="Notifications"
-                  className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
+                  className={`relative overflow-hidden shrink-0 ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
                     ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
                     : 'bg-black/5 border-black/5 text-slate-700 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
                     }`}
@@ -180,7 +261,7 @@ export default function Header() {
               onClick={toggleTheme}
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
               aria-label="Toggle theme"
-              className={`relative overflow-hidden ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
+              className={`relative overflow-hidden shrink-0 ${isScrolled ? 'p-2 rounded-full' : 'p-2.5 rounded-xl'} border transition-all hover:scale-105 active:scale-95 group ${isDark
                 ? 'bg-white/5 border-white/10 text-white hover:bg-amber-400/20 hover:border-amber-400/30 hover:text-amber-400'
                 : 'bg-black/5 border-black/5 text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600'
                 }`}
@@ -193,14 +274,14 @@ export default function Header() {
             {!user ? (
               <Link
                 href="/login"
-                className={`relative overflow-hidden ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-6 py-3 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-black/5 border-black/5 text-[#111] hover:bg-black/10'}`}
+                className={`relative overflow-hidden shrink-0 whitespace-nowrap ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-5 py-2.5 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-black/5 border-black/5 text-[#111] hover:bg-black/10'}`}
               >
                 Login
               </Link>
             ) : (
               <button
                 onClick={logout}
-                className={`relative overflow-hidden ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-6 py-3 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400' : 'bg-black/5 border-black/5 text-[#111] hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-600'}`}
+                className={`relative overflow-hidden shrink-0 whitespace-nowrap ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-5 py-2.5 rounded-xl text-[0.7rem]'} font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400' : 'bg-black/5 border-black/5 text-[#111] hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-600'}`}
               >
                 Logout
               </button>
@@ -210,10 +291,10 @@ export default function Header() {
               href="https://wa.me/919161391566?text=I'd like to start growing my business with Synchronous Build Digital."
               target="_blank"
               rel="noopener noreferrer"
-              className={`relative group overflow-hidden ${isScrolled ? 'px-5 py-2.5 rounded-full' : 'px-8 py-3.5 rounded-xl text-xs'} shadow-lg transition-all hover:scale-[1.03] active:scale-95 border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
+              className={`relative group overflow-hidden shrink-0 whitespace-nowrap inline-flex items-center justify-center ${isScrolled ? 'px-4 py-2 rounded-full text-[0.65rem]' : 'px-5 py-2.5 rounded-xl text-[0.7rem]'} shadow-md transition-all hover:scale-105 active:scale-95 border ${isDark ? 'bg-white border-black/5' : 'bg-[#111] border-white/10'}`}
             >
-              <span className={`font-bold uppercase tracking-widest relative z-10 transition-all duration-500 ${isScrolled ? 'text-[0.65rem]' : 'text-xs'} ${isDark ? 'text-[#111]' : 'text-white'}`}>Start Growing</span>
-              <div className={`absolute top-0 right-0 ${isScrolled ? 'w-3 h-3' : 'w-4 h-4'} bg-[#F05E23] mask-triangle z-20 transition-all duration-500`}></div>
+              <span className={`font-bold uppercase tracking-widest relative z-10 whitespace-nowrap transition-all duration-500 ${isScrolled ? 'text-[0.65rem]' : 'text-[0.7rem]'} ${isDark ? 'text-[#111]' : 'text-white'}`}>Start Growing</span>
+              <div className={`absolute top-0 right-0 ${isScrolled ? 'w-2.5 h-2.5' : 'w-3 h-3'} bg-[#F05E23] mask-triangle z-20 transition-all duration-500`}></div>
             </a>
           </div>
 
@@ -346,23 +427,76 @@ export default function Header() {
             </div>
 
             <div className="flex flex-col gap-8">
-              {navLinks.map((link, i) => (
-                <motion.div
-                  key={link.name}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <Link
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`text-4xl sm:text-6xl md:text-7xl font-black tracking-[-0.05em] leading-[0.85] transition-all hover:tracking-[-0.03em] ${pathname === link.href ? 'text-[#F05E23]' : `${isDark ? 'text-white/40 hover:text-white' : 'text-[#111]/40 hover:text-[#111]'} hover:text-[#F05E23]`
-                      }`}
+              {navLinks.map((link, i) => {
+                if (link.isDropdown) {
+                  return (
+                    <motion.div
+                      key={link.name}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="flex flex-col gap-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <Link
+                          href={link.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`text-4xl sm:text-6xl md:text-7xl font-black tracking-[-0.05em] leading-[0.85] transition-all hover:tracking-[-0.03em] ${pathname.startsWith('/services') ? 'text-[#F05E23]' : `${isDark ? 'text-white/40 hover:text-white' : 'text-[#111]/40 hover:text-[#111]'} hover:text-[#F05E23]`}`}
+                        >
+                          {link.name}
+                        </Link>
+                        <button
+                          onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
+                          className={`p-3 rounded-2xl border transition-all ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-black/5 border-black/5 text-[#111]'}`}
+                        >
+                          <ChevronDown className={`w-6 h-6 transition-transform duration-300 ${mobileServicesOpen ? 'rotate-180 text-[#F05E23]' : ''}`} />
+                        </button>
+                      </div>
+
+                      <AnimatePresence>
+                        {mobileServicesOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="flex flex-col gap-2 pl-4 border-l-2 border-[#F05E23]/40 my-2 overflow-hidden"
+                          >
+                            {serviceSubItems.map((sub) => {
+                              return (
+                                <Link
+                                  key={sub.name}
+                                  href={sub.href}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={`flex items-center py-2 px-3 rounded-xl transition-all ${pathname === sub.href ? 'text-[#F05E23] font-bold' : (isDark ? 'text-white/70 hover:text-white' : 'text-slate-700 hover:text-[#111]')}`}
+                                >
+                                  <span className="text-lg font-bold uppercase tracking-wider">{sub.name}</span>
+                                </Link>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  );
+                }
+                return (
+                  <motion.div
+                    key={link.name}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: i * 0.1 }}
                   >
-                    {link.name}
-                  </Link>
-                </motion.div>
-              ))}
+                    <Link
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`text-4xl sm:text-6xl md:text-7xl font-black tracking-[-0.05em] leading-[0.85] transition-all hover:tracking-[-0.03em] ${pathname === link.href ? 'text-[#F05E23]' : `${isDark ? 'text-white/40 hover:text-white' : 'text-[#111]/40 hover:text-[#111]'} hover:text-[#F05E23]`
+                        }`}
+                    >
+                      {link.name}
+                    </Link>
+                  </motion.div>
+                );
+              })}
               {user && (
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
@@ -434,10 +568,10 @@ function NavLink({ href, children, active, isDark, isScrolled }) {
   return (
     <Link
       href={href}
-      className={`relative ${isScrolled ? 'px-4 py-2 text-[0.65rem]' : 'px-5 py-2.5 text-[0.75rem]'} font-bold uppercase tracking-widest transition-all duration-300 ${active ? (isDark ? 'text-[#111]' : 'text-white') : (isDark ? 'text-white/50 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+      className={`relative shrink-0 whitespace-nowrap ${isScrolled ? 'px-4 py-2 text-[0.65rem]' : 'px-5 py-2.5 text-[0.75rem]'} font-bold uppercase tracking-widest transition-all duration-300 ${active ? (isDark ? 'text-[#111]' : 'text-white') : (isDark ? 'text-white/50 hover:text-white' : 'text-slate-500 hover:text-slate-900')
         }`}
     >
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 whitespace-nowrap">{children}</span>
       {active && (
         <motion.div
           layoutId="nav-pill"

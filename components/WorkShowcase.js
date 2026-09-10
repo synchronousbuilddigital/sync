@@ -129,7 +129,7 @@ export default function WorkShowcase() {
 
     return (
         <section
-            className={`relative w-full min-h-0 sm:min-h-screen pt-0 pb-20 sm:py-32 flex flex-col items-center justify-start sm:justify-center overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FFF9F5]'}`}
+            className={`relative w-full min-h-0 sm:min-h-screen pt-0 pb-6 sm:py-32 flex flex-col items-center justify-start sm:justify-center overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A10]' : 'bg-[#FFF9F5]'}`}
         >
             {/* Soft Light Orange Background Flair */}
             <div className="absolute inset-0 pointer-events-none">

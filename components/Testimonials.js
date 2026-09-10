@@ -64,9 +64,9 @@ const CardContent = ({ t, isDark }) => (
             </div>
 
             <blockquote className={`text-base sm:text-2xl md:text-[1.8rem] font-semibold leading-snug sm:leading-[1.1] mb-4 sm:mb-8 tracking-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-[#111]'}`}>
-                <span className="text-[#F05E23]/30 mr-1 text-xl sm:text-2xl">"</span>
+                <span className="text-[#F05E23]/30 mr-1 text-xl sm:text-2xl">&quot;</span>
                 {t.quote.split('. ')[0]}.
-                <span className="text-[#F05E23]/30 ml-1 text-xl sm:text-2xl">"</span>
+                <span className="text-[#F05E23]/30 ml-1 text-xl sm:text-2xl">&quot;</span>
                 <footer className={`mt-2 sm:mt-4 text-xs sm:text-[0.85rem] font-medium leading-relaxed block italic opacity-80 transition-colors duration-500 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
                     {t.quote.split('. ').slice(1).join('. ')}
                 </footer>
@@ -101,7 +101,8 @@ export default function Testimonials() {
     const [hasMounted, setHasMounted] = useState(false);
 
     useEffect(() => {
-        setHasMounted(true);
+        const timer = setTimeout(() => setHasMounted(true), 0);
+        return () => clearTimeout(timer);
     }, []);
 
     // Calculate layout dimensions
@@ -183,7 +184,7 @@ export default function Testimonials() {
     };
 
     return (
-        <section className={`w-full py-12 relative overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-transparent'}`}>
+        <section className={`w-full pt-4 pb-8 sm:py-12 relative overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#0A0A0A]' : 'bg-transparent'}`}>
             {/* Background Texture */}
             <motion.div
                 animate={{ opacity: isDark ? [0.03, 0.05, 0.03] : [0.01, 0.02, 0.01] }}
@@ -195,30 +196,30 @@ export default function Testimonials() {
                 }}
             />
 
-            <div className="max-w-7xl mx-auto px-6 relative z-30 mb-12">
-                <div className={`flex flex-col md:flex-row md:items-end justify-between gap-12 border-b pb-12 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-black/5'}`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-30 mb-4 sm:mb-12">
+                <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-12 border-b pb-4 sm:pb-12 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-black/5'}`}>
                     <div className="max-w-4xl">
                         <motion.div 
                             initial={{ opacity: 0, x: -20 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
-                            className="inline-flex items-center gap-3 px-5 py-2 bg-[#F05E23]/5 border border-[#F05E23]/10 rounded-full mb-8"
+                            className="inline-flex items-center gap-2.5 px-3.5 py-1.5 sm:px-5 sm:py-2 bg-[#F05E23]/5 border border-[#F05E23]/10 rounded-full mb-3 sm:mb-8"
                         >
                             <span className="w-1.5 h-1.5 rounded-full bg-[#F05E23] animate-pulse"></span>
-                            <span className="text-[0.6rem] font-black text-[#F05E23] tracking-[0.45em] uppercase">Verified Outcomes</span>
+                            <span className="text-[0.6rem] font-black text-[#F05E23] tracking-[0.35em] sm:tracking-[0.45em] uppercase">Verified Outcomes</span>
                         </motion.div>
                         <motion.h2
                             initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                            className={`text-[3.5rem] sm:text-[5rem] lg:text-[7rem] font-bold tracking-[-0.05em] leading-[0.8] transition-colors duration-700 ${isDark ? 'text-white' : 'text-[#111]'}`}
+                            className={`text-3xl sm:text-6xl lg:text-[7rem] font-bold tracking-tight sm:tracking-[-0.05em] leading-[1.05] sm:leading-[0.8] transition-colors duration-700 ${isDark ? 'text-white' : 'text-[#111]'}`}
                         >
                             Success <br /> <span className="text-[#F05E23]">Synchronized.</span>
                         </motion.h2>
                     </div>
                     
-                    <div className="flex flex-col items-end gap-10">
+                    <div className="hidden md:flex flex-col items-end gap-10">
                         <div className="flex gap-4 relative z-50">
                             <button 
                                 onClick={() => handleScroll('left')}
@@ -255,9 +256,7 @@ export default function Testimonials() {
                 onMouseEnter={() => setIsPaused(true)}
                 onMouseLeave={() => setIsPaused(false)}
             >
-                {/* Visual Gradient Masks */}
-                <div className={`absolute inset-y-0 left-0 w-32 md:w-64 z-20 pointer-events-none transition-colors duration-700 bg-gradient-to-r ${isDark ? 'from-[#0A0A0A]' : 'from-[#F9F9F9]'} to-transparent`} />
-                <div className={`absolute inset-y-0 right-0 w-32 md:w-64 z-20 pointer-events-none transition-colors duration-700 bg-gradient-to-l ${isDark ? 'from-[#0A0A0A]' : 'from-[#F9F9F9]'} to-transparent`} />
+
 
                 {!hasMounted ? (
                     <div className="flex gap-4 sm:gap-8 px-[5vw] sm:px-[10vw]">
@@ -287,6 +286,33 @@ export default function Testimonials() {
                         ))}
                     </motion.div>
                 )}
+            </div>
+
+            {/* Mobile Navigation Controls (Placed AFTER review cards: left arrow on left, right arrow on right) */}
+            <div className="flex md:hidden items-center justify-between px-6 mt-6 relative z-30 w-full">
+                <button
+                    onClick={() => handleScroll('left')}
+                    className={`w-12 h-12 rounded-full border flex items-center justify-center transition-all duration-300 group shadow-md active:scale-90 cursor-pointer ${
+                        isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-black/10 text-[#111]'
+                    } hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]`}
+                    aria-label="Previous testimonial"
+                >
+                    <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+                </button>
+
+                <span className={`text-[0.6rem] font-black uppercase tracking-[0.3em] ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
+                    Verified Reviews
+                </span>
+
+                <button
+                    onClick={() => handleScroll('right')}
+                    className={`w-12 h-12 rounded-full border flex items-center justify-center transition-all duration-300 group shadow-md active:scale-90 cursor-pointer ${
+                        isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-black/10 text-[#111]'
+                    } hover:bg-[#F05E23] hover:text-white hover:border-[#F05E23]`}
+                    aria-label="Next testimonial"
+                >
+                    <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
+                </button>
             </div>
 
             

@@ -63,42 +63,45 @@ export default function Process() {
     const trackRef = useRef(null);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+        if (typeof window === 'undefined') return;
+
+        // Only run GSAP ScrollTrigger horizontal pin on desktop screens (>= 1024px)
+        if (window.innerWidth < 1024) return;
 
         gsap.registerPlugin(ScrollTrigger);
 
         let ctx = gsap.context(() => {
             const tracks = trackRef.current;
-            if (!tracks) return;
-            // Increased distance for "mandatory" feel
-            const scrollWidth = tracks.scrollWidth - window.innerWidth;
-            const totalScrollDistance = scrollWidth + (window.innerHeight * 0.4);
+            const trigger = triggerRef.current;
+            if (!tracks || !trigger) return;
+
+            const getScrollDistance = () => {
+                return Math.max(0, tracks.scrollWidth - window.innerWidth + (window.innerWidth * 0.1));
+            };
 
             gsap.to(tracks, {
-                x: -scrollWidth,
+                x: () => -getScrollDistance(),
                 ease: "none",
                 scrollTrigger: {
-                    trigger: triggerRef.current,
+                    trigger: trigger,
                     pin: true,
-                    scrub: 1.5, // Slightly heavier feel
+                    scrub: 1,
                     start: "top top",
-                    end: () => `+=${totalScrollDistance}`,
+                    end: () => `+=${getScrollDistance() + 400}`,
                     invalidateOnRefresh: true,
-                    anticipatePin: 1,
-                    snap: {
-                        snapTo: 1 / (steps.length), // Including the CTA as a snap point
-                        duration: { min: 0.3, max: 0.7 },
-                        delay: 0.05,
-                        ease: "power2.inOut"
-                    },
-                    onUpdate: (self) => {
-                        // We can use this to update some state if needed
-                    }
+                    anticipatePin: 1
                 }
             });
         }, sectionRef);
 
-        return () => ctx.revert();
+        const timer = setTimeout(() => {
+            ScrollTrigger.refresh();
+        }, 400);
+
+        return () => {
+            clearTimeout(timer);
+            ctx.revert();
+        };
     }, []);
 
     // Framer Motion for some ambient UI and mobile vertical view
@@ -115,7 +118,7 @@ export default function Process() {
             ref={sectionRef}
             className={`w-full relative overflow-visible selection:bg-[#F05E23]/20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
         >
-            <div ref={triggerRef} className="min-h-0 lg:h-screen w-full relative overflow-hidden pt-12 pb-2 sm:pb-12 lg:py-0">
+            <div ref={triggerRef} className="min-h-0 lg:h-screen w-full relative overflow-hidden pt-3 sm:pt-12 pb-2 sm:pb-12 lg:py-0">
 
                 {/* Mandatory Progress Bar (Right Side) */}
                 <div className="absolute right-6 top-1/2 -translate-y-1/2 h-[30vh] w-1 rounded-full bg-white/5 z-50 overflow-hidden hidden lg:block">
@@ -296,8 +299,8 @@ export default function Process() {
                     </div>
                 </div>
 
-                {/* Progress Strip */}
-                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 z-20">
+                {/* Progress Strip - Desktop Only */}
+                <div className="hidden lg:flex absolute bottom-10 left-1/2 -translate-x-1/2 items-center gap-4 z-20">
                     {steps.map((_, i) => (
                         <div key={i} className="flex flex-col items-center gap-3">
                             <div className={`w-2 h-2 rounded-full transition-all duration-500`}

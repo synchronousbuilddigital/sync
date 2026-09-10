@@ -145,7 +145,7 @@ export default function WhyChooseUs() {
     const IconComponent = activeAdv.icon;
 
     return (
-        <section ref={sectionRef} className={`w-full py-16 sm:py-32 relative overflow-hidden transition-colors duration-700 ${isDark ? 'bg-[#050508]' : 'bg-[#FAFAFD]'}`}>
+        <section ref={sectionRef} className={`relative w-full pt-6 pb-4 sm:py-32 overflow-hidden transition-colors duration-500 ${isDark ? 'bg-[#0A0A10] text-white' : 'bg-[#FAFAF8] text-slate-900'}`}>
             {/* Ambient Grid Background */}
             <div className={`absolute inset-0 z-0 pointer-events-none transition-opacity duration-700 ${isDark ? 'opacity-[0.04]' : 'opacity-[0.02]'}`}
                  style={{ backgroundImage: `radial-gradient(${isDark ? '#FFF' : '#000'} 1.2px, transparent 1.2px)`, backgroundSize: '48px 48px' }}></div>
@@ -156,7 +156,7 @@ export default function WhyChooseUs() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
                 
                 {/* Section Title Header */}
-                <div className="flex flex-col items-center text-center mb-12 sm:mb-20">
+                <div className="flex flex-col items-center text-center mb-6 sm:mb-10">
                     <motion.div 
                         initial={{ opacity: 0, y: -20 }}
                         whileInView={{ opacity: 1, y: 0 }}
